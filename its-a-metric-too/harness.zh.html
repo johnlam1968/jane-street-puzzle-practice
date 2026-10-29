@@ -268,14 +268,13 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 </noscript>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="wrap">
-  <a class="back" href="index.html" data-i18n="backLink">← 全部谜题</a>
+  <a class="back" href="../index.zh.html" data-i18n="backLink" data-i18n-href="../index.zh.html">← 全部谜题</a>
   <header>
     <div>
       <h1 data-i18n="h1">假设账本</h1>
       <p class="sub" data-i18n="sub">把你假设的州涂出来，标出你假设的首都 —— 包括<b>隐藏</b>的那些 —— 每个已发布数都会按真实的行走代价重新核对一遍。</p>
     </div>
     <div class="tools">
-      <button class="btn" id="presetCorner" data-i18n="presetCorner">角落假设</button>
       <input type="file" id="fileIn" accept="application/json,.json" hidden>
     </div>
   </header>
@@ -323,7 +322,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <button class="btn" id="undoBtn" disabled data-i18n="undoBtn">撤销</button>
       </div>
 
-      <div class="status" id="status" data-i18n="statusIdle">涂一个州，或者载入角落假设。</div>
+      <div class="status" id="status" data-i18n="statusIdle">涂一个州，或者打开一个板子文件。</div>
       <div class="answerbox" id="answerBox" hidden>
         <span data-i18n="labelAnswer">算出来的答案</span><b id="answerNum"></b>
         <span class="rows" id="rowSums"></span>
@@ -348,7 +347,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <label data-i18n="pngPreviewLabel">PNG 预览 —— 长按可以保存</label>
         <img id="pngOut" alt="the painted board">
       </div>
-      <div class="build" data-i18n="buildLine">build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a></div>
+      <div class="build" data-i18n="buildLine">build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="harness.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">源码</a></div>
       <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
     </div>
 
@@ -517,6 +516,7 @@ const I18N = {
   h1: '假设账本',
   sub: '把你假设的州涂出来，标出你假设的首都 —— 包括<b>隐藏</b>的那些 —— 每个已发布数都会按真实的行走代价重新核对一遍。',
   backLink: '← 全部谜题',
+  backLinkHref: '../index.zh.html',
   noscript: '<b>这个页面需要 JavaScript</b>，下面的棋盘由它绘制。<br><br>如果你是从预览里打开这个文件的（iOS：信息附件、隔空投送，或者「文件」App），你看到的是页面的图片，不是页面本身 —— iOS 的预览不跑脚本，所以棋盘会是空的，按钮也没有用。请改用浏览器打开：在 iOS 上分享文件并选择<b>用 Safari 打开</b>；在电脑上双击它，或者用 <code>python3 -m http.server</code> 起一个服务，然后打开它打印出来的地址。',
   plateHead: '<b>原题</b> · 11×11',
   labelBoard: '棋盘',
@@ -554,8 +554,7 @@ const I18N = {
   capSizeLabel: '所假设首都所在州的大小',
   presetClear: '清空',
   undoBtn: '撤销',
-  presetCorner: '角落假设',
-  statusIdle: '涂一个州，或者载入角落假设。',
+  statusIdle: '涂一个州，或者打开一个板子文件。',
   labelIterations: '迭代',
   labelIterName: '给这次尝试起个名',
   btnSaveIter: '保存迭代',
@@ -566,7 +565,7 @@ const I18N = {
   btnOpenJson: '打开 JSON',
   btnSavePng: '保存 PNG',
   pngPreviewLabel: 'PNG 预览 —— 长按可以保存',
-  buildLine: 'build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a>',
+  buildLine: 'build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="harness.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">源码</a>',
   panelCandidates: '候选',
   thCandidate: '候选',
   thGoalPy: 'goal.py',
@@ -1303,24 +1302,6 @@ function refresh() {
   save();
 }
 
-/* ---------- presets ---------- */
-const PRESET_CORNER = {
-  // the Γ state (11), the 8-cell state, the 16-cell state, the forced 1×1 at
-  // (5,10) and the hidden 1×1 at (3,5) that both published 1s ask for.
-  states: [
-    [[2,4],[2,5],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[8,7],[8,8]],
-    [[1,9],[2,9],[3,8],[3,9],[3,10],[4,9],[5,9],[6,9]],
-    [[8,5],[9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9],[10,0],[10,1],[10,2],[10,8],[10,9],[10,10]],
-  ],
-  assumed: [[5,10,1],[3,5,1]],
-};
-function loadPreset(p) {
-  colors = new Array(N * N).fill(-1);
-  p.states.forEach((cells, id) => cells.forEach(([r, c]) => { colors[r * N + c] = id; }));
-  assumed = new Map(p.assumed.map(([r, c, k]) => [r * N + c, k]));
-  refresh();
-}
-
 /* ---------- the board switcher ----------
    One sheet, many puzzles.  The 11x11 is the reason this page exists; the
    practice boards are there to try a thing out on a puzzle that is already
@@ -1395,7 +1376,6 @@ function loadBoard(id) {
   $('routeSvg').setAttribute('viewBox', '0 0 ' + N + ' ' + N);
   $('capSize').max = String(N * N);
   $('showSolution').hidden = !b.solution;
-  $('presetCorner').hidden = b.id !== LEDGER_BOARD.id;
   $('boardNote').hidden = b.id === LEDGER_BOARD.id;
   $('plateName').textContent = boardLabel(b);
   $('boardSel').value = b.id;
@@ -2318,7 +2298,6 @@ $('tools').addEventListener('click', e => {
   const palChip = e.target.closest('.chip[data-id]');
   if (palChip) { setPaintColor(+palChip.dataset.id); return; }
 });
-$('presetCorner').addEventListener('click', () => { pushUndo(); loadPreset(PRESET_CORNER); });
 $('presetClear').addEventListener('click', () => { pushUndo(); colors = new Array(N * N).fill(-1); assumed = new Map(); refresh(); });
 $('boardSel').addEventListener('change', e => loadBoard(e.target.value));
 $('showSolution').addEventListener('click', showSolution);

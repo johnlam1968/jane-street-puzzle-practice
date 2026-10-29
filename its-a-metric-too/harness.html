@@ -268,14 +268,13 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 </noscript>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="wrap">
-  <a class="back" href="index.html" data-i18n="backLink">← All puzzles</a>
+  <a class="back" href="../index.html" data-i18n="backLink" data-i18n-href="../index.html">← All puzzles</a>
   <header>
     <div>
       <h1 data-i18n="h1">Assumption ledger</h1>
       <p class="sub" data-i18n="sub">Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.</p>
     </div>
     <div class="tools">
-      <button class="btn" id="presetCorner" data-i18n="presetCorner">Corner hypothesis</button>
       <input type="file" id="fileIn" accept="application/json,.json" hidden>
     </div>
   </header>
@@ -323,7 +322,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <button class="btn" id="undoBtn" disabled data-i18n="undoBtn">Undo</button>
       </div>
 
-      <div class="status" id="status" data-i18n="statusIdle">Paint a state, or load the corner hypothesis.</div>
+      <div class="status" id="status" data-i18n="statusIdle">Paint a state, or open a board file.</div>
       <div class="answerbox" id="answerBox" hidden>
         <span data-i18n="labelAnswer">Computed answer</span><b id="answerNum"></b>
         <span class="rows" id="rowSums"></span>
@@ -348,7 +347,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <label data-i18n="pngPreviewLabel">PNG preview — long-press it to save</label>
         <img id="pngOut" alt="the painted board">
       </div>
-      <div class="build" data-i18n="buildLine">build 2026-10-29b · 49 practice boards (4×4, 5×5, 6×6, 7×7 — the official 5×5 example among them) · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · show route on hover, long press on a touch screen · <a href="ledger.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">source</a></div>
+      <div class="build" data-i18n="buildLine">build 2026-10-29b · 49 practice boards (4×4, 5×5, 6×6, 7×7 — the official 5×5 example among them) · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · show route on hover, long press on a touch screen · <a href="harness.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">source</a></div>
       <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
     </div>
 
@@ -520,6 +519,7 @@ const I18N = {
   h1: 'Assumption ledger',
   sub: 'Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.',
   backLink: '← All puzzles',
+  backLinkHref: '../index.html',
   noscript: '<b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the Files app), you are looking at a picture of the page, not the page itself -- iOS previews do not run scripts, so the board stays empty and the buttons do nothing. Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>; on a computer, double-click it, or serve the folder with <code>python3 -m http.server</code> and open the address it prints.',
   plateHead: '<b>Original</b> · 11×11',
   labelBoard: 'Board',
@@ -557,8 +557,7 @@ const I18N = {
   capSizeLabel: 'assumed capitol\'s state size',
   presetClear: 'Clear',
   undoBtn: 'Undo',
-  presetCorner: 'Corner hypothesis',
-  statusIdle: 'Paint a state, or load the corner hypothesis.',
+  statusIdle: 'Paint a state, or open a board file.',
   labelIterations: 'iterations',
   labelIterName: 'name this try',
   btnSaveIter: 'Save iteration',
@@ -569,7 +568,7 @@ const I18N = {
   btnOpenJson: 'Open JSON',
   btnSavePng: 'Save PNG',
   pngPreviewLabel: 'PNG preview — long-press it to save',
-  buildLine: 'build 2026-10-29b · 49 practice boards (4×4, 5×5, 6×6, 7×7 — the official 5×5 example among them) · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · show route on hover, long press on a touch screen · <a href="ledger.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">source</a>',
+  buildLine: 'build 2026-10-29b · 49 practice boards (4×4, 5×5, 6×6, 7×7 — the official 5×5 example among them) · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · show route on hover, long press on a touch screen · <a href="harness.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">source</a>',
   panelCandidates: 'Candidates',
   thCandidate: 'candidate',
   thGoalPy: 'goal.py',
@@ -1306,24 +1305,6 @@ function refresh() {
   save();
 }
 
-/* ---------- presets ---------- */
-const PRESET_CORNER = {
-  // the Γ state (11), the 8-cell state, the 16-cell state, the forced 1×1 at
-  // (5,10) and the hidden 1×1 at (3,5) that both published 1s ask for.
-  states: [
-    [[2,4],[2,5],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[8,7],[8,8]],
-    [[1,9],[2,9],[3,8],[3,9],[3,10],[4,9],[5,9],[6,9]],
-    [[8,5],[9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9],[10,0],[10,1],[10,2],[10,8],[10,9],[10,10]],
-  ],
-  assumed: [[5,10,1],[3,5,1]],
-};
-function loadPreset(p) {
-  colors = new Array(N * N).fill(-1);
-  p.states.forEach((cells, id) => cells.forEach(([r, c]) => { colors[r * N + c] = id; }));
-  assumed = new Map(p.assumed.map(([r, c, k]) => [r * N + c, k]));
-  refresh();
-}
-
 /* ---------- the board switcher ----------
    One sheet, many puzzles.  The 11x11 is the reason this page exists; the
    practice boards are there to try a thing out on a puzzle that is already
@@ -1398,7 +1379,6 @@ function loadBoard(id) {
   $('routeSvg').setAttribute('viewBox', '0 0 ' + N + ' ' + N);
   $('capSize').max = String(N * N);
   $('showSolution').hidden = !b.solution;
-  $('presetCorner').hidden = b.id !== LEDGER_BOARD.id;
   $('boardNote').hidden = b.id === LEDGER_BOARD.id;
   $('plateName').textContent = boardLabel(b);
   $('boardSel').value = b.id;
@@ -2321,7 +2301,6 @@ $('tools').addEventListener('click', e => {
   const palChip = e.target.closest('.chip[data-id]');
   if (palChip) { setPaintColor(+palChip.dataset.id); return; }
 });
-$('presetCorner').addEventListener('click', () => { pushUndo(); loadPreset(PRESET_CORNER); });
 $('presetClear').addEventListener('click', () => { pushUndo(); colors = new Array(N * N).fill(-1); assumed = new Map(); refresh(); });
 $('boardSel').addEventListener('change', e => loadBoard(e.target.value));
 $('showSolution').addEventListener('click', showSolution);

@@ -171,6 +171,12 @@ table.ledger th { text-align: left; font-weight: 500; color: var(--muted); font-
 table.ledger td { padding: 3px 4px; border-bottom: 1px solid rgba(0,0,0,.05); font-family: var(--f-num); vertical-align: top; }
 table.ledger tr { cursor: pointer; }
 table.ledger tr:hover td { background: rgba(0,0,0,.04); }
+/* the verdict row the pointer is on: from the square, and from the row itself */
+table.ledger tr.hov td { background: color-mix(in srgb, var(--accent) 13%, transparent); }
+table.ledger tr.hov td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+table.ledger tr.hovrow td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+/* the square behind the verdict row the pointer is on */
+.cell.vh { outline: 2px dashed var(--accent); outline-offset: -2px; }
 .v { font-weight: 700; }
 .v.CONTRADICTED, .v.UNPRODUCIBLE { color: var(--bad); }
 .pay { margin-top: 3px; font-size: 11px; }
@@ -341,7 +347,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <h2 data-i18n="panelVerdicts">Verdicts</h2>
         <div class="tally" id="tally"></div>
       </div>
-      <div style="max-height:52vh;overflow:auto">
+      <div style="max-height:52vh;overflow:auto" id="verdictBox">
         <table class="ledger" id="verdicts">
           <thead><tr><th data-i18n="thSquare">square</th><th data-i18n="thReads">reads</th><th data-i18n="thRange">range</th><th data-i18n="thVerdict">verdict</th></tr></thead>
           <tbody></tbody>
@@ -1193,7 +1199,13 @@ function refresh() {
       '<td><span class="v ' + r.verdict + '">' + r.verdict + '</span><div class="why">' + r.why + '</div>' + canPay +
       (r.route && r.route.length > 1 ? '<div class="route">' + r.route.map(cellName).join(' → ') + '</div>' : '') + '</td></tr>';
   }).join('');
-  tb.querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => { selected = +tr.dataset.i; refresh(); }));
+  tb.querySelectorAll('tr').forEach(tr => {
+    tr.addEventListener('click', () => { selected = +tr.dataset.i; refresh(); });
+    // pointing at a verdict row rings the square it talks about
+    tr.addEventListener('mouseenter', () => { markCellFromRow(+tr.dataset.i); });
+    tr.addEventListener('mouseleave', () => { markCellFromRow(-1); });
+  });
+  markVerdictRow(hoverVerdict);          // the table was rebuilt: light it up again
 
   const nStates = led.list.length;
   $('undoBtn').disabled = undoStack.length === 0;
@@ -2071,6 +2083,40 @@ function closeConstraint() {
   popCell = -1;
 }
 
+/* ---------- the two panels, pointing at each other ----------
+   Resting the pointer on a square lights up the verdict row that belongs to
+   it, so the number you are pointing at and its verdict can be read at the
+   same time; and pointing at a verdict row rings the square it talks about.
+   Clicking a verdict row already pinned its square -- this is the same idea,
+   without the click. */
+let hoverVerdict = -1;        // the square whose verdict row is lit up
+
+function scrollRowIntoView(tr) {
+  const box = $('verdictBox');
+  if (!box) return;
+  const b = box.getBoundingClientRect(), r = tr.getBoundingClientRect();
+  if (r.top < b.top) box.scrollTop -= (b.top - r.top);
+  else if (r.bottom > b.bottom) box.scrollTop += (r.bottom - b.bottom);
+}
+
+function markVerdictRow(i) {
+  const tb = $('verdicts') && $('verdicts').querySelector('tbody');
+  if (!tb) return;
+  tb.querySelectorAll('tr.hov').forEach(tr => tr.classList.remove('hov'));
+  if (i < 0) return;
+  const tr = tb.querySelector('tr[data-i="' + i + '"]');
+  if (!tr) return;                       // a square with no published number has no row
+  tr.classList.add('hov');
+  scrollRowIntoView(tr);
+}
+
+function markCellFromRow(i) {
+  for (const d of $('board').children) d.classList.remove('vh');
+  if (i < 0) return;
+  const cell = $('board').children[i];
+  if (cell) cell.classList.add('vh');
+}
+
 /* ---------- events ---------- */
 /* Two fingers can paint at the same time -- handy on a tablet, where you can
    hold one in each hand and tap the two halves of a symmetric pair.  Each
@@ -2091,7 +2137,10 @@ $('board').addEventListener('pointerdown', e => {
   const i = +el.dataset.i;
   if (e.pointerType === 'touch') {
     const p = { i: i, x: e.clientX, y: e.clientY, long: false, timer: null };
-    p.timer = setTimeout(() => { p.long = true; hoverCell = i; drawRoute(); }, LONG_PRESS_MS);
+    p.timer = setTimeout(() => {
+      p.long = true; hoverCell = i; hoverVerdict = i;
+      markVerdictRow(i); drawRoute();
+    }, LONG_PRESS_MS);
     touchPending.set(e.pointerId, p);
     return;
   }
@@ -2121,7 +2170,11 @@ window.addEventListener('pointerup', e => {
   if (!pending) return;
   clearTimeout(pending.timer);
   touchPending.delete(e.pointerId);
-  if (pending.long) { hoverCell = -1; drawRoute(); return; }
+  if (pending.long) {
+    hoverCell = -1; hoverVerdict = -1;
+    markVerdictRow(-1); drawRoute();
+    return;
+  }
   if (pointers.size === 0 && tool !== 'constraint') pushUndo();
   applyTool(pending.i);
 });
@@ -2130,11 +2183,14 @@ window.addEventListener('pointercancel', e => {
   const pending = touchPending.get(e.pointerId);
   if (pending) { clearTimeout(pending.timer); touchPending.delete(e.pointerId); }
 });
-/* the mouse has a hover: rest it on a square and the route turns up */
+/* the mouse has a hover: rest it on a square and the route turns up, and the
+   verdict row that belongs to the square lights up at once */
 $('board').addEventListener('pointerover', e => {
-  if (e.pointerType !== 'mouse' || !routeOn) return;
+  if (e.pointerType !== 'mouse') return;
   const el = e.target.closest('.cell'); if (!el) return;
   const i = +el.dataset.i;
+  if (i !== hoverVerdict) { hoverVerdict = i; markVerdictRow(i); }
+  if (!routeOn) return;
   clearTimeout(hoverTimer);
   if (i === hoverCell) return;
   hoverCell = -1; drawRoute();
@@ -2146,6 +2202,7 @@ $('board').addEventListener('pointerout', e => {
   if (to && to.closest && to.closest('.cell')) return;    // moving to the next square
   clearTimeout(hoverTimer);
   if (hoverCell !== -1) { hoverCell = -1; drawRoute(); }
+  if (hoverVerdict !== -1) { hoverVerdict = -1; markVerdictRow(-1); }
 });
 $('tools').addEventListener('click', e => {
   const chip = e.target.closest('.chip[data-tool]');

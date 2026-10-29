@@ -1,0 +1,1585 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title data-i18n="pageTitle">账本 · It's a Metric, Too</title>
+<meta name="description" content="Jane Street《It's a Metric, Too》的假设账本：把一个州的面积涂到板上，标出你假设的首都，每个已发布数都会按真实的行走代价重新核对一遍。" data-i18n-content="Jane Street《It's a Metric, Too》的假设账本：把一个州的面积涂到板上，标出你假设的首都，每个已发布数都会按真实的行走代价重新核对一遍。">
+<meta name="theme-color" content="#e9eeec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111a1e" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e6b70'/%3E%3Cpath d='M6 6h9v9H6zM17 6h9v9h-9zM6 17h9v9H6z' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='21.5' cy='21.5' r='3.5' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Ledger sheet: the board is a worksheet, the right column is the audit trail. */
+:root {
+  --ground: #e9eeec; --sheet: #f7f9f8; --ink: #1b2a31; --muted: #5b6b70; --line: #c3cdcc;
+  --accent: #0e6b70; --accent-ink: #ffffff; --bad: #b3261e; --good: #2f6b2a; --warn: #8a5a00;
+  --blank: #fbfcfb;
+  --t0: #eaa98f; --t1: #ecc96a; --t2: #9fc884; --t3: #7fbfc4; --t4: #9aa6de;
+  --t5: #c897d0; --t6: #e797ae; --t7: #c8b183; --t8: #79a9dc; --t9: #c4dfa0;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #111a1e; --sheet: #172327; --ink: #e3ecec; --muted: #93a5a8; --line: #33464b;
+    --accent: #5cc3c4; --accent-ink: #0c1b1d; --bad: #ff8a80; --good: #9bd68f; --warn: #e0b25e;
+    --blank: #1c2a2f;
+    --t0: #7e4a3a; --t1: #7f6b2f; --t2: #4b6c40; --t3: #386a6e; --t4: #4b5687;
+    --t5: #6c4b78; --t6: #80485a; --t7: #6f6147; --t8: #3a6189; --t9: #56764f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #111a1e; --sheet: #172327; --ink: #e3ecec; --muted: #93a5a8; --line: #33464b;
+  --accent: #5cc3c4; --accent-ink: #0c1b1d; --bad: #ff8a80; --good: #9bd68f; --warn: #e0b25e;
+  --blank: #1c2a2f;
+  --t0: #7e4a3a; --t1: #7f6b2f; --t2: #4b6c40; --t3: #386a6e; --t4: #4b5687;
+  --t5: #6c4b78; --t6: #80485a; --t7: #6f6147; --t8: #3a6189; --t9: #56764f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
+}
+.back { font-size: 0.85rem; color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 4px; }
+.back:hover { color: var(--accent); }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 20px; }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.6rem, 3.6vw, 2.3rem); line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; font-size: 0.93rem; max-width: 62ch; }
+.sub a { color: var(--accent); }
+h2 { font-family: var(--f-display); font-size: 1.05rem; margin: 0 0 8px; letter-spacing: -0.005em; }
+button, select, input { font: inherit; touch-action: manipulation; }
+@media (pointer: coarse) { select.btn, input.btn { font-size: 16px; } }
+.btn { background: var(--sheet); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-weight: 500; font-size: 0.9rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+select.btn, input.btn { padding: 6px 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; }
+@media (max-width: 860px) { main { grid-template-columns: minmax(0, 1fr); } }
+.plate { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: clamp(10px, 2.5vw, 20px); display: grid; gap: 10px; }
+.plate-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.plate-head b { color: var(--ink); font-weight: 600; }
+.boardbox { container-type: inline-size; width: 100%; max-width: 560px; margin: 0 auto; }
+/* coordinate rulers: columns (X) on top, rows (Y) on the left */
+.axes { display: grid; grid-template-columns: 1.6em minmax(0, 1fr); grid-template-rows: 1.6em minmax(0, 1fr); }
+.ax-corner { display: grid; place-items: center; font: 600 0.62rem/1 var(--f-num); color: var(--muted); letter-spacing: 0.04em; }
+.ax-cols { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  padding: 0 2.5px 2px; }
+.ax-rows { display: grid; grid-template-rows: repeat(var(--n), minmax(0, 1fr));
+  padding: 2.5px 2px 2.5px 0; }
+.ax-cols span, .ax-rows span { display: grid; place-items: center;
+  font: 500 max(8px, calc(100cqw / var(--n) * 0.20)) / 1 var(--f-num);
+  font-variant-numeric: tabular-nums; color: var(--muted); }
+.ax-rows span { justify-items: end; padding-right: 2px; }
+.axes .axis-note { position: absolute; }
+#board {
+  display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-rows: repeat(var(--n), minmax(0, 1fr));
+  width: 100%; aspect-ratio: 1; border: 2.5px solid var(--ink); touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+}
+.cell { position: relative; display: grid; place-items: center; background: var(--blank);
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  font-family: var(--f-num); font-weight: 600; font-size: calc(100cqw / var(--n) * 0.34); font-variant-numeric: tabular-nums; color: var(--ink);
+  /* Walls.  Colour alone is not enough for a colour-weak eye, so every edge
+     where a state ends is drawn as a bold line as well.  Each edge is drawn
+     once, by the cell on its upper-left side, so no line is doubled up. */
+  --wall: clamp(1.6px, 0.55cqw, 3.5px);
+  --wN: 0 0 0 transparent; --wE: 0 0 0 transparent; --wS: 0 0 0 transparent; --wW: 0 0 0 transparent;
+  box-shadow: var(--wN), var(--wE), var(--wS), var(--wW); }
+.cell .sz { position: absolute; top: 1px; left: 3px; font-size: max(8px, calc(100cqw / var(--n) * 0.19)); font-weight: 500; color: var(--muted); line-height: 1; }
+.cell .sz.nocap { color: var(--warn); font-weight: 700; }
+.cell .dv { position: absolute; bottom: 1px; right: 3px; font-size: max(8px, calc(100cqw / var(--n) * 0.19)); font-weight: 500; color: var(--muted); line-height: 1; }
+.cell .dv.bad { color: var(--bad); font-weight: 700; }
+.cell .cap { position: absolute; width: 24%; aspect-ratio: 1; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px var(--sheet); }
+.cell.assumed { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.cell.assumed .cap { background: var(--accent); }
+.cell.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+.chip { font: 500 0.88rem/1 var(--f-body); color: var(--ink); background: var(--sheet); border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
+.chip small { color: var(--muted); font-size: 0.74rem; font-family: var(--f-num); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.chip[aria-pressed="true"] small { color: inherit; opacity: 0.7; }
+.swatch { width: 13px; height: 13px; border-radius: 4px; border: 1px solid rgba(0,0,0,.25); }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tools .sep { width: 1px; height: 26px; background: var(--line); }
+.status { font-size: 0.9rem; padding: 8px 10px; border-radius: 6px; background: var(--blank); border: 1px solid var(--line); }
+.status.bad { border-color: var(--bad); color: var(--bad); }
+.status.good { border-color: var(--good); color: var(--good); }
+.status.warn { border-color: var(--warn); color: var(--warn); }
+.panel { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: 14px; display: grid; gap: 12px; }
+.tally { display: flex; flex-wrap: wrap; gap: 6px; }
+.tally .chip { padding: 5px 10px; font-size: 0.8rem; }
+table.ledger { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+table.ledger th { text-align: left; font-weight: 500; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 4px; border-bottom: 1px solid var(--line); }
+table.ledger td { padding: 3px 4px; border-bottom: 1px solid rgba(0,0,0,.05); font-family: var(--f-num); vertical-align: top; }
+table.ledger tr { cursor: pointer; }
+table.ledger tr:hover td { background: rgba(0,0,0,.04); }
+.v { font-weight: 700; }
+.v.CONTRADICTED, .v.UNPRODUCIBLE { color: var(--bad); }
+.pay { margin-top: 3px; font-size: 11px; }
+.pay.ok { color: var(--good); }
+.pay.mid { color: var(--warn); }
+.cell .cost { position: absolute; bottom: 1px; left: 3px; font-size: max(8px, calc(100cqw / var(--n) * 0.19)); font-weight: 600; color: #2f6f7d; line-height: 1; }
+.cell .cost.zero { color: var(--muted); font-weight: 500; }
+.cell .cost.match { color: #14181d; font-weight: 800; }
+.cell .cost.higher { color: #1f7a3d; font-weight: 700; }
+.cell .cost.lower { color: #b58900; font-weight: 700; }
+.cell .badge { position: absolute; top: 1px; right: 2px; font-size: max(7px, calc(100cqw / var(--n) * 0.16)); line-height: 1; }
+.cell .badge.confirmed { color: #14181d; }
+.cell .badge.open { color: #5b6b76; }
+.cell .badge.demand { color: #b58900; }
+.cell .badge.error { color: #c0392b; font-weight: 700; }
+.build { margin: 12px 0 2px; font-size: 11px; color: #8a8f98; }
+.build a { color: #6ea8c4; }
+.pay.no { color: var(--bad); }
+.v.NEEDS_HIDDEN_CAPITOL, .v.NEEDS_EXACT_PATH { color: var(--warn); }
+.v.FORCED, .v.TIGHT_GEODESIC, .v.TIGHT_CHEAPEST { color: var(--good); }
+.v.KEEP { color: var(--good); }
+.v.PARK { color: var(--muted); }
+.v.BACKTRACK { color: var(--bad); }
+.why { color: var(--muted); font-family: var(--f-body); font-size: 0.78rem; line-height: 1.35; }
+.route { color: var(--muted); font-size: 0.72rem; }
+.hint { color: var(--muted); font-size: 0.85rem; }
+.hint code { font-family: var(--f-num); font-size: 0.85em; }
+.notes { display: grid; gap: 8px; }
+.note { border-left: 3px solid var(--line); padding: 2px 0 2px 9px; font-size: 0.85rem; }
+.note.bad { border-color: var(--bad); }
+.note.warn { border-color: var(--warn); }
+.note.good { border-color: var(--good); }
+.sugg { display: flex; flex-wrap: wrap; gap: 6px; }
+.sugg button { font-size: 0.8rem; padding: 4px 9px; }
+details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+/* the export area: a download can be blocked, so the same content is always
+   on the page as text (copyable) and as a picture (saveable by long-press) */
+.iterlist { display: grid; gap: 4px; }
+.iterrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 0.82rem;
+  padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--blank); }
+.iterrow b { font-weight: 600; }
+.iterrow .n { color: var(--muted); font-family: var(--f-num); }
+.iterrow .bad { color: var(--bad); font-weight: 700; }
+.iterrow .good { color: var(--good); font-weight: 700; }
+.iterrow button { font-size: 0.75rem; padding: 2px 8px; }
+.io { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+.io-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-right: 2px; }
+.io .btn { font-size: 0.84rem; padding: 6px 11px; }
+.exports { display: grid; gap: 10px; }
+.exp { display: grid; gap: 5px; }
+.exp label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.exp textarea {
+  width: 100%; font: 500 11px/1.45 var(--f-num); color: var(--ink); background: var(--blank);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; resize: vertical;
+}
+.exp img { max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--ground); }
+/* the toast: whatever happened has to be visible without scrolling */
+.toast {
+  position: fixed; left: 50%; top: 10px; z-index: 50; max-width: min(92vw, 560px);
+  transform: translate(-50%, -260%); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--sheet); border-radius: 8px; padding: 9px 14px;
+  font-size: 0.86rem; line-height: 1.35; box-shadow: 0 6px 22px rgba(0,0,0,.24);
+  transition: transform .22s ease, opacity .22s ease;
+}
+.toast.show { transform: translate(-50%, 0); opacity: 1; }
+.toast.good { background: var(--good); color: #fff; }
+.toast.bad { background: var(--bad); color: #fff; }
+</style>
+</head>
+<body>
+<noscript>
+  <div data-i18n="noscript"><b>这个页面需要 JavaScript</b>，下面的棋盘由它绘制。<br><br>如果你是从预览里打开这个文件的（iOS：信息附件、隔空投送，或者「文件」App），你看到的是页面的图片，不是页面本身 —— iOS 的预览不跑脚本，所以棋盘会是空的，按钮也没有用。请改用浏览器打开：在 iOS 上分享文件并选择<b>用 Safari 打开</b>；在电脑上双击它，或者用 <code>python3 -m http.server</code> 起一个服务，然后打开它打印出来的地址。</div>
+</noscript>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="wrap">
+  <a class="back" href="index.html" data-i18n="backLink">← 全部谜题</a>
+  <header>
+    <div>
+      <h1 data-i18n="h1">假设账本</h1>
+      <p class="sub" data-i18n="sub">把你假设的州涂出来，标出你假设的首都 —— 包括<b>隐藏</b>的那些 —— 每个已发布数都会按真实的行走代价重新核对一遍。</p>
+    </div>
+    <div class="tools">
+      <button class="btn" id="presetCorner" data-i18n="presetCorner">角落假设</button>
+      <input type="file" id="fileIn" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main>
+    <div class="plate">
+      <div class="plate-head"><span data-i18n="plateHead"><b>原题</b> · 11×11</span><span id="stateCount" data-i18n="noStatesYet">还没有州</span></div>
+      <div class="boardbox">
+        <div class="axes" style="--n:11">
+          <div class="ax-corner" data-i18n="axCornerTitle">行（Y）—— 索引在左边</div>
+          <div class="ax-cols" id="axCols"></div>
+          <div class="ax-rows" id="axRows"></div>
+          <div id="board" style="--n:11"></div>
+        </div>
+      </div>
+
+      <div class="tools" id="tools">
+        <span class="chip" aria-pressed="true" data-tool="paint"><span class="swatch" style="background:var(--t0)"></span><span data-i18n="toolPaint">涂州</span></span>
+        <span class="chip" aria-pressed="false" data-tool="cap"><span data-i18n="toolCap">假设首都</span></span>
+        <span class="chip" aria-pressed="false" data-tool="erase"><span data-i18n="toolErase">擦除</span></span>
+        <span class="sep"></span>
+        <span id="palette" class="tools"></span>
+        <span class="sep"></span>
+        <label class="hint" for="capSize" data-i18n="capSizeLabel">所假设首都所在州的大小</label>
+        <input class="btn" id="capSize" type="number" min="1" max="121" value="1" style="width:5.2em">
+        <span class="sep"></span>
+        <button class="btn" id="presetClear" data-i18n="presetClear">清空</button>
+        <button class="btn" id="undoBtn" disabled data-i18n="undoBtn">撤销</button>
+      </div>
+
+      <div class="status" id="status" data-i18n="statusIdle">涂一个州，或者载入角落假设。</div>
+
+      <div class="io">
+        <span class="io-label" data-i18n="labelIterations">迭代</span>
+        <input class="btn" id="iterName" placeholder="给这次尝试起个名" data-i18n-ph="labelIterName" style="width:9em">
+        <button class="btn" id="saveIter" data-i18n="btnSaveIter">保存迭代</button>
+        <button class="btn" id="exportIter" data-i18n="btnExportIter">全部导出</button>
+      </div>
+      <div id="iterList" class="iterlist"></div>
+
+      <div class="io">
+        <span class="io-label" data-i18n="labelSaveShare">保存 / 分享</span>
+        <button class="btn" id="saveJson" data-i18n="btnSaveJson">保存 JSON</button>
+        <button class="btn" id="copyJson" data-i18n="btnCopyJson">复制 JSON</button>
+        <button class="btn" id="openJson" data-i18n="btnOpenJson">打开 JSON</button>
+        <button class="btn" id="savePng" data-i18n="btnSavePng">保存 PNG</button>
+      </div>
+      <div class="exp" id="pngRow" hidden>
+        <label data-i18n="pngPreviewLabel">PNG 预览 —— 长按可以保存</label>
+        <img id="pngOut" alt="the painted board">
+      </div>
+      <div class="build" data-i18n="buildLine">build 2026-10-29a · 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a></div>
+      <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
+    </div>
+
+    <div class="panel">
+      <div id="candPanel" hidden>
+        <h2 data-i18n="panelCandidates">候选</h2>
+        <div class="hint" id="candMeta"></div>
+        <div style="max-height:36vh;overflow:auto">
+          <table class="ledger" id="candTable">
+            <thead><tr><th data-i18n="thCandidate">候选</th><th data-i18n="thGoalPy">goal.py</th><th data-i18n="thThisPage">本页</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h2 data-i18n="panelVerdicts">判定</h2>
+        <div class="tally" id="tally"></div>
+      </div>
+      <div style="max-height:52vh;overflow:auto">
+        <table class="ledger" id="verdicts">
+          <thead><tr><th data-i18n="thSquare">格子</th><th data-i18n="thReads">读数</th><th data-i18n="thRange">区间</th><th data-i18n="thVerdict">判定</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div>
+        <h2 data-i18n="panelNotes">备注</h2>
+        <div class="notes" id="notes"></div>
+      </div>
+      <details>
+        <summary data-i18n="hiddenCapTitle">隐藏首都可能在哪？</summary>
+        <div class="hint" id="cands"></div>
+      </details>
+    </div>
+  </main>
+
+  <!-- the explanation sits at the very bottom, on purpose: the board is the
+       work, the legend is the reference -->
+      <p class="hint" id="cellKey" data-i18n="cellKey"><b>坐标</b> —— 列（X）横着编号在上方，行（Y）竖着编号在左边；
+        一个格子叫作 <b>rNcM</b>，所以 r2c5 就是第 2 行第 5 列。
+        <b>格子左上角</b> —— 它所在州的面积；<b>✱</b> 表示那个州<b>没有首都</b>
+        （它的对称固定了不止一个格子，或者一个也不固定），所以它不提供终点，
+        而且在它里面的每一步都按整块面积计代价。<b>墙</b> —— 格子之间的粗线就是州的边界，
+        同时还带着对称检查的结果：<b>深色</b>线是普通边界，<b>琥珀色</b>线标出一个没有首都的州
+        （它哪儿也不去），<b>红色</b>线标出一块完全没有对称的区域 —— 那还不是一个州，
+        请用镜像或者旋转重新涂一个。<b>右下角</b> —— 在「每个未知格都尽量小」的假设下，
+        从那格走到我们已经知道的某个首都的最小代价。它是下界，不是答案：隐藏的首都可能更近，
+        而一个低于这个下界的数要求的正是这件事。<b>左下角</b> —— 当前假设真正钉住的代价：
+        只经过那些州大小已知的格子，走到已知或假想首都的最便宜路线。
+        如果暂时还没有这样的路线，那里就不显示任何东西 —— 得先给那些自由格定大小。
+        它的颜色把那个代价和同一格里的已发布数作比较：<b>黑色加粗</b>表示两者一致，
+        <b>绿色</b>表示算出来的代价更高，<b>琥珀色</b>表示更低。<b>右上角</b> —— 判定，做成徽章：
+        <b>&#9679;</b> 确认（假设把这个数正好钉死），
+        <b>&#9675;</b> 待定（付得起，但还没钉死），
+        <b>&#9650;</b> 要求（必须有一个还没露面的首都更近），
+        <b>&#10005;</b> 矛盾（已知首都更便宜，所以这个数是错的）。</p>
+
+</div>
+
+<script>
+'use strict';
+/* ---------------------------------------------------------------------------
+   The assumption ledger.
+
+   Rules that this page encodes, and that a value-only check gets wrong:
+
+     * A state's capitol exists only if EVERY non-trivial self-symmetry leaves
+       EXACTLY ONE square fixed.  A mirror that runs along a column of squares
+       fixes all of them, so such a state has NO capitol and contributes no
+       destination to the distance field.  Every even-sized state is in this
+       class: a state with a capitol has size 1 + (sum of 2/4/8), so it is
+       always odd.
+     * A square that reads 1 cannot be a 1x1 state: a singleton is its own
+       capitol, so it would read 0.
+     * A square that reads 0 IS a capitol, but that does not make it a
+       singleton -- the size of a capitol's own state is a separate question.
+
+   Two books are kept for every square:
+     lower  every unknown square is charged as little as possible (size 1);
+     upper  a route through two unknown squares has no upper bound at all, so
+            it is not used; a route from a known square into an unknown one is
+            charged the known side.
+   A published number is CONTRADICTED only when the upper book is already
+   cheaper than it.  A published number BELOW the lower book is not a
+   contradiction -- it is a DEMAND for a hidden capitol.
+--------------------------------------------------------------------------- */
+
+const N = 11;
+const CLUES = [[0,1,8],[0,2,4],[0,5,11],[0,9,5],[1,7,11],[2,2,7],[2,5,1],[2,10,14],[3,0,28],[3,3,51],[3,6,1],[3,8,6],
+  [4,1,22],[4,8,4],[4,10,1],[5,3,15],[5,5,10],[5,7,0],[6,0,11],[6,2,11],[6,9,9],[7,2,17],[7,4,14],[7,7,10],[7,10,13],
+  [8,0,30],[8,5,6],[8,8,45],[9,3,10],[10,1,26],[10,5,0],[10,8,77],[10,9,61]];
+const NCOL = 10;
+const TONES = ['--t0','--t1','--t2','--t3','--t4','--t5','--t6','--t7','--t8','--t9'];
+
+const clueAt = new Array(N * N).fill(-1);
+for (const [r, c, v] of CLUES) clueAt[r * N + c] = v;
+
+/* ---------- the two languages ----------
+   Every user-visible string lives here: [English, Chinese].  The build
+   (tools/lr11/page/build_lang.py) rewrites this table into the single
+   language it publishes, so the two pages can never drift apart and the
+   source stays the one truth.  Machine-readable words -- the verdict
+   names, goal.py's KEEP / PARK / BACKTRACK, the JSON keys -- are NOT
+   translated: they are the protocol our other tools speak. */
+const LANG = 'zh';          // 'en' or 'zh'; the build sets it
+const I18N = {
+  pageTitle: '账本 · It\'s a Metric, Too',
+  metaDesc: 'Jane Street《It\'s a Metric, Too》的假设账本：把一个州的面积涂到板上，标出你假设的首都，每个已发布数都会按真实的行走代价重新核对一遍。',
+  h1: '假设账本',
+  sub: '把你假设的州涂出来，标出你假设的首都 —— 包括<b>隐藏</b>的那些 —— 每个已发布数都会按真实的行走代价重新核对一遍。',
+  backLink: '← 全部谜题',
+  noscript: '<b>这个页面需要 JavaScript</b>，下面的棋盘由它绘制。<br><br>如果你是从预览里打开这个文件的（iOS：信息附件、隔空投送，或者「文件」App），你看到的是页面的图片，不是页面本身 —— iOS 的预览不跑脚本，所以棋盘会是空的，按钮也没有用。请改用浏览器打开：在 iOS 上分享文件并选择<b>用 Safari 打开</b>；在电脑上双击它，或者用 <code>python3 -m http.server</code> 起一个服务，然后打开它打印出来的地址。',
+  plateHead: '<b>原题</b> · 11×11',
+  axCornerTitle: '行（Y）—— 索引在左边',
+  cellKey: '<b>坐标</b> —— 列（X）横着编号在上方，行（Y）竖着编号在左边；\n        一个格子叫作 <b>rNcM</b>，所以 r2c5 就是第 2 行第 5 列。\n        <b>格子左上角</b> —— 它所在州的面积；<b>✱</b> 表示那个州<b>没有首都</b>\n        （它的对称固定了不止一个格子，或者一个也不固定），所以它不提供终点，\n        而且在它里面的每一步都按整块面积计代价。<b>墙</b> —— 格子之间的粗线就是州的边界，\n        同时还带着对称检查的结果：<b>深色</b>线是普通边界，<b>琥珀色</b>线标出一个没有首都的州\n        （它哪儿也不去），<b>红色</b>线标出一块完全没有对称的区域 —— 那还不是一个州，\n        请用镜像或者旋转重新涂一个。<b>右下角</b> —— 在「每个未知格都尽量小」的假设下，\n        从那格走到我们已经知道的某个首都的最小代价。它是下界，不是答案：隐藏的首都可能更近，\n        而一个低于这个下界的数要求的正是这件事。<b>左下角</b> —— 当前假设真正钉住的代价：\n        只经过那些州大小已知的格子，走到已知或假想首都的最便宜路线。\n        如果暂时还没有这样的路线，那里就不显示任何东西 —— 得先给那些自由格定大小。\n        它的颜色把那个代价和同一格里的已发布数作比较：<b>黑色加粗</b>表示两者一致，\n        <b>绿色</b>表示算出来的代价更高，<b>琥珀色</b>表示更低。<b>右上角</b> —— 判定，做成徽章：\n        <b>&#9679;</b> 确认（假设把这个数正好钉死），\n        <b>&#9675;</b> 待定（付得起，但还没钉死），\n        <b>&#9650;</b> 要求（必须有一个还没露面的首都更近），\n        <b>&#10005;</b> 矛盾（已知首都更便宜，所以这个数是错的）。',
+  toolPaint: '涂州',
+  toolCap: '假设首都',
+  toolErase: '擦除',
+  capSizeLabel: '所假设首都所在州的大小',
+  presetClear: '清空',
+  undoBtn: '撤销',
+  presetCorner: '角落假设',
+  statusIdle: '涂一个州，或者载入角落假设。',
+  labelIterations: '迭代',
+  labelIterName: '给这次尝试起个名',
+  btnSaveIter: '保存迭代',
+  btnExportIter: '全部导出',
+  labelSaveShare: '保存 / 分享',
+  btnSaveJson: '保存 JSON',
+  btnCopyJson: '复制 JSON',
+  btnOpenJson: '打开 JSON',
+  btnSavePng: '保存 PNG',
+  pngPreviewLabel: 'PNG 预览 —— 长按可以保存',
+  buildLine: 'build 2026-10-29a · 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a>',
+  panelCandidates: '候选',
+  thCandidate: '候选',
+  thGoalPy: 'goal.py',
+  thThisPage: '本页',
+  panelVerdicts: '判定',
+  thSquare: '格子',
+  thReads: '读数',
+  thRange: '区间',
+  thVerdict: '判定',
+  panelNotes: '备注',
+  hiddenCapTitle: '隐藏首都可能在哪？',
+  badgeForced: '确认：这些假设把这个数正好钉死',
+  badgeTightGeo: '待定：一个已知首都正好付得起这个数，但隐藏的首都可能更近',
+  badgeTightCheap: '待定：这就是下界，不可能有首都更近',
+  badgeNeedsPath: '待定：必须有一条代价正好是这个数的路能走到某个首都',
+  badgeDemand: '要求：必须有一个还没露面的首都比这更近',
+  badgeContradicted: '矛盾：已知首都更便宜，所以这个数不可能是最小值',
+  badgeUnproducible: '走不出来：没有任何一条路能正好付掉这个数',
+  noteNoSymmetry: '你涂的这块区域完全没有对称，所以它根本还不是一个州 —— 重新涂成一个有对称的形状（镜像或者旋转）。',
+  noteNoCapitol: '这个 %s 格的州<b>没有首都</b>。首都不是涂出来的：它由形状决定，而这里每个对称固定了 %s 个格子，而不是恰好一个。它仍然是一个合法的州，但不提供任何终点，而且在它里面的每一步都按 %s 计代价。',
+  noteCapitolOnClue: '你涂的这个州的首都落在了 %s（%s）上，可首都读数是 0。',
+  noteZeroElsewhere: '%s 处的那个 0 所在的州，首都却在别处。',
+  noteEvenAssumed: '你给 %s 处的首都假设了一个 %s 格的州，可是有首都的州一定是奇数：偶数大小的州有一条沿着一列格子走的镜像轴，它固定了不止一个格子，所以根本没有首都。请用奇数。',
+  noteSatisfactionAxis: '满足轴（跟「是不是最小值」无关）：%s 个数有一条代价完全确定的路（与空格怎么填无关），%s 个数要靠空格调节才凑得出，%s 个数任何路都凑不出（得靠隐藏首都）。',
+  noteSatisfactionFull: '铺砌已填满（121 格全归了州），这时候可达代价集合是精确的。满足性检验：33 个已发布数里，%s；且%s。%s',
+  noteSingleton: '读数为 1 的格子旁边必须有一个 1×1 的州（一步代价 1）。候选位置：%s。',
+  notesNone: '没有什么要标出来的。能对上这些数的假设，和为真的假设，不是同一回事。',
+  whyForced: '你的假设把距离正好钉成 %s',
+  whyContradicted: '你已经知道的某个首都只要 %s 就能走到，比 %s 更便宜，所以这个数不可能是最小值',
+  whyUnproducible: '从这格出发没有任何一条路的代价正好是 %s%s，所以这个数根本走不出来',
+  whyUnprodCosts: '（可达的代价有 %s）',
+  whyUnprodNone: '（连一个已知首都都到不了）',
+  whyTightGeo: '已知首都最多只要 %s 就能走到，而这个数说最小值是 %s，所以隐藏的首都不许更近',
+  whyDemand: '你知道的最近的首都至少在 %s 之外，而这个数说的是 %s，所以必须有一个隐藏的首都严格更近%s',
+  whyDemandExtra: '；而且也没有哪条路能正好花掉 %s 走到已知首都',
+  whyTightCheap: '%s 是下界：不可能有首都比 %s 更近，而且必须有一个正好落在 %s',
+  whyNeedsPath: '这个数落在区间里面，所以必须有一条代价正好是 %s 的路能走到某个首都',
+  paySimpleNote: '（这条绕了圈，所以还有更便宜的路：这个数不是最小值）',
+  payOkHead: '<div class="pay ok">付得起，而且<b>与空格无关</b>：',
+  payMid: '<div class="pay mid">付得起，<b>但要空格来凑</b>：已知格子的路线凑不出 %s，空格必须额外贡献 %s 的代价（可走代价 %s）</div>',
+  payNo: '<div class="pay no">付不起：没有任何一条路能正好花掉 %s%s ⇒ 只能靠一个隐藏首都</div>',
+  payNoKnown: '（已知首都能凑出 %s）',
+  payNoNone: '（连已知首都都到不了）',
+  stateCount: '%s 个州 · %s 个有首都 · %s 格未知',
+  noStatesYet: '还没有州',
+  statusContradicted: '<b>%s 个已发布数是矛盾的。</b> %s',
+  statusComplete: '铺砌已填满，而且<b>每个已发布数都走得出来、并且就是最便宜的那条</b>：%s/%s 个都对得上。',
+  statusOk: '没有矛盾：在这些假设下，每个已发布数仍然都走得出来。',
+  hiddenCap: '<b>%s 读 %s</b>：隐藏的首都可以落在 %s 步之内，也就是 %s。',
+  hiddenCapNone: '<p>目前没有哪个格子要求一个隐藏的首都。</p>',
+  iterContradicted: '%s 个矛盾',
+  iterOk: '没有矛盾',
+  iterForced: '%s 个确认 · %s 个要隐藏首都',
+  btnRestore: '恢复',
+  btnDrop: '删除',
+  iterRestored: '已恢复 <b>%s</b>。',
+  jsonPublished: 'Jane Street，《It\'s a Metric, Too》（2026 年 10 月）—— 33 个官方数字',
+  jsonWhat: '只有板子：你假设的州和你假设的首都。判定和备注故意不放进来 —— 它们是从这块板子和已发布数推出来的，所以让规则工具自己重算，而不是相信一个存下来的结论。',
+  errDisconnected: '%s 处的那个州不是一整块连通的形状，所以它没法拥有自己的颜色。',
+  errColourConflict: '颜色冲突：%s 和 %s 这两个州都要同一种颜色 %s，而它们又相邻 —— 那样会融成一个州。给其中一个换一个颜色。',
+  axisColumn: '第 %s 列',
+  axisRow: '第 %s 行',
+  paletteTitle: '州颜色 %s',
+  candMeta: '为 <b>%s</b> 提出了 <b>%s</b> 个候选州（它读 %s），大小 %s。<b>每一个都在这里重新判一遍</b> —— 左边的词是 goal.py 给的，右边的词是本页给的，两者来自不同的代码。',
+  candTruncated: ' <b>这一轮在候选上限处停住了：它并没有穷尽可能性。</b>',
+  btnLoad: '载入',
+  candLoaded: '已载入候选：%s',
+  candStatus: '为 %s 载入了 %s 个候选 —— %s',
+  candDisagree: '<b>%s 个</b>与 goal.py 不一致。',
+  candAgree: '本页与 goal.py 在它们身上全部一致。',
+  pngTitle: 'It\'s a Metric, Too —— 假设账本',
+  pngCounts: '%s 个州，%s 个有首都，%s 个假想首都',
+  pngLegend1: '左上角 = 州的面积（* = 那个州没有首都）',
+  pngLegend2: '右下角 = 走到我们已经知道的某个首都的最小代价',
+  pngFail: '这个浏览器画不出这张图。',
+  pngReadyToast: '图片已生成：%s。它也显示在下面 —— 手机上长按可以保存。',
+  pngReadyStatus: '图片已生成：<b>%s</b>。它也显示在棋盘下面；手机上长按可以保存。',
+  jsonReadyToast: 'JSON 已生成：%s。点「复制 JSON」会把同样的文本放进剪贴板。',
+  jsonReadyStatus: 'JSON 已生成：<b>%s</b> —— %s 个州、%s 个假想首都。<b>复制 JSON</b> 会把同样的文本放进剪贴板，规则工具可以用 <code>python3 lr11/assume.py %s</code> 读它。',
+  jsonCopiedToast: 'JSON 已复制到剪贴板 —— 发给朋友，或者交给规则工具。',
+  jsonCopiedStatus: 'JSON 已复制到剪贴板。',
+  jsonCopyFailed: '浏览器不让我们复制。JSON 现在在一个已选中的框里 —— 按 Cmd/Ctrl+C。',
+  jsonLoaded: '已载入 %s。',
+  fileUnreadable: '读不了那个文件：%s',
+  iterSaved: '已保存迭代“%s”。',
+  iterNone: '还没有保存任何迭代。',
+  iterExported: '已导出 %s 个迭代。',
+  noteSatAllProduced: '每一个都能被某条路走出来',
+  noteSatSomeUnproduced: '有 %s 个走不出来',
+  noteSatAllCheapest: '每一个都恰好是最小值',
+  noteSatSomeNotCheapest: '其中 %s 个不是最小值',
+  noteSatWrong: '对不上的:',
+  noteSatWrongOne: '读',
+  noteSatEnd: '。',
+};
+const t = k => (I18N[k] !== undefined ? I18N[k] : k);
+const fmt = (s, ...a) => { let i = 0; return s.replace(/%s/g, () => String(a[i++])); };
+function applyI18n() {
+  document.title = t('pageTitle');
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta) meta.content = t('metaDesc');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.dataset.i18n); });
+}
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+let colors = new Array(N * N).fill(-1);   // state id per square, -1 = unknown
+let assumed = new Map();                  // square -> assumed state size of its capitol
+let tool = 'paint', paintColor = 0, selected = -1;
+let undoStack = [];
+const pointers = new Set();    // the fingers that are down on the board right now
+
+/* ---------- geometry (same rule kernel as the other pages) ---------- */
+function nbrs(i, n) {
+  const r = (i / n) | 0, c = i % n, out = [];
+  if (r > 0) out.push(i - n); if (c < n - 1) out.push(i + 1); if (r < n - 1) out.push(i + n); if (c > 0) out.push(i - 1);
+  return out;
+}
+function regionInfo(cells, n) {
+  let minC = n, maxC = -1, minR = n, maxR = -1;
+  const member = new Set(cells);  for (const i of cells) { const r = (i / n) | 0, c = i % n; minC = Math.min(minC, c); maxC = Math.max(maxC, c); minR = Math.min(minR, r); maxR = Math.max(maxR, r); }
+  const p = minC + maxC, q = minR + maxR;
+  let anySym = false, capOk = true, cap = -1; const fixes = [], symNames = [];
+  for (let g = 0; g < 7; g++) {
+    if (g >= 3 && ((p + q) & 1)) continue;
+    let ok = true, fixed = 0, fixedCell = -1;
+    for (const i of cells) {
+      const r = (i / n) | 0, c = i % n; let nc, nr;
+      switch (g) {
+        case 0: nc = p - c; nr = q - r; break;
+        case 1: nc = p - c; nr = r; break;
+        case 2: nc = c; nr = q - r; break;
+        case 3: nc = r + ((p - q) >> 1); nr = c + ((q - p) >> 1); break;
+        case 4: nc = ((p + q) >> 1) - r; nr = ((p + q) >> 1) - c; break;
+        case 5: nc = ((p + q) >> 1) - r; nr = ((q - p) >> 1) + c; break;
+        default: nc = ((p - q) >> 1) + r; nr = ((p + q) >> 1) - c; break;
+      }
+      if (nc < 0 || nr < 0 || nc >= n || nr >= n || !member.has(nr * n + nc)) { ok = false; break; }
+      if (nc === c && nr === r) { fixed++; fixedCell = i; }
+    }
+    if (!ok) continue;
+    anySym = true; fixes.push(fixed);
+    symNames.push(['rot180','refV','refH','refD1','refD2','rot90','rot270'][g]);
+    if (fixed !== 1) capOk = false;
+    else if (cap === -1) cap = fixedCell;
+    else if (cap !== fixedCell) capOk = false;
+  }
+  return { sym: anySym, capitol: anySym && capOk ? cap : -1, fixes, symNames };
+}
+function components(labels, n) {
+  const N2 = n * n, comp = new Array(N2).fill(-1), list = [];
+  for (let i = 0; i < N2; i++) {
+    if (labels[i] < 0 || comp[i] >= 0) continue;
+    const id = list.length, cells = [i]; comp[i] = id;
+    for (let k = 0; k < cells.length; k++) for (const v of nbrs(cells[k], n)) if (comp[v] < 0 && labels[v] === labels[i]) { comp[v] = id; cells.push(v); }
+    const info = regionInfo(cells, n);
+    list.push({ cells, sym: info.sym, capitol: info.capitol, fixes: info.fixes });
+  }
+  return { comp, list };
+}
+
+/* ---------- can this assumed capitol be REAL? ----------
+   An assumed capitol is a square plus a state size.  But a capitol is not
+   a free parameter: it is the unique square fixed by every non-trivial
+   self-symmetry of a REAL state, and that state occupies real squares of
+   the board.  So the assumption "this square is the capitol of a state of
+   size k" has to be checkable.
+
+   Two facts make it checkable without a search:
+
+     * a state with a capitol is always ODD in size (a mirror axis that runs
+       along a column of squares fixes all of them, so even-sized states
+       never have a capitol);
+     * a state of size 1 is its own capitol.
+
+   So an EVEN assumed size is impossible on the spot.  For odd sizes the
+   page cannot enumerate every shape cheaply, so it says what is knowable:
+   the size is at least legal, and the assumption still has to be paid for
+   by real squares elsewhere on the board. */
+function capitolSizeImpossible(k) {
+  if (k % 2 === 0) return 'even';
+  return null;
+}
+function cellName(i) { const r = (i / N) | 0, c = i % N; return 'r' + r + 'c' + c; }
+
+/* ---------- the two books ---------- */
+function book(sizeOf, sources, optimistic) {
+  const NN = N * N, dist = new Array(NN).fill(Infinity), prev = new Array(NN).fill(-1), done = new Array(NN).fill(false);
+  for (const s of sources) dist[s] = 0;
+  for (let it = 0; it < NN; it++) {
+    let u = -1;
+    for (let i = 0; i < NN; i++) if (!done[i] && (u < 0 || dist[i] < dist[u])) u = i;
+    if (u < 0 || dist[u] === Infinity) break;
+    done[u] = true;
+    for (const v of nbrs(u, N)) {
+      const ku = sizeOf.get(u), kv = sizeOf.get(v);
+      let w;
+      if (ku === undefined && kv === undefined) { if (!optimistic) continue; w = 1; }
+      else if (ku === undefined) w = optimistic ? 1 : kv;
+      else if (kv === undefined) w = optimistic ? 1 : ku;
+      else w = Math.min(ku, kv);
+      if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; }
+    }
+  }
+  const route = i => { const out = []; let x = i; while (x >= 0) { out.push(x); x = prev[x]; } return out.reverse(); };
+  return { dist, route };
+}
+
+/* ---------- which costs can actually be paid? ----------
+   The two books only ask whether a published number is too big or too small.
+   They never ask whether it can be paid for AT ALL: a number can sit inside
+   [lower, upper] and still be unreachable, if every walk out of that square
+   costs 3 or 7 and the square says 5.  This walks the (square, cost) graph
+   and collects every cost that some walk can really pay.  Where a size is
+   unknown the edge is charged anything in [1, known side] (or [1, board] when
+   both sides are unknown), which is a relaxation -- so on a partial board the
+   result can only ADD a contradiction, never remove one.  On a complete
+   tiling it is exact. */
+function reachableCosts(sizeOf, sources, maxCost) {
+  const NN = N * N, W = maxCost + 1;
+  const seen = new Uint8Array(NN * W), stack = [];
+  for (const s of sources) {
+    if (s < 0 || s >= NN || seen[s * W]) continue;
+    seen[s * W] = 1; stack.push([s, 0]);
+  }
+  while (stack.length) {
+    const st = stack.pop(), u = st[0], c = st[1];
+    for (const v of nbrs(u, N)) {
+      const ku = sizeOf.get(u), kv = sizeOf.get(v);
+      let lo, hi;
+      if (ku !== undefined && kv !== undefined) { lo = hi = Math.min(ku, kv); }
+      else if (ku === undefined && kv === undefined) { lo = 1; hi = NN; }
+      else { lo = 1; hi = ku !== undefined ? ku : kv; }
+      const top = Math.min(hi, maxCost - c);
+      for (let cc = c + lo; cc <= c + top; cc++) {
+        const k = v * W + cc;
+        if (!seen[k]) { seen[k] = 1; stack.push([v, cc]); }
+      }
+    }
+  }
+  const out = [];
+  for (let i = 0; i < NN; i++) {
+    const a = [];
+    for (let c = 0; c <= maxCost; c++) if (seen[i * W + c]) a.push(c);
+    out.push(a);
+  }
+  return out;
+}
+
+/* ---------- the costs that are FULLY DETERMINED ----------
+   A route that never touches a square whose state size is still unknown has
+   a cost that does not depend on how the free squares are filled in.  So a
+   published number that such a route pays can be paid no matter what the
+   rest of the board turns out to be -- the strong, unconditional answer.
+   Routes that do touch free squares can only be paid if those squares are
+   sized just so (TUNABLE); numbers no route can pay need a hidden capitol
+   (UNPAYABLE) -- which on a complete board is a contradiction in itself.
+
+   The two questions are INDEPENDENT of each other:
+     "is the number the minimum?"  -> the two books, the VERDICT column
+     "can the number be paid at all?" -> this, the PAYABLE column
+   A number can be payable and still be wrong (a cheaper route exists), and
+   a number can be the minimum and still be unpayable. */
+function determinedCosts(sizeOf, sources, maxCost) {
+  const NN = N * N, W = maxCost + 1;
+  const seen = new Uint8Array(NN * W), prev = new Map(), stack = [];
+  for (const s of sources) {
+    if (s < 0 || s >= NN || seen[s * W]) continue;
+    seen[s * W] = 1;
+    // a capitol whose state size is unknown: only the trivial route (cost 0),
+    // and it cannot be passed through -- the crossing cost is not determined
+    if (sizeOf.get(s) !== undefined) stack.push([s, 0]);
+  }
+  while (stack.length) {
+    const st = stack.pop(), u = st[0], c = st[1];
+    for (const v of nbrs(u, N)) {
+      const ku = sizeOf.get(u), kv = sizeOf.get(v);
+      if (ku === undefined || kv === undefined) continue;   // a free square: cost not fixed
+      const cc = c + Math.min(ku, kv);
+      if (cc > maxCost) continue;
+      const k = v * W + cc;
+      if (!seen[k]) { seen[k] = 1; prev.set(v + ':' + cc, u + ':' + c); stack.push([v, cc]); }
+    }
+  }
+  const costOf = (i, c) => {
+    const a = []; let key = i + ':' + c;
+    while (prev.has(key)) { const [u, uc] = key.split(':').map(Number); a.push([u, uc]); key = prev.get(key); }
+    const [si, sc] = key.split(':').map(Number);
+    a.push([si, sc]);                               // the source itself
+    return a.reverse();
+  };
+  const out = [];
+  for (let i = 0; i < NN; i++) {
+    const a = [];
+    for (let c = 0; c <= maxCost; c++) if (seen[i * W + c]) a.push(c);
+    out.push({ costs: a, route: c => costOf(i, c) });
+  }
+  return out;
+}
+
+/* ---------- verdict badges ----------
+   Four families, so the board says at a glance which published numbers the
+   current assumptions already settle and which are still asking for something.
+   The shape differs as well as the colour, so it survives a black-and-white
+   print. */
+const VERDICT_BADGE = {
+  FORCED:            { g: 'confirmed', ch: '\u25CF', c: '#14181d', t: t('badgeForced') },
+  TIGHT_GEODESIC:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeTightGeo') },
+  TIGHT_CHEAPEST:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeTightCheap') },
+  NEEDS_EXACT_PATH:  { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeNeedsPath') },
+  NEEDS_HIDDEN_CAPITOL: { g: 'demand', ch: '\u25B2', c: '#b58900', t: t('badgeDemand') },
+  CONTRADICTED:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: t('badgeContradicted') },
+  UNPRODUCIBLE:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: t('badgeUnproducible') },
+};
+
+/* ---------- the ledger ---------- */
+function ledger() {
+  const { comp, list } = components(colors, N);
+  const sizeOf = new Map(), sources = new Set(), notes = [];
+  const stateInfo = list.map((s, idx) => {
+    for (const c of s.cells) sizeOf.set(c, s.cells.length);
+    if (s.capitol >= 0) sources.add(s.capitol);
+    return s;
+  });
+  // The symmetry check, made spatial: what the notes say about a state, the
+  // walls say at a glance.  0 = fine, 1 = a legal state with no capitol (it
+  // goes nowhere), 2 = no symmetry at all (not a state yet).
+  const flags = new Uint8Array(N * N);
+  for (const s of stateInfo) {
+    const f = !s.sym ? 2 : (s.capitol < 0 ? 1 : 0);
+    if (f) for (const c of s.cells) flags[c] = f;
+  }
+  for (let i = 0; i < N * N; i++) if (clueAt[i] === 0 && !sizeOf.has(i)) sources.add(i);   // a 0 IS a capitol
+  for (const [i, k] of assumed) { sizeOf.set(i, k); sources.add(i); }     // assumed capitols
+
+  for (const s of stateInfo) {
+    if (!s.sym) notes.push({ k: 'bad', t: t('noteNoSymmetry') });
+    else if (s.capitol < 0) notes.push({ k: 'warn', t: fmt(t('noteNoCapitol'), s.cells.length, s.fixes.join('/'), s.cells.length) });
+    if (s.capitol >= 0 && clueAt[s.capitol] >= 0 && clueAt[s.capitol] !== 0) notes.push({ k: 'bad', t: fmt(t('noteCapitolOnClue'), clueAt[s.capitol], cellName(s.capitol)) });
+    for (const c of s.cells) if (clueAt[c] === 0 && s.capitol !== c) notes.push({ k: 'bad', t: fmt(t('noteZeroElsewhere'), cellName(c)) });
+  }
+
+  // An assumed capitol has to be a REAL state: a state with a capitol is
+  // always odd in size, so an even assumed size cannot happen at all.
+  for (const [i, k] of assumed) {
+    if (capitolSizeImpossible(k) === 'even') {
+      notes.push({ k: 'bad', t: fmt(t('noteEvenAssumed'), k, cellName(i)) });
+    }
+  }
+
+  // The two books are about the distance to the capitols we ALREADY KNOW about
+  // (the published 0s, the capitols of the states you painted, and the capitols
+  // you assumed).  They are not bounds on the true distance d: a hidden capitol
+  // can be nearer than both.  That asymmetry is the whole point --
+  //   farKnown  <  v  is a CONTRADICTION (a known capitol is strictly cheaper)
+  //   nearKnown >  v  is a DEMAND (a hidden capitol has to be strictly nearer)
+  const nearKnown = book(sizeOf, sources, true);    // optimistic: unknown squares as small as possible
+  const farKnown = book(sizeOf, sources, false);    // defensible: routes through two unknown squares are not used
+
+  // A tiling is complete only when every square belongs to a state.  Only
+  // then is the set of reachable costs exact, and only then does "no walk
+  // costs exactly v" condemn the number instead of merely remarking on it.
+  const complete = sizeOf.size === N * N;
+  const maxV = CLUES.reduce((m, x) => Math.max(m, x[2]), 0);
+  const reach = reachableCosts(sizeOf, sources, maxV);
+  const det = determinedCosts(sizeOf, sources, maxV);
+
+  const rows = [];
+  const verdictOf = {};
+  for (const [r, c, v] of CLUES) {
+    const i = r * N + c;
+    const L = nearKnown.dist[i] === Infinity ? null : nearKnown.dist[i];
+    const U = farKnown.dist[i] === Infinity ? null : farKnown.dist[i];
+    const pay = reach[i], cheapest = pay.length ? pay[0] : null;
+    const fixed = det[i].costs, isFixed = fixed.indexOf(v) >= 0;
+    const produced = isFixed, tunable = !isFixed && pay.indexOf(v) >= 0;
+    const payable = isFixed ? 'PRODUCED' : (tunable ? 'TUNABLE' : 'UNPAYABLE');
+    let witness = null, witnessCosts = null;
+    if (isFixed) {
+      const steps = det[i].route(v);
+      witness = steps.map(s => [((s[0] / N) | 0), s[0] % N]);
+      witnessCosts = steps.slice(0, -1).map((s, k) => Math.min(sizeOf.get(s[0]), sizeOf.get(steps[k + 1][0])));
+    }
+    let verdict, why;
+    if (L !== null && U !== null && L === U && L === v) { verdict = 'FORCED'; why = fmt(t('whyForced'), v); }
+    else if (U !== null && U < v) { verdict = 'CONTRADICTED'; why = fmt(t('whyContradicted'), U, v); }
+    else if (complete && !produced) {
+      verdict = 'UNPRODUCIBLE';
+      why = fmt(t('whyUnproducible'), v,
+        pay.length ? fmt(t('whyUnprodCosts'), pay.slice(0, 12).join(', ') + (pay.length > 12 ? ', ...' : ''))
+                   : t('whyUnprodNone'));
+    }
+    else if (U !== null && U === v) { verdict = 'TIGHT_GEODESIC'; why = fmt(t('whyTightGeo'), v, v); }
+    else if (L !== null && L > v) { verdict = 'NEEDS_HIDDEN_CAPITOL'; why = fmt(t('whyDemand'), L, v, produced ? '' : fmt(t('whyDemandExtra'), v)); }
+    else if (L !== null && L === v) { verdict = 'TIGHT_CHEAPEST'; why = fmt(t('whyTightCheap'), v, v, v); }
+    else { verdict = 'NEEDS_EXACT_PATH'; why = fmt(t('whyNeedsPath'), v); }
+    verdictOf[i] = verdict;
+    rows.push({ i, v, L, U, verdict, why, route: U !== null ? farKnown.route(i) : null,
+                produced, payable, witness, witnessCosts,
+                witnessSimple: witness ? (new Set(witness).size === witness.length) : null,
+                tuning: (payable === 'TUNABLE' && pay.length) ? v - pay[0] : null,
+                reachable: pay, determined: fixed, cheapest });
+  }
+
+  // The satisfaction test: on a complete tiling, every published number must
+  // be produced by some walk AND be the cheapest one.  Either half alone
+  // would have been enough to miss a wrong tiling.
+  let satisfaction = null;
+  if (complete) {
+    const wrong = {};
+    rows.forEach(r => { if (r.cheapest !== r.v) wrong['(' + (r.i / N | 0) + ', ' + (r.i % N) + ')'] = { published: r.v, actual: r.cheapest, reachable: r.reachable.slice(0, 12) }; });
+    satisfaction = {
+      all_numbers_produced: rows.every(r => r.produced),
+      all_numbers_are_the_cheapest: Object.keys(wrong).length === 0,
+      wrong: wrong,
+    };
+  }
+  return { list: stateInfo, comp, flags, sizeOf, sources, nearKnown, farKnown, rows, notes, complete, satisfaction, verdictOf };
+}
+
+/* ---------- where could a hidden capitol be? ---------- */
+function hiddenCapitolCandidates(rows) {
+  const out = [];
+  for (const row of rows) {
+    if (row.verdict !== 'NEEDS_HIDDEN_CAPITOL' && row.verdict !== 'NEEDS_EXACT_PATH') continue;
+    if (row.L === null) continue;
+    // a capitol within reach: at most (v+1)/2 steps (every step but the last
+    // costs at least 2, since a step of cost 1 enters a 1x1 state, which is
+    // itself a capitol).
+    const D = Math.floor((row.v + 1) / 2), cand = [];
+    for (let j = 0; j < N * N; j++) {
+      if (j === row.i) continue;
+      if (clueAt[j] > 0) continue;                 // a square with a number is not a capitol
+      if (Math.abs((j / N | 0) - (row.i / N | 0)) + Math.abs((j % N) - (row.i % N)) <= D) cand.push(j);
+    }
+    if (cand.length) out.push({ row, cand });
+  }
+  return out;
+}
+
+/* ---------- 1x1 candidates forced by a published 1 ---------- */
+function singletonCandidates() {
+  const out = [];
+  for (const [r, c, v] of CLUES) {
+    if (v !== 1) continue;
+    const i = r * N + c;
+    // a 1x1 state must sit next to the square, must not be a square that
+    // already belongs to a painted state, and must not be a published 0
+    // (a 0 is a capitol of some state, but we do not know that state's size)
+    const cand = nbrs(i, N).filter(j => clueAt[j] !== 0 && colors[j] < 0);
+    out.push({ i, cand });
+  }
+  return out;
+}
+
+/* ---------- painting ---------- */
+function buildBoard() {
+  const b = $('board');
+  b.innerHTML = '';
+  for (let i = 0; i < N * N; i++) {
+    const d = document.createElement('div');
+    d.className = 'cell'; d.dataset.i = i;
+    b.appendChild(d);
+  }
+  buildAxes();
+}
+
+/* Coordinate rulers.  The page names a square rNcM -- r is the row (the Y
+   axis, down the left) and c the column (the X axis, across the top).  The
+   rulers are separate grids that share the board's inner width/height, so
+   the numbers line up with the cells they name. */
+function buildAxes() {
+  const cols = $('axCols'), rows = $('axRows');
+  if (!cols || !rows) return;
+  cols.innerHTML = ''; rows.innerHTML = '';
+  for (let c = 0; c < N; c++) {
+    const s = document.createElement('span');
+    s.textContent = String(c);
+    s.title = fmt(t('axisColumn'), c);
+    cols.appendChild(s);
+  }
+  for (let r = 0; r < N; r++) {
+    const s = document.createElement('span');
+    s.textContent = String(r);
+    s.title = fmt(t('axisRow'), r);
+    rows.appendChild(s);
+  }
+}
+function paint(i) {
+  const d = $('board').children[i];
+  const led = lastLedger;
+  const col = colors[i] >= 0 ? 'var(' + TONES[colors[i] % NCOL] + ')' : 'var(--blank)';
+  d.style.background = col;
+  // The walls.  Each edge is drawn once, by the cell on its upper-left side;
+  // an edge that sits on the rim of the board is drawn by the cell on it.  A
+  // square with no state of its own counts as different, so the edge of a
+  // painted region against the blank board is a wall too.  The colour of a
+  // wall is the worst of its two sides: a region with no symmetry at all is
+  // outlined in red, a state with no capitol in amber.
+  const rr = (i / N) | 0, cc = i % N, st = led.comp[i];
+  const flag = j => (j >= 0 && j < N * N) ? led.flags[j] : 0;
+  const wallColour = (a, b) => {
+    const f = Math.max(flag(a), flag(b));
+    return f === 2 ? 'var(--bad)' : (f === 1 ? 'var(--warn)' : 'var(--ink)');
+  };
+  const plain = '0 0 0 transparent';
+  d.style.setProperty('--wN', (rr === 0 && st >= 0) ? 'inset 0 calc(-1 * var(--wall)) 0 ' + wallColour(i, i) : plain);
+  d.style.setProperty('--wW', (cc === 0 && st >= 0) ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i) : plain);
+  d.style.setProperty('--wE', cc === N - 1 ? (st >= 0 ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i) : plain)
+    : (led.comp[i + 1] !== st ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i + 1) : plain));
+  d.style.setProperty('--wS', rr === N - 1 ? (st >= 0 ? 'inset 0 calc(-1 * var(--wall)) 0 ' + wallColour(i, i) : plain)
+    : (led.comp[i + N] !== st ? 'inset 0 calc(-1 * var(--wall)) 0 ' + wallColour(i, i + N) : plain));
+  d.innerHTML = '';
+  if (colors[i] >= 0) {
+    const s = led.list.find(s => s.cells.includes(i));
+    const sp = document.createElement('span'); sp.className = 'sz' + (s && s.capitol < 0 ? ' nocap' : '');
+    sp.textContent = s ? s.cells.length : '';
+    if (s && s.capitol < 0) sp.textContent = s.cells.length + '✱';
+    d.appendChild(sp);
+    if (s && s.capitol === i) { const c = document.createElement('span'); c.className = 'cap'; d.appendChild(c); }
+  }
+  if (assumed.has(i)) { const c = document.createElement('span'); c.className = 'cap'; d.appendChild(c); d.classList.add('assumed'); }
+  else d.classList.remove('assumed');
+  if (clueAt[i] >= 0) {
+    const t = document.createElement('span'); t.textContent = clueAt[i]; d.appendChild(t);
+    const b = VERDICT_BADGE[(led.verdictOf || {})[i]];
+    if (b) { const m = document.createElement('span'); m.className = 'badge ' + b.g; m.textContent = b.ch; m.title = b.t; d.appendChild(m); }
+  }
+  const dv = led.nearKnown.dist[i];
+  if (dv !== Infinity && dv !== 0) {
+    const v = document.createElement('span'); v.className = 'dv'; v.textContent = dv;
+    d.appendChild(v);
+  }
+  // bottom-left: the cost the current assumptions actually pin down -- the
+  // cheapest route to a known or assumed capitol that uses only squares whose
+  // state size is known.  Infinity means no such route exists yet: the free
+  // squares would have to be sized first.
+  const cv = led.farKnown.dist[i];
+  if (cv !== Infinity) {
+    const v = document.createElement('span'); v.className = 'cost'; v.textContent = cv;
+    const pub = clueAt[i];
+    if (pub >= 0) {
+      if (cv === pub) v.classList.add('match');        // the assumptions reproduce it
+      else if (cv > pub) v.classList.add('higher');    // the calculated cost is bigger
+      else v.classList.add('lower');                   // the calculated cost is smaller
+    } else if (cv === 0) v.classList.add('zero');      // a capitol with no published number
+    d.appendChild(v);
+  }
+  if (selected === i) d.classList.add('sel'); else d.classList.remove('sel');
+}
+function setStatus(html, kind) { const st = $('status'); st.innerHTML = html; st.className = 'status' + (kind ? ' ' + kind : ''); }
+function pushUndo() { undoStack.push({ c: colors.slice(), a: [...assumed] }); if (undoStack.length > 200) undoStack.shift(); }
+function doUndo() { const u = undoStack.pop(); if (!u) return; colors = u.c; assumed = new Map(u.a); refresh(); }
+function setPaintColor(id) {
+  if (!Number.isInteger(id) || id < 0 || id >= NCOL) id = 0;   // a bad id would paint nothing at all
+  paintColor = id;
+  tool = 'paint';
+  $('tools').querySelectorAll('.chip[data-tool]').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.tool === 'paint')));
+  $('palette').querySelectorAll('.chip[data-id]').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.id === id)));
+  const sw = $('palette').querySelector('.chip[data-id="' + id + '"] .swatch');
+  if (sw) sw.style.outline = '2px solid var(--ink)';
+  $('palette').querySelectorAll('.chip[data-id] .swatch').forEach(o => { if (o !== sw) o.style.outline = ''; });
+}
+function setCell(i) {
+  if (tool === 'erase') { colors[i] = -1; assumed.delete(i); }
+  else if (tool === 'cap') {
+    const k = Math.max(1, Math.min(121, +$('capSize').value || 1));
+    if (assumed.has(i)) assumed.delete(i); else { assumed.set(i, k); colors[i] = -1; }
+  } else {
+    if (colors[i] === paintColor) { colors[i] = -1; }
+    else { colors[i] = paintColor; assumed.delete(i); }
+  }
+  refresh();
+}
+
+/* ---------- render ---------- */
+let lastLedger = null;
+function refresh() {
+  lastLedger = ledger();
+  const led = lastLedger;
+  for (let i = 0; i < N * N; i++) paint(i);
+
+  const counts = {};
+  for (const r of led.rows) counts[r.verdict] = (counts[r.verdict] || 0) + 1;
+  $('tally').innerHTML = Object.keys(counts).sort().map(k =>
+    '<span class="chip"><b class="v ' + k + '">' + counts[k] + '</b> ' + k.replace(/_/g, ' ').toLowerCase() + '</span>').join('');
+
+  const tb = $('verdicts').querySelector('tbody');
+  tb.innerHTML = led.rows.map(r => {
+    const range = (r.L === null ? '–' : r.L) + '–' + (r.U === null ? '∞' : r.U);
+    let canPay;
+    if (r.payable === 'PRODUCED') {
+      const simple = r.witnessSimple ? '' : t('paySimpleNote');
+      canPay = t('payOkHead')
+        + (r.witness ? r.witness.map(p2 => cellName(p2[0] * N + p2[1])).join(' → ') + ' = ' + r.witnessCosts.join('+') + ' = ' + r.witnessCosts.reduce((a, b) => a + b, 0) : '')
+        + simple + '</div>';
+    } else if (r.payable === 'TUNABLE') {
+      canPay = fmt(t('payMid'), r.v, r.tuning, r.reachable[0] + '–' + r.reachable[r.reachable.length - 1]);
+    } else {
+      canPay = fmt(t('payNo'), r.v,
+        r.reachable.length ? fmt(t('payNoKnown'), r.reachable[0] + '–' + r.reachable[r.reachable.length - 1])
+                           : t('payNoNone'));
+    }
+    return '<tr data-i="' + r.i + '"><td>' + cellName(r.i) + '</td><td>' + r.v + '</td><td>' + range + '</td>' +
+      '<td><span class="v ' + r.verdict + '">' + r.verdict + '</span><div class="why">' + r.why + '</div>' + canPay +
+      (r.route && r.route.length > 1 ? '<div class="route">' + r.route.map(cellName).join(' → ') + '</div>' : '') + '</td></tr>';
+  }).join('');
+  tb.querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => { selected = +tr.dataset.i; refresh(); }));
+
+  const nStates = led.list.length;
+  $('undoBtn').disabled = undoStack.length === 0;
+  $('stateCount').textContent = nStates ? fmt(t('stateCount'), nStates,
+    led.list.filter(s => s.capitol >= 0).length, (N * N - led.sizeOf.size)) : t('noStatesYet');
+  // the same three numbers, in a language-independent form: the prose is
+  // translated, the counts are not
+  $('stateCount').dataset.states = String(nStates);
+  $('stateCount').dataset.capitols = String(led.list.filter(s => s.capitol >= 0).length);
+  $('stateCount').dataset.unknown = String(N * N - led.sizeOf.size);
+
+  const bad = led.rows.filter(r => r.verdict === 'CONTRADICTED' || r.verdict === 'UNPRODUCIBLE');
+  const st = $('status');
+  if (bad.length) { st.className = 'status bad'; st.innerHTML = fmt(t('statusContradicted'), bad.length,
+    bad.map(r => cellName(r.i) + ' reads ' + r.v + ' but ' + r.why).join('; ') + '.'); }
+  else if (!nStates && !assumed.size) { st.className = 'status'; st.textContent = t('statusIdle'); }
+  else if (led.complete) {
+    const sat = led.satisfaction;
+    st.className = 'status good';
+    st.innerHTML = fmt(t('statusComplete'), led.rows.length, led.rows.length);
+  }
+  else { st.className = 'status good'; st.innerHTML = t('statusOk'); }
+
+  const notes = led.notes.slice();
+  {
+    const cnt = { PRODUCED: 0, TUNABLE: 0, UNPAYABLE: 0 };
+    for (const r of led.rows) cnt[r.payable]++;
+    notes.push({ k: 'info', t: fmt(t('noteSatisfactionAxis'), cnt.PRODUCED, cnt.TUNABLE, cnt.UNPAYABLE) });
+  }
+  if (led.complete && led.satisfaction) {
+    const sat = led.satisfaction, wrong = Object.keys(sat.wrong);
+    notes.push({ k: sat.all_numbers_produced && sat.all_numbers_are_the_cheapest ? 'good' : 'bad',
+      t: fmt(t('noteSatisfactionFull'),
+        sat.all_numbers_produced ? t('noteSatAllProduced')
+          : fmt(t('noteSatSomeUnproduced'), 33 - Object.values(sat.wrong).filter(x => x.actual !== null).length),
+        sat.all_numbers_are_the_cheapest ? t('noteSatAllCheapest') : fmt(t('noteSatSomeNotCheapest'), wrong.length),
+        wrong.length ? t('noteSatWrong') + ' ' + wrong.map(k => k + ' ' + t('noteSatWrongOne') + ' ' + sat.wrong[k].published + ' ' + sat.wrong[k].actual).join('; ') + t('noteSatEnd') : '') });
+  }
+  const singles = singletonCandidates();
+  if (singles.length) {
+    notes.push({ k: 'warn', t: fmt(t('noteSingleton'),
+      singles.map(s => cellName(s.i) + ' → ' + s.cand.map(cellName).join('/')).join('; ')) });
+  }
+  $('notes').innerHTML = notes.map(n => '<div class="note ' + n.k + '">' + n.t + '</div>').join('') ||
+    '<div class="hint">' + t('notesNone') + '</div>';
+
+  const cands = hiddenCapitolCandidates(led.rows);
+  $('cands').innerHTML = cands.length
+    ? cands.map(c => '<p>' + fmt(t('hiddenCap'), cellName(c.row.i), c.row.v,
+        Math.floor((c.row.v + 1) / 2), c.cand.map(cellName).join(', ')) + '</p>').join('')
+    : t('hiddenCapNone');
+
+  save();
+}
+
+/* ---------- presets ---------- */
+const PRESET_CORNER = {
+  // the Γ state (11), the 8-cell state, the 16-cell state, the forced 1×1 at
+  // (5,10) and the hidden 1×1 at (3,5) that both published 1s ask for.
+  states: [
+    [[2,4],[2,5],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[8,7],[8,8]],
+    [[1,9],[2,9],[3,8],[3,9],[3,10],[4,9],[5,9],[6,9]],
+    [[8,5],[9,1],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[9,9],[10,0],[10,1],[10,2],[10,8],[10,9],[10,10]],
+  ],
+  assumed: [[5,10,1],[3,5,1]],
+};
+function loadPreset(p) {
+  colors = new Array(N * N).fill(-1);
+  p.states.forEach((cells, id) => cells.forEach(([r, c]) => { colors[r * N + c] = id; }));
+  assumed = new Map(p.assumed.map(([r, c, k]) => [r * N + c, k]));
+  refresh();
+}
+
+/* ---------- the iteration stack ---------- */
+let iterations = [];      // {name, at, board, tally}
+
+function tallyOf(rows) {
+  const t = {};
+  for (const r of rows) t[r.verdict] = (t[r.verdict] || 0) + 1;
+  return t;
+}
+function renderIterations() {
+  const box = $('iterList');
+  if (!iterations.length) { box.innerHTML = ''; box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = iterations.map((it, i) => {
+    const bad = (it.tally.CONTRADICTED || 0) + (it.tally.UNPRODUCIBLE || 0);
+    const forced = it.tally.FORCED || 0;
+    return '<div class="iterrow"><b>' + it.name + '</b>'
+      + '<span class="n">' + it.at.slice(5, 16).replace('T', ' ') + '</span>'
+      + '<span class="' + (bad ? 'bad' : 'good') + '">' + (bad ? fmt(t('iterContradicted'), bad) : t('iterOk')) + '</span>'
+      + '<span class="n">' + fmt(t('iterForced'), forced, (it.tally.NEEDS_HIDDEN_CAPITOL || 0)) + '</span>'
+      + '<button class="btn" data-restore="' + i + '">' + t('btnRestore') + '</button>'
+      + '<button class="btn" data-del="' + i + '">' + t('btnDrop') + '</button></div>';
+  }).join('');
+  box.querySelectorAll('[data-restore]').forEach(b => b.addEventListener('click', () => {
+    const res = loadJSON(iterations[+b.dataset.restore].board);
+    if (res && res.ok === false) { setStatus(res.message, 'bad'); return; }
+    setStatus(fmt(t('iterRestored'), iterations[+b.dataset.restore].name), 'good');
+  }));
+  box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    iterations.splice(+b.dataset.del, 1);
+    renderIterations(); save();
+  }));
+}
+
+/* ---------- save and load ---------- */
+function toast(msg, kind) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (kind ? ' ' + kind : '');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { t.className = 'toast'; }, 6000);
+}
+function download(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.rel = 'noopener';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  // the anchor must survive a moment: some browsers (notably older Safari)
+  // process the download asynchronously and drop it if the link is removed
+  // straight away
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 4000);
+}
+function stamp() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+}
+function boardJSON() {
+  const led = lastLedger;
+  return {
+    format: 'metric-too-ledger/1',
+    n: N,
+    saved: new Date().toISOString(),
+    published: t('jsonPublished'),
+    what_this_is: t('jsonWhat'),
+    states: led.list.map((s, id) => ({
+      id,
+      colour: colors[s.cells[0]],          // the palette colour it was painted with
+      size: s.cells.length,
+      cells: s.cells.map(i => [Math.floor(i / N), i % N]),
+      symmetry: regionInfo(s.cells, N).symNames,
+      capitol: s.capitol >= 0 ? [Math.floor(s.capitol / N), s.capitol % N] : null,
+    })),
+    assumed_capitols: [...assumed].map(([i, k]) => ({
+      cell: [Math.floor(i / N), i % N], state_size: k,
+    })),
+  };
+}
+/* A board, turned into the two arrays the page works with.  Nothing is
+   painted here: the labels are checked against the partition the file claims
+   first, so a file that asks for the impossible is refused whole. */
+function parseBoard(data) {
+  // accepts the exported shape and the plain preset shape
+  const cellsOf = st => (Array.isArray(st) && Array.isArray(st[0]) && typeof st[0][0] === 'number')
+    ? st : (st.cells || []);
+  const states = data.states || [];
+
+  // A state may ask for a colour of its own -- that is exactly what the
+  // `colour` field of an exported board is for.  Without one, the state keeps
+  // the number of its place in the list.  The number is only a LABEL: two
+  // states that share a label AND touch each other would melt into one, so
+  // the labels are checked against the partition the file describes before
+  // anything is painted.  A file that asks for the impossible is refused
+  // whole, rather than half-loaded.
+  const labels = new Array(N * N).fill(-1);
+  const wanted = [];
+  states.forEach((st, id) => {
+    const ask = (st && !Array.isArray(st) && Number.isInteger(st.colour)) ? st.colour : null;
+    const label = (ask !== null && ask >= 0) ? ask : id;
+    wanted.push(label);
+    cellsOf(st).forEach(([r, c]) => { if (r >= 0 && c >= 0 && r < N && c < N) labels[r * N + c] = label; });
+  });
+
+  const { comp } = components(labels, N);
+  const owner = new Map();                       // piece -> the state that owns it
+  for (let id = 0; id < states.length; id++) {
+    const cells = cellsOf(states[id]).filter(p => p && p.length >= 2 && p[0] >= 0 && p[1] >= 0 && p[0] < N && p[1] < N);
+    if (!cells.length) continue;
+    const first = cells[0][0] * N + cells[0][1];
+    const cid = comp[first];
+    for (const p of cells) if (comp[p[0] * N + p[1]] !== cid) {
+      return { ok: false, message: fmt(t('errDisconnected'), cellName(first)) };
+    }
+    if (owner.has(cid)) {
+      const was = owner.get(cid);
+      return { ok: false, message: fmt(t('errColourConflict'), cellName(was.cell), cellName(first), wanted[id]) };
+    }
+    owner.set(cid, { id: id, cell: first });
+  }
+
+  const assumed = new Map();
+  (data.assumed_capitols || data.assumed || []).forEach(a => {
+    if (Array.isArray(a)) { const [r, c, k] = a; assumed.set(r * N + c, k == null ? 1 : k); }
+    else { const [r, c] = a.cell; assumed.set(r * N + c, a.state_size || 1); }
+  });
+  return { ok: true, labels: labels, assumed: assumed, states: states };
+}
+
+function loadJSON(data) {
+  // a bundle of candidates from goal.py: not a board, a LIST of boards
+  if (data && data.format === 'metric-too-ledger-candidates/1') return loadBundle(data);
+  const p = parseBoard(data);
+  if (!p.ok) return p;
+  pushUndo();                                    // snapshot the board we are about to replace
+  colors = p.labels;
+  assumed = p.assumed;
+  refresh();
+  return { ok: true, states: p.states.length };
+}
+
+/* Judge a board without painting it: the ledger runs on a COPY of the board,
+   so the page can check every candidate of a bundle without disturbing what
+   is on screen. */
+function judgeBoard(data) {
+  const p = parseBoard(data);
+  if (!p.ok) return null;
+  const savedC = colors, savedA = assumed;
+  colors = p.labels; assumed = p.assumed;
+  const led = ledger();
+  colors = savedC; assumed = savedA;
+  return led;
+}
+
+/* The three words goal.py uses, computed here from the page's OWN verdicts:
+     BACKTRACK  some published number is contradicted
+     KEEP       the target square is pinned by these assumptions
+     PARK       neither -- not dead, just not decided yet              */
+const PRODUCES = ['FORCED', 'TIGHT_GEODESIC', 'TIGHT_CHEAPEST'];
+function pageWord(led, target) {
+  if (!led) return null;
+  if (led.rows.some(r => r.verdict === 'CONTRADICTED')) return 'BACKTRACK';
+  const v = target >= 0 ? led.verdictOf[target] : null;
+  if (v && PRODUCES.indexOf(v) >= 0) return 'KEEP';
+  return 'PARK';
+}
+function cellIndex(name) {
+  const m = /^r(\d+)c(\d+)$/.exec(String(name || '').trim());
+  if (!m) return -1;
+  const r = +m[1], c = +m[2];
+  return (r >= 0 && c >= 0 && r < N && c < N) ? r * N + c : -1;
+}
+
+/* A bundle of candidates.  goal.py proposes the shapes; this page judges
+   every one of them again -- nothing that was stored is taken on trust --
+   and a click puts a candidate on the board so it can be worked on. */
+let candidates = null;
+function loadBundle(data) {
+  const list = data.candidates || [];
+  const target = cellIndex(data.cell);
+  const rows = list.map((c, i) => {
+    const led = judgeBoard(c.board || c);
+    const word = pageWord(led, target);
+    const mine = led && target >= 0 ? led.verdictOf[target] : null;
+    const said = c.word || null;
+    const cap = c.capitol ? 'cap ' + c.capitol[0] + 'c' + c.capitol[1] : 'no capitol';
+    return {
+      i: i, name: c.name || ('size ' + (c.size || '?')), word: word, said: said,
+      short: 'size ' + (c.size == null ? '?' : c.size) + ' · ' + cap,
+      mine: mine, agree: !said || said === word,
+      tally: led ? led.rows.reduce((m, r) => (m[r.verdict] = (m[r.verdict] || 0) + 1, m), {}) : {},
+    };
+  });
+  candidates = list;
+  const panel = $('candPanel');
+  panel.hidden = false;
+  $('candMeta').innerHTML = fmt(t('candMeta'), list.length, (data.cell || '?'),
+    (data.published == null ? '?' : data.published), ((data.sizes || []).join(', ') || '?'))
+    + (data.truncated ? t('candTruncated') : '');
+  const SHORT = { FORCED: 'FORCED', TIGHT_GEODESIC: 'TIGHT', TIGHT_CHEAPEST: 'TIGHT',
+                  NEEDS_EXACT_PATH: 'NEEDS', NEEDS_HIDDEN_CAPITOL: 'NEEDS',
+                  CONTRADICTED: 'CONTRADICTED', UNPRODUCIBLE: 'UNPRODUCIBLE' };
+  const tb = $('candTable').querySelector('tbody');
+  tb.innerHTML = rows.map(r => {
+    const short = r.mine ? (SHORT[r.mine] || r.mine) : '';
+    const tally = Object.keys(r.tally).sort().map(k => k.toLowerCase() + ' ' + r.tally[k]).join(', ');
+    return '<tr title="' + tally + '"><td>' + r.short + '</td>'
+      + '<td><b class="v ' + (r.said || 'PARK') + '">' + (r.said || '?') + '</b></td>'
+      + '<td><b class="v ' + (r.word || 'PARK') + '">' + (r.word || '?') + '</b>'
+      + (short ? ' <span class="hint">' + short + '</span>' : '')
+      + (r.agree ? '' : ' <span class="v BACKTRACK">!</span>') + '</td>'
+      + '<td><button class="btn" data-cand="' + r.i + '">' + t('btnLoad') + '</button></td></tr>';
+  }).join('');
+  tb.querySelectorAll('[data-cand]').forEach(b => b.addEventListener('click', () => {
+    const c = candidates[+b.dataset.cand];
+    const res = loadJSON(c.board || c);
+    if (res && res.ok === false) { setStatus(res.message, 'bad'); return; }
+    setStatus(fmt(t('candLoaded'), c.name || ''), 'good');
+  }));
+  const bad = rows.filter(r => !r.agree).length;
+  setStatus(fmt(t('candStatus'), (data.cell || '?'), list.length,
+    bad ? fmt(t('candDisagree'), bad) : t('candAgree')), bad ? 'warn' : 'good');
+  return { ok: true, states: 0, candidates: list.length };
+}
+function drawBoardCanvas() {
+  const S = 46, pad = 18, gut = 24, head = 62, foot = 78, dpr = 2;
+  const W = pad * 2 + gut + S * N, H = head + gut + S * N + foot;
+  const cv = document.createElement('canvas');
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d');
+  g.scale(dpr, dpr);  const cs = getComputedStyle(document.documentElement);
+  const C = n => (cs.getPropertyValue(n) || '').trim() || '#ffffff';
+  const led = lastLedger;
+  g.fillStyle = C('--ground'); g.fillRect(0, 0, W, H);
+  g.fillStyle = C('--ink');
+  g.font = '700 18px system-ui, sans-serif';
+  g.fillText(t('pngTitle'), pad, 26);
+  g.font = '12px system-ui, sans-serif';
+  g.fillStyle = C('--muted');
+  g.fillText(new Date().toLocaleString() + '  |  ' + fmt(t('pngCounts'), led.list.length,
+    led.list.filter(s => s.capitol >= 0).length, assumed.size), pad, 44);
+  const x0 = pad + gut, y0 = head + gut;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const i = r * N + c, x = x0 + c * S, y = y0 + r * S;
+    const st = led.list.find(s => s.cells.includes(i));
+    g.fillStyle = st ? C('--t' + (colors[i] % NCOL)) : C('--blank');
+    g.fillRect(x + 1, y + 1, S - 2, S - 2);
+    if (clueAt[i] >= 0) {
+      g.fillStyle = C('--ink');
+      g.font = '600 17px ui-monospace, monospace';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(String(clueAt[i]), x + S / 2, y + S / 2);
+      const bd = VERDICT_BADGE[(led.verdictOf || {})[i]];
+      if (bd) {
+        g.fillStyle = bd.c; g.font = 'bold 12px system-ui, sans-serif';
+        g.textAlign = 'right'; g.textBaseline = 'top';
+        g.fillText(bd.ch, x + S - 3, y + 2);
+      }
+    }
+    if (st) {
+      g.fillStyle = st.capitol < 0 ? C('--bad') : C('--muted');
+      g.font = '700 9px system-ui, sans-serif';
+      g.textAlign = 'left'; g.textBaseline = 'top';
+      g.fillText(String(st.cells.length) + (st.capitol < 0 ? '*' : ''), x + 3, y + 2);
+      if (st.capitol === i) {
+        g.fillStyle = C('--ink');
+        g.beginPath(); g.arc(x + S / 2, y + S / 2, 7, 0, 2 * Math.PI); g.fill();
+      }
+    }
+    if (assumed.has(i)) {
+      g.strokeStyle = C('--accent'); g.lineWidth = 2; g.setLineDash([4, 3]);
+      g.strokeRect(x + 3, y + 3, S - 6, S - 6); g.setLineDash([]);
+      g.fillStyle = C('--accent');
+      g.beginPath(); g.arc(x + S / 2, y + S / 2, 5, 0, 2 * Math.PI); g.fill();
+    }
+    const dv = led.nearKnown.dist[i];
+    if (dv !== Infinity && dv !== 0) {
+      g.fillStyle = C('--muted'); g.font = '9px system-ui, sans-serif';
+      g.textAlign = 'right'; g.textBaseline = 'bottom';
+      g.fillText(String(dv), x + S - 3, y + S - 2);
+    }
+    const cv = led.farKnown.dist[i];
+    if (cv !== Infinity) {
+      const pub = clueAt[i];
+      let col = '#2f6f7d', bold = '';
+      if (pub >= 0) {
+        if (cv === pub) { col = '#14181d'; bold = 'bold '; }
+        else if (cv > pub) { col = '#1f7a3d'; bold = 'bold '; }
+        else { col = '#b58900'; bold = 'bold '; }
+      } else if (cv === 0) col = C('--muted');
+      g.fillStyle = col; g.font = bold + '9px system-ui, sans-serif';
+      g.textAlign = 'left'; g.textBaseline = 'bottom';
+      g.fillText(String(cv), x + 3, y + S - 2);
+    }
+  }
+  g.strokeStyle = C('--line'); g.lineWidth = 1;
+  for (let i = 0; i <= N; i++) {
+    g.beginPath(); g.moveTo(x0 + i * S, y0); g.lineTo(x0 + i * S, y0 + N * S); g.stroke();
+    g.beginPath(); g.moveTo(x0, y0 + i * S); g.lineTo(x0 + N * S, y0 + i * S); g.stroke();
+  }
+  // the same walls the page draws, so the picture says the same thing
+  const flag = j => (j >= 0 && j < N * N) ? led.flags[j] : 0;
+  const segs = [[], [], []];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const i = r * N + c, st = led.comp[i];
+    if (c < N - 1 && led.comp[i + 1] !== st) {
+      segs[Math.max(flag(i), flag(i + 1))].push([x0 + (c + 1) * S, y0 + r * S, x0 + (c + 1) * S, y0 + (r + 1) * S]);
+    }
+    if (r < N - 1 && led.comp[i + N] !== st) {
+      segs[Math.max(flag(i), flag(i + N))].push([x0 + c * S, y0 + (r + 1) * S, x0 + (c + 1) * S, y0 + (r + 1) * S]);
+    }
+    // the rim of the board: a painted region ends there too
+    if (st >= 0) {
+      if (c === 0) segs[flag(i)].push([x0, y0 + r * S, x0, y0 + (r + 1) * S]);
+      if (r === 0) segs[flag(i)].push([x0 + c * S, y0, x0 + (c + 1) * S, y0]);
+      if (c === N - 1) segs[flag(i)].push([x0 + N * S, y0 + r * S, x0 + N * S, y0 + (r + 1) * S]);
+      if (r === N - 1) segs[flag(i)].push([x0 + c * S, y0 + N * S, x0 + (c + 1) * S, y0 + N * S]);
+    }
+  }
+  g.lineWidth = 3;
+  [['--ink', 0], ['--warn', 1], ['--bad', 2]].forEach(pair => {
+    if (!segs[pair[1]].length) return;
+    g.strokeStyle = C(pair[0]);
+    g.beginPath();
+    for (const s of segs[pair[1]]) { g.moveTo(s[0], s[1]); g.lineTo(s[2], s[3]); }
+    g.stroke();
+  });
+  g.strokeStyle = C('--ink'); g.lineWidth = 3;
+  g.strokeRect(x0, y0, N * S, N * S);
+  /* coordinate rulers, same convention as the page: columns (X) across the
+     top, rows (Y) down the left */
+  g.fillStyle = C('--muted'); g.font = '11px ui-monospace, monospace';
+  for (let c = 0; c < N; c++) {
+    g.textAlign = 'center'; g.textBaseline = 'bottom';
+    g.fillText(String(c), x0 + c * S + S / 2, y0 - 7);
+  }
+  for (let r = 0; r < N; r++) {
+    g.textAlign = 'right'; g.textBaseline = 'middle';
+    g.fillText(String(r), x0 - 7, y0 + r * S + S / 2);
+  }
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.font = '10px ui-monospace, monospace';
+  g.fillText('c', x0 - 14, y0 - 7);
+  g.fillText('r', x0 - 14, y0 - 22);
+  const tally = {};
+  for (const row of led.rows) tally[row.verdict] = (tally[row.verdict] || 0) + 1;
+  g.fillStyle = C('--muted'); g.font = '11px system-ui, sans-serif';
+  g.textAlign = 'left'; g.textBaseline = 'top';
+  g.fillText(t('pngLegend1'), pad, y0 + N * S + 10);
+  g.fillText(t('pngLegend2'), pad, y0 + N * S + 28);
+  g.fillText(Object.entries(tally).map(([k, v]) => v + ' ' + k.replace(/_/g, ' ').toLowerCase()).join('   '),
+    pad, y0 + N * S + 46);
+  return cv;
+}
+function boardPNG() {
+  const cv = drawBoardCanvas();
+  const name = 'metric-too-ledger-' + stamp() + '.png';
+  cv.toBlob(b => {
+    if (!b) { toast(t('pngFail'), 'bad'); return; }
+    const url = URL.createObjectURL(b);
+    const img = $('pngOut');
+    img.src = url; img.hidden = false;
+    $('pngRow').hidden = false;
+    download(b, name);
+    toast(fmt(t('pngReadyToast'), name), 'good');
+    setStatus(fmt(t('pngReadyStatus'), name), 'good');
+  }, 'image/png');
+}
+
+/* ---------- events ---------- */
+/* Two fingers can paint at the same time -- handy on a tablet, where you can
+   hold one in each hand and tap the two halves of a symmetric pair.  Each
+   finger is tracked on its own, so lifting one does not stop the other, and
+   the whole stroke is a single undo step. */
+$('board').addEventListener('pointerdown', e => {
+  const el = e.target.closest('.cell'); if (!el) return;
+  e.preventDefault();
+  if (pointers.size === 0) pushUndo();
+  pointers.add(e.pointerId);
+  setCell(+el.dataset.i);
+});
+$('board').addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId)) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const c = el && el.closest && el.closest('.cell');
+  if (c && c.parentNode === $('board')) setCell(+c.dataset.i);
+});
+window.addEventListener('pointerup', e => { pointers.delete(e.pointerId); });
+window.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); });
+$('tools').addEventListener('click', e => {
+  const chip = e.target.closest('.chip[data-tool]');
+  if (chip) {
+    tool = chip.dataset.tool;
+    $('tools').querySelectorAll('.chip[data-tool]').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
+    return;
+  }
+  // the palette: the id is on the chip, and clicking the little swatch inside
+  // it must count as clicking the chip
+  const palChip = e.target.closest('.chip[data-id]');
+  if (palChip) { setPaintColor(+palChip.dataset.id); return; }
+});
+$('presetCorner').addEventListener('click', () => { pushUndo(); loadPreset(PRESET_CORNER); });
+$('presetClear').addEventListener('click', () => { pushUndo(); colors = new Array(N * N).fill(-1); assumed = new Map(); refresh(); });
+$('undoBtn').addEventListener('click', doUndo);
+$('saveJson').addEventListener('click', () => {
+  const data = boardJSON();
+  const text = JSON.stringify(data, null, 2);
+  const name = 'metric-too-ledger-' + stamp() + '.json';
+  download(new Blob([text], { type: 'application/json' }), name);
+  toast(fmt(t('jsonReadyToast'), name), 'good');
+  setStatus(fmt(t('jsonReadyStatus'), name, data.states.length, data.assumed_capitols.length, name), 'good');
+});
+$('copyJson').addEventListener('click', async () => {
+  const text = JSON.stringify(boardJSON(), null, 2);
+  let ok = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) ok = await navigator.clipboard.writeText(text); } catch (e) { ok = false; }
+  if (!ok) {
+    // no async clipboard here (older browsers, and file:// pages): the old way,
+    // through a throw-away text area
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.setAttribute('readonly', '');
+    tmp.style.cssText = 'position:fixed;top:-1000px;left:0;opacity:0';
+    document.body.appendChild(tmp);
+    tmp.select();
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    tmp.remove();
+  }
+  if (ok) {
+    toast(t('jsonCopiedToast'), 'good');
+    setStatus(t('jsonCopiedStatus'), 'good');
+    return;
+  }
+  // last resort: show it, selected, so it can be copied by hand
+  const box = $('jsonFallback');
+  box.hidden = false;
+  box.value = text;
+  box.focus(); box.select();
+  toast(t('jsonCopyFailed'), 'bad');
+});
+$('openJson').addEventListener('click', () => $('fileIn').click());
+$('fileIn').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const res = loadJSON(JSON.parse(await f.text()));
+    if (res && res.ok === false) {
+      setStatus(res.message, 'bad');
+      toast(res.message, 'bad');
+      return;
+    }
+    if (res && res.bundle) return;          // the bundle sets its own status
+    setStatus(fmt(t('jsonLoaded'), f.name), 'good');
+  } catch (err) {
+    setStatus(fmt(t('fileUnreadable'), err.message), 'bad');
+  }
+  e.target.value = '';
+});
+$('savePng').addEventListener('click', () => boardPNG());
+$('saveIter').addEventListener('click', () => {
+  const name = ($('iterName').value || '').trim() || ('try ' + (iterations.length + 1));
+  const board = boardJSON();
+  board.name = name;
+  iterations.push({ name: name, at: new Date().toISOString(), board: board, tally: tallyOf(lastLedger.rows) });
+  $('iterName').value = '';
+  renderIterations(); save();
+  toast(fmt(t('iterSaved'), name), 'good');
+});
+$('exportIter').addEventListener('click', () => {
+  if (!iterations.length) { toast(t('iterNone'), 'bad'); return; }
+  const data = { format: 'metric-too-ledger-iterations/1', n: N, saved: new Date().toISOString(),
+    iterations: iterations.map(it => ({ name: it.name, at: it.at, board: it.board, tally: it.tally })) };
+  download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+    'metric-too-ledger-iterations-' + stamp() + '.json');
+  toast(fmt(t('iterExported'), iterations.length), 'good');
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); doUndo(); return; }
+  if (e.key >= '0' && e.key <= '9') setPaintColor(+e.key);
+});
+
+/* ---------- palette ---------- */
+const pal = $('palette');
+for (let i = 0; i < NCOL; i++) {
+  const s = document.createElement('span');
+  s.className = 'chip'; s.dataset.id = i; s.title = fmt(t('paletteTitle'), i);
+  s.setAttribute('aria-pressed', String(i === 0));
+  s.innerHTML = '<span class="swatch" style="background:var(' + TONES[i] + ')"></span>' + i;
+  pal.appendChild(s);
+}
+
+/* ---------- persistence ---------- */
+function save() { store.set('mt2ledger', { c: colors, a: [...assumed], it: iterations }); }
+(function boot() {
+  applyI18n();
+  const saved = store.get('mt2ledger');
+  if (saved) { colors = saved.c; assumed = new Map(saved.a); iterations = saved.it || []; }
+  buildBoard();
+  setPaintColor(0);
+  renderIterations();
+  refresh();
+})();
+</script>
+</body></html>

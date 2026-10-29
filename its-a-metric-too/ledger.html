@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Ledger · It's a Metric, Too</title>
-<meta name="description" content="Assumption ledger for Jane Street's “It's a Metric, Too”: put a state's area on the board, assume a capitol, and see every published number re-checked against the real travel costs.">
+<title data-i18n="pageTitle">Ledger · It's a Metric, Too</title>
+<meta name="description" content="Assumption ledger for Jane Street's “It's a Metric, Too”: put a state's area on the board, assume a capitol, and see every published number re-checked against the real travel costs." data-i18n-content="Assumption ledger for Jane Street's “It's a Metric, Too”: put a state's area on the board, assume a capitol, and see every published number re-checked against the real travel costs.">
 <meta name="theme-color" content="#e9eeec" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111a1e" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e6b70'/%3E%3Cpath d='M6 6h9v9H6zM17 6h9v9h-9zM6 17h9v9H6z' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='21.5' cy='21.5' r='3.5' fill='%23fff'/%3E%3C/svg%3E">
@@ -197,46 +197,108 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 </head>
 <body>
 <noscript>
-  <div style="max-width:60ch;margin:24px auto;padding:14px 16px;border:1px solid var(--line);
-              border-radius:6px;background:var(--sheet);color:var(--ink);font-size:0.95rem;line-height:1.5">
-    <b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>
-    If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the
-    Files app), you are looking at a picture of the page, not the page itself -- iOS
-    previews do not run scripts, so the board stays empty and the buttons do nothing.
-    Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>;
-    on a computer, double-click it, or serve the folder with
-    <code>python3 -m http.server</code> and open the address it prints.
-  </div>
+  <div data-i18n="noscript"><b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the Files app), you are looking at a picture of the page, not the page itself -- iOS previews do not run scripts, so the board stays empty and the buttons do nothing. Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>; on a computer, double-click it, or serve the folder with <code>python3 -m http.server</code> and open the address it prints.</div>
 </noscript>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="wrap">
-  <a class="back" href="index.html">← All puzzles</a>
+  <a class="back" href="index.html" data-i18n="backLink">← All puzzles</a>
   <header>
     <div>
-      <h1>Assumption ledger</h1>
-      <p class="sub">Paint the states you are assuming, mark the capitols you are assuming — including the
-      <b>hidden</b> ones — and every published number is re-checked against the real travel costs.
-      The <a href="map.html">capitol map</a> shows where a capitol could be; this page shows what your assumptions cost you.</p>
+      <h1 data-i18n="h1">Assumption ledger</h1>
+      <p class="sub" data-i18n="sub">Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.</p>
     </div>
     <div class="tools">
-      <button class="btn" id="presetCorner">Corner hypothesis</button>
+      <button class="btn" id="presetCorner" data-i18n="presetCorner">Corner hypothesis</button>
       <input type="file" id="fileIn" accept="application/json,.json" hidden>
     </div>
   </header>
 
   <main>
     <div class="plate">
-      <div class="plate-head"><span><b>Original</b> · 11×11</span><span id="stateCount">no states yet</span></div>
+      <div class="plate-head"><span data-i18n="plateHead"><b>Original</b> · 11×11</span><span id="stateCount" data-i18n="noStatesYet">no states yet</span></div>
       <div class="boardbox">
         <div class="axes" style="--n:11">
-          <div class="ax-corner" title="rows (Y) — index down the left"><span>r</span></div>
+          <div class="ax-corner" data-i18n="axCornerTitle">rows (Y) — index down the left</div>
           <div class="ax-cols" id="axCols"></div>
           <div class="ax-rows" id="axRows"></div>
           <div id="board" style="--n:11"></div>
         </div>
       </div>
-      <p class="hint" id="cellKey">
-        <b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;
+
+      <div class="tools" id="tools">
+        <span class="chip" aria-pressed="true" data-tool="paint"><span class="swatch" style="background:var(--t0)"></span><span data-i18n="toolPaint">Paint state</span></span>
+        <span class="chip" aria-pressed="false" data-tool="cap"><span data-i18n="toolCap">Assume capitol</span></span>
+        <span class="chip" aria-pressed="false" data-tool="erase"><span data-i18n="toolErase">Erase</span></span>
+        <span class="sep"></span>
+        <span id="palette" class="tools"></span>
+        <span class="sep"></span>
+        <label class="hint" for="capSize" data-i18n="capSizeLabel">assumed capitol's state size</label>
+        <input class="btn" id="capSize" type="number" min="1" max="121" value="1" style="width:5.2em">
+        <span class="sep"></span>
+        <button class="btn" id="presetClear" data-i18n="presetClear">Clear</button>
+        <button class="btn" id="undoBtn" disabled data-i18n="undoBtn">Undo</button>
+      </div>
+
+      <div class="status" id="status" data-i18n="statusIdle">Paint a state, or load the corner hypothesis.</div>
+
+      <div class="io">
+        <span class="io-label" data-i18n="labelIterations">iterations</span>
+        <input class="btn" id="iterName" placeholder="name this try" data-i18n-ph="labelIterName" style="width:9em">
+        <button class="btn" id="saveIter" data-i18n="btnSaveIter">Save iteration</button>
+        <button class="btn" id="exportIter" data-i18n="btnExportIter">Export all</button>
+      </div>
+      <div id="iterList" class="iterlist"></div>
+
+      <div class="io">
+        <span class="io-label" data-i18n="labelSaveShare">save / share</span>
+        <button class="btn" id="saveJson" data-i18n="btnSaveJson">Save JSON</button>
+        <button class="btn" id="copyJson" data-i18n="btnCopyJson">Copy JSON</button>
+        <button class="btn" id="openJson" data-i18n="btnOpenJson">Open JSON</button>
+        <button class="btn" id="savePng" data-i18n="btnSavePng">Save PNG</button>
+      </div>
+      <div class="exp" id="pngRow" hidden>
+        <label data-i18n="pngPreviewLabel">PNG preview — long-press it to save</label>
+        <img id="pngOut" alt="the painted board">
+      </div>
+      <div class="build" data-i18n="buildLine">build 2026-10-29a · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · <a href="ledger.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">source</a></div>
+      <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
+    </div>
+
+    <div class="panel">
+      <div id="candPanel" hidden>
+        <h2 data-i18n="panelCandidates">Candidates</h2>
+        <div class="hint" id="candMeta"></div>
+        <div style="max-height:36vh;overflow:auto">
+          <table class="ledger" id="candTable">
+            <thead><tr><th data-i18n="thCandidate">candidate</th><th data-i18n="thGoalPy">goal.py</th><th data-i18n="thThisPage">this page</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h2 data-i18n="panelVerdicts">Verdicts</h2>
+        <div class="tally" id="tally"></div>
+      </div>
+      <div style="max-height:52vh;overflow:auto">
+        <table class="ledger" id="verdicts">
+          <thead><tr><th data-i18n="thSquare">square</th><th data-i18n="thReads">reads</th><th data-i18n="thRange">range</th><th data-i18n="thVerdict">verdict</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div>
+        <h2 data-i18n="panelNotes">Notes</h2>
+        <div class="notes" id="notes"></div>
+      </div>
+      <details>
+        <summary data-i18n="hiddenCapTitle">Where could a hidden capitol be?</summary>
+        <div class="hint" id="cands"></div>
+      </details>
+    </div>
+  </main>
+
+  <!-- the explanation sits at the very bottom, on purpose: the board is the
+       work, the legend is the reference -->
+      <p class="hint" id="cellKey" data-i18n="cellKey"><b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;
         a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.
         <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has
         <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no
@@ -256,79 +318,8 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <b>&#9679;</b> confirmed (the assumptions pin the number exactly),
         <b>&#9675;</b> open (payable, but not pinned down yet),
         <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),
-        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).
-      </p>
+        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).</p>
 
-      <div class="tools" id="tools">
-        <span class="chip" aria-pressed="true" data-tool="paint"><span class="swatch" style="background:var(--t0)"></span>Paint state</span>
-        <span class="chip" aria-pressed="false" data-tool="cap">Assume capitol</span>
-        <span class="chip" aria-pressed="false" data-tool="erase">Erase</span>
-        <span class="sep"></span>
-        <span id="palette" class="tools"></span>
-        <span class="sep"></span>
-        <label class="hint" for="capSize">assumed capitol's state size</label>
-        <input class="btn" id="capSize" type="number" min="1" max="121" value="1" style="width:5.2em">
-        <span class="sep"></span>
-        <button class="btn" id="presetClear">Clear</button>
-        <button class="btn" id="undoBtn" disabled>Undo</button>
-      </div>
-
-      <div class="status" id="status">Paint a state, or load the corner hypothesis.</div>
-
-      <div class="io">
-        <span class="io-label">iterations</span>
-        <input class="btn" id="iterName" placeholder="name this try" style="width:9em">
-        <button class="btn" id="saveIter">Save iteration</button>
-        <button class="btn" id="exportIter">Export all</button>
-      </div>
-      <div id="iterList" class="iterlist"></div>
-
-      <div class="io">
-        <span class="io-label">save / share</span>
-        <button class="btn" id="saveJson">Save JSON</button>
-        <button class="btn" id="copyJson">Copy JSON</button>
-        <button class="btn" id="openJson">Open JSON</button>
-        <button class="btn" id="savePng">Save PNG</button>
-      </div>
-      <div class="exp" id="pngRow" hidden>
-        <label>PNG preview — long-press it to save</label>
-        <img id="pngOut" alt="the painted board">
-      </div>
-      <div class="build">build 2026-10-27a · 坐标轴(列=X 在上,行=Y 在左)· 两轴版(违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE)· 假想首都必须是真州(大小须为奇数)· <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a></div>
-      <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
-    </div>
-
-    <div class="panel">
-      <div id="candPanel" hidden>
-        <h2>Candidates</h2>
-        <div class="hint" id="candMeta"></div>
-        <div style="max-height:36vh;overflow:auto">
-          <table class="ledger" id="candTable">
-            <thead><tr><th>candidate</th><th>goal.py</th><th>this page</th><th></th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-      <div>
-        <h2>Verdicts</h2>
-        <div class="tally" id="tally"></div>
-      </div>
-      <div style="max-height:52vh;overflow:auto">
-        <table class="ledger" id="verdicts">
-          <thead><tr><th>square</th><th>reads</th><th>range</th><th>verdict</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div>
-        <h2>Notes</h2>
-        <div class="notes" id="notes"></div>
-      </div>
-      <details>
-        <summary>Where could a hidden capitol be?</summary>
-        <div class="hint" id="cands"></div>
-      </details>
-    </div>
-  </main>
 </div>
 
 <script>
@@ -368,6 +359,147 @@ const TONES = ['--t0','--t1','--t2','--t3','--t4','--t5','--t6','--t7','--t8','-
 
 const clueAt = new Array(N * N).fill(-1);
 for (const [r, c, v] of CLUES) clueAt[r * N + c] = v;
+
+/* ---------- the two languages ----------
+   Every user-visible string lives here: [English, Chinese].  The build
+   (tools/lr11/page/build_lang.py) rewrites this table into the single
+   language it publishes, so the two pages can never drift apart and the
+   source stays the one truth.  Machine-readable words -- the verdict
+   names, goal.py's KEEP / PARK / BACKTRACK, the JSON keys -- are NOT
+   translated: they are the protocol our other tools speak. */
+const LANG = 'en';          // 'en' or 'zh'; the build sets it
+const I18N = {
+  pageTitle: 'Ledger · It\'s a Metric, Too',
+  metaDesc: 'Assumption ledger for Jane Street\'s “It\'s a Metric, Too”: put a state\'s area on the board, assume a capitol, and see every published number re-checked against the real travel costs.',
+  h1: 'Assumption ledger',
+  sub: 'Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.',
+  backLink: '← All puzzles',
+  noscript: '<b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the Files app), you are looking at a picture of the page, not the page itself -- iOS previews do not run scripts, so the board stays empty and the buttons do nothing. Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>; on a computer, double-click it, or serve the folder with <code>python3 -m http.server</code> and open the address it prints.',
+  plateHead: '<b>Original</b> · 11×11',
+  axCornerTitle: 'rows (Y) — index down the left',
+  cellKey: '<b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;\n        a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.\n        <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has\n        <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no\n        destination and every step inside it costs the whole area. <b>Walls</b> — the bold lines between\n        squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain\n        border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line\n        marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a\n        mirror or a rotation. <b>Bottom-right</b> — the cheapest\n        distance from that square to a capitol we already know about, if every unknown square were as\n        small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is\n        exactly what a number below that floor demands. <b>Bottom-left</b> — the cost the current\n        assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only\n        squares whose state size is known. Where no such route exists yet, nothing is shown there — the\n        free squares would have to be sized first. Its colour compares that cost with the published\n        number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated\n        cost is higher, <b>amber</b> when it is lower. <b>Top-right</b> — the verdict, as a badge:\n        <b>&#9679;</b> confirmed (the assumptions pin the number exactly),\n        <b>&#9675;</b> open (payable, but not pinned down yet),\n        <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),\n        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).',
+  toolPaint: 'Paint state',
+  toolCap: 'Assume capitol',
+  toolErase: 'Erase',
+  capSizeLabel: 'assumed capitol\'s state size',
+  presetClear: 'Clear',
+  undoBtn: 'Undo',
+  presetCorner: 'Corner hypothesis',
+  statusIdle: 'Paint a state, or load the corner hypothesis.',
+  labelIterations: 'iterations',
+  labelIterName: 'name this try',
+  btnSaveIter: 'Save iteration',
+  btnExportIter: 'Export all',
+  labelSaveShare: 'save / share',
+  btnSaveJson: 'Save JSON',
+  btnCopyJson: 'Copy JSON',
+  btnOpenJson: 'Open JSON',
+  btnSavePng: 'Save PNG',
+  pngPreviewLabel: 'PNG preview — long-press it to save',
+  buildLine: 'build 2026-10-29a · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · <a href="ledger.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">source</a>',
+  panelCandidates: 'Candidates',
+  thCandidate: 'candidate',
+  thGoalPy: 'goal.py',
+  thThisPage: 'this page',
+  panelVerdicts: 'Verdicts',
+  thSquare: 'square',
+  thReads: 'reads',
+  thRange: 'range',
+  thVerdict: 'verdict',
+  panelNotes: 'Notes',
+  hiddenCapTitle: 'Where could a hidden capitol be?',
+  badgeForced: 'confirmed: the assumptions pin this number exactly',
+  badgeTightGeo: 'open: a known capitol pays exactly this, but a hidden one may be nearer',
+  badgeTightCheap: 'open: this is the floor, no capitol can be nearer',
+  badgeNeedsPath: 'open: some capitol has to be reachable at exactly this cost',
+  badgeDemand: 'demand: an unrevealed capitol has to be nearer than this',
+  badgeContradicted: 'contradicted: a known capitol is cheaper, so this cannot be the minimum',
+  badgeUnproducible: 'unproducible: no route can pay exactly this',
+  noteNoSymmetry: 'A painted region has no symmetry at all, so it is not a state in the first place — repaint it as a shape that has one (a mirror or a rotation).',
+  noteNoCapitol: 'This state of size %s has NO capitol. You do not paint capitols: they are derived from the shape, and here every symmetry fixes %s squares instead of exactly one. It is still a legal state, but it contributes no destination, and every step inside it costs %s.',
+  noteCapitolOnClue: 'The capitol of a painted state sits on the %s at %s, but a capitol reads 0.',
+  noteZeroElsewhere: 'The 0 at %s is inside a state whose capitol is elsewhere.',
+  noteEvenAssumed: 'You assumed a state of size %s for the capitol at %s, but a state with a capitol is always odd: an even-sized state has a mirror axis running along a column of squares, which fixes more than one of them, so it has no capitol at all. Use an odd size.',
+  noteSatisfactionAxis: 'Satisfaction axis (independent of “is it the minimum?”): %s numbers have a route whose cost is fully determined (however the free squares are filled), %s numbers need the free squares to be tuned, and %s numbers cannot be paid by any route at all (they need a hidden capitol).',
+  noteSatisfactionFull: 'The tiling is complete (all 121 squares belong to a state), so the set of reachable costs is exact. Satisfaction test: of the 33 published numbers, %s; and %s.%s',
+  noteSingleton: 'A square that reads 1 needs a 1×1 state right next to it (a step of cost 1). Candidates: %s.',
+  notesNone: 'Nothing to flag. Assumptions that fit the numbers are not the same as assumptions that are true.',
+  whyForced: 'your assumptions pin the distance to exactly %s',
+  whyContradicted: 'a capitol you already know about is reachable for %s, which is cheaper than %s, so the number cannot be the minimum',
+  whyUnproducible: 'no walk out of this square can cost exactly %s%s, so this number cannot be produced at all',
+  whyUnprodCosts: ' (the reachable costs are %s)',
+  whyUnprodNone: ' (not even one known capitol is within reach)',
+  whyTightGeo: 'a known capitol is reachable for at most %s, and the number says the minimum is %s, so no hidden capitol may be nearer',
+  whyDemand: 'the nearest capitol you know about is at least %s away, but the number says %s, so a hidden capitol has to be strictly nearer than that%s',
+  whyDemandExtra: '; no walk to a known capitol costs exactly %s either',
+  whyTightCheap: '%s is the floor: no capitol can be nearer than %s, and one has to sit at exactly %s',
+  whyNeedsPath: 'the number sits inside the range, so a capitol has to be reachable at exactly %s',
+  paySimpleNote: '(this route loops, so there is a cheaper way: the number is not the minimum)',
+  payOkHead: '<div class="pay ok">payable, and <b>independent of the free squares</b>:',
+  payMid: '<div class="pay mid">payable, but <b>the free squares have to make up the difference</b>: the route through known squares comes to %s, the free squares must add %s of cost (reachable costs %s)</div>',
+  payNo: '<div class="pay no">not payable: no route costs exactly %s%s ⇒ only a hidden capitol can pay it</div>',
+  payNoKnown: ' (known capitols reach %s)',
+  payNoNone: ' (not even one known capitol is within reach)',
+  stateCount: '%s states · %s with a capitol · %s squares unknown',
+  noStatesYet: 'no states yet',
+  statusContradicted: '<b>%s published numbers are contradicted.</b> %s',
+  statusComplete: 'The tiling is complete and <b>every published number is produced and is the cheapest one</b>: %s/%s check out.',
+  statusOk: 'No contradiction: every published number is still reachable under these assumptions.',
+  hiddenCap: '<b>%s reads %s</b>: a hidden capitol within %s steps, i.e. %s.',
+  hiddenCapNone: '<p>No square currently demands a hidden capitol.</p>',
+  iterContradicted: '%s contradicted',
+  iterOk: 'no contradiction',
+  iterForced: '%s forced · %s need a hidden capitol',
+  btnRestore: 'Restore',
+  btnDrop: 'Drop',
+  iterRestored: 'Restored <b>%s</b>.',
+  jsonPublished: 'Jane Street, It\'s a Metric, Too (October 2026) -- the 33 official numbers',
+  jsonWhat: 'the board only: the states you are assuming and the capitols you are assuming. The verdicts and notes are NOT here on purpose -- they are derived from this board and the published numbers, so a rule tool recomputes them instead of trusting a stored conclusion.',
+  errDisconnected: 'The state at %s is not one connected shape, so it cannot carry a colour of its own.',
+  errColourConflict: 'Colour conflict: the states at %s and %s both ask for colour %s and they touch, so they would melt into a single state. Give one of them a different colour.',
+  axisColumn: 'column %s',
+  axisRow: 'row %s',
+  paletteTitle: 'state colour %s',
+  candMeta: '<b>%s</b> candidate states proposed for <b>%s</b> (it reads %s), sizes %s. <b>Each one is judged again here</b> — the word on the left is goal.py\'s, the word on the right is this page\'s, and they come from different code.',
+  candTruncated: ' <b>This round stopped at the candidate limit: it did NOT exhaust the possibilities.</b>',
+  btnLoad: 'load',
+  candLoaded: 'Loaded candidate: %s',
+  candStatus: 'Loaded %s candidates for %s — %s',
+  candDisagree: '<b>%s disagree</b> with goal.py.',
+  candAgree: 'this page agrees with goal.py on all of them.',
+  pngTitle: 'It\'s a Metric, Too - assumption ledger',
+  pngCounts: '%s states, %s with a capitol, %s assumed capitols',
+  pngLegend1: 'top-left = the area of the state   (* = that state has no capitol)',
+  pngLegend2: 'bottom-right = the cheapest distance to a capitol we already know about',
+  pngFail: 'The picture could not be made in this browser.',
+  pngReadyToast: 'Picture ready: %s. It is also shown below - long-press it to save on a phone.',
+  pngReadyStatus: 'Picture ready: <b>%s</b>. It is shown below the board as well; on a phone, long-press it to save.',
+  jsonReadyToast: 'JSON ready: %s. Copy JSON puts the very same text on your clipboard.',
+  jsonReadyStatus: 'JSON ready: <b>%s</b> - %s states and %s assumed capitols. <b>Copy JSON</b> puts the same text on your clipboard, and a rule tool can read it with <code>python3 lr11/assume.py %s</code>.',
+  jsonCopiedToast: 'JSON copied to the clipboard - paste it to a friend, or to a rule tool.',
+  jsonCopiedStatus: 'JSON copied to the clipboard.',
+  jsonCopyFailed: 'The browser would not let the page copy. The JSON is now in a box, selected - press Cmd/Ctrl+C.',
+  jsonLoaded: 'Loaded %s.',
+  fileUnreadable: 'Could not read that file: %s',
+  iterSaved: 'Saved iteration "%s".',
+  iterNone: 'No iterations saved yet.',
+  iterExported: 'Exported %s iteration(s).',
+  noteSatAllProduced: 'every one of them can be produced by some walk',
+  noteSatSomeUnproduced: ' %s of them cannot',
+  noteSatAllCheapest: 'every one of them is exactly the minimum',
+  noteSatSomeNotCheapest: ' %s of them are not the minimum',
+  noteSatWrong: 'the ones that do not match:',
+  noteSatWrongOne: 'reads',
+  noteSatEnd: '.',
+};
+const t = k => (I18N[k] !== undefined ? I18N[k] : k);
+const fmt = (s, ...a) => { let i = 0; return s.replace(/%s/g, () => String(a[i++])); };
+function applyI18n() {
+  document.title = t('pageTitle');
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta) meta.content = t('metaDesc');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.dataset.i18n); });
+}
 
 const $ = id => document.getElementById(id);
 const store = {
@@ -575,13 +707,13 @@ function determinedCosts(sizeOf, sources, maxCost) {
    The shape differs as well as the colour, so it survives a black-and-white
    print. */
 const VERDICT_BADGE = {
-  FORCED:            { g: 'confirmed', ch: '\u25CF', c: '#14181d', t: 'confirmed: the assumptions pin this number exactly' },
-  TIGHT_GEODESIC:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: 'open: a known capitol pays exactly this, but a hidden one may be nearer' },
-  TIGHT_CHEAPEST:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: 'open: this is the floor, no capitol can be nearer' },
-  NEEDS_EXACT_PATH:  { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: 'open: some capitol has to be reachable at exactly this cost' },
-  NEEDS_HIDDEN_CAPITOL: { g: 'demand', ch: '\u25B2', c: '#b58900', t: 'demand: an unrevealed capitol has to be nearer than this' },
-  CONTRADICTED:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: 'contradicted: a known capitol is cheaper, so this cannot be the minimum' },
-  UNPRODUCIBLE:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: 'unproducible: no route can pay exactly this' },
+  FORCED:            { g: 'confirmed', ch: '\u25CF', c: '#14181d', t: t('badgeForced') },
+  TIGHT_GEODESIC:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeTightGeo') },
+  TIGHT_CHEAPEST:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeTightCheap') },
+  NEEDS_EXACT_PATH:  { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeNeedsPath') },
+  NEEDS_HIDDEN_CAPITOL: { g: 'demand', ch: '\u25B2', c: '#b58900', t: t('badgeDemand') },
+  CONTRADICTED:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: t('badgeContradicted') },
+  UNPRODUCIBLE:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: t('badgeUnproducible') },
 };
 
 /* ---------- the ledger ---------- */
@@ -605,17 +737,17 @@ function ledger() {
   for (const [i, k] of assumed) { sizeOf.set(i, k); sources.add(i); }     // assumed capitols
 
   for (const s of stateInfo) {
-    if (!s.sym) notes.push({ k: 'bad', t: 'A painted region has no symmetry at all, so it is not a state in the first place — repaint it as a shape that has one (a mirror or a rotation).' });
-    else if (s.capitol < 0) notes.push({ k: 'warn', t: 'This state of size ' + s.cells.length + ' has NO capitol. You do not paint capitols: they are derived from the shape, and here every symmetry fixes ' + s.fixes.join('/') + ' squares instead of exactly one. It is still a legal state, but it contributes no destination, and every step inside it costs ' + s.cells.length + '.' });
-    if (s.capitol >= 0 && clueAt[s.capitol] >= 0 && clueAt[s.capitol] !== 0) notes.push({ k: 'bad', t: 'The capitol of a painted state sits on the ' + clueAt[s.capitol] + ' at ' + cellName(s.capitol) + ', but a capitol reads 0.' });
-    for (const c of s.cells) if (clueAt[c] === 0 && s.capitol !== c) notes.push({ k: 'bad', t: 'The 0 at ' + cellName(c) + ' is inside a state whose capitol is elsewhere.' });
+    if (!s.sym) notes.push({ k: 'bad', t: t('noteNoSymmetry') });
+    else if (s.capitol < 0) notes.push({ k: 'warn', t: fmt(t('noteNoCapitol'), s.cells.length, s.fixes.join('/'), s.cells.length) });
+    if (s.capitol >= 0 && clueAt[s.capitol] >= 0 && clueAt[s.capitol] !== 0) notes.push({ k: 'bad', t: fmt(t('noteCapitolOnClue'), clueAt[s.capitol], cellName(s.capitol)) });
+    for (const c of s.cells) if (clueAt[c] === 0 && s.capitol !== c) notes.push({ k: 'bad', t: fmt(t('noteZeroElsewhere'), cellName(c)) });
   }
 
   // An assumed capitol has to be a REAL state: a state with a capitol is
   // always odd in size, so an even assumed size cannot happen at all.
   for (const [i, k] of assumed) {
     if (capitolSizeImpossible(k) === 'even') {
-      notes.push({ k: 'bad', t: 'You assumed a state of size ' + k + ' for the capitol at ' + cellName(i) + ', but a state with a capitol is always odd: an even-sized state has a mirror axis running along a column of squares, which fixes more than one of them, so it has no capitol at all. Use an odd size.' });
+      notes.push({ k: 'bad', t: fmt(t('noteEvenAssumed'), k, cellName(i)) });
     }
   }
 
@@ -653,18 +785,18 @@ function ledger() {
       witnessCosts = steps.slice(0, -1).map((s, k) => Math.min(sizeOf.get(s[0]), sizeOf.get(steps[k + 1][0])));
     }
     let verdict, why;
-    if (L !== null && U !== null && L === U && L === v) { verdict = 'FORCED'; why = 'your assumptions pin the distance to exactly ' + v; }
-    else if (U !== null && U < v) { verdict = 'CONTRADICTED'; why = 'a capitol you already know about is reachable for ' + U + ', which is cheaper than ' + v + ', so the number cannot be the minimum'; }
+    if (L !== null && U !== null && L === U && L === v) { verdict = 'FORCED'; why = fmt(t('whyForced'), v); }
+    else if (U !== null && U < v) { verdict = 'CONTRADICTED'; why = fmt(t('whyContradicted'), U, v); }
     else if (complete && !produced) {
       verdict = 'UNPRODUCIBLE';
-      why = 'no walk out of this square can cost exactly ' + v
-        + (pay.length ? ' (the reachable costs are ' + pay.slice(0, 12).join(', ') + (pay.length > 12 ? ', ...' : '') + ')' : ' (not even one known capitol is within reach)')
-        + ', so this number cannot be produced at all';
+      why = fmt(t('whyUnproducible'), v,
+        pay.length ? fmt(t('whyUnprodCosts'), pay.slice(0, 12).join(', ') + (pay.length > 12 ? ', ...' : ''))
+                   : t('whyUnprodNone'));
     }
-    else if (U !== null && U === v) { verdict = 'TIGHT_GEODESIC'; why = 'a known capitol is reachable for at most ' + v + ', and the number says the minimum is ' + v + ', so no hidden capitol may be nearer'; }
-    else if (L !== null && L > v) { verdict = 'NEEDS_HIDDEN_CAPITOL'; why = 'the nearest capitol you know about is at least ' + L + ' away, but the number says ' + v + ', so a hidden capitol has to be strictly nearer than that' + (produced ? '' : '; no walk to a known capitol costs exactly ' + v + ' either'); }
-    else if (L !== null && L === v) { verdict = 'TIGHT_CHEAPEST'; why = v + ' is the floor: no capitol can be nearer than ' + v + ', and one has to sit at exactly ' + v; }
-    else { verdict = 'NEEDS_EXACT_PATH'; why = 'the number sits inside the range, so a capitol has to be reachable at exactly ' + v; }
+    else if (U !== null && U === v) { verdict = 'TIGHT_GEODESIC'; why = fmt(t('whyTightGeo'), v, v); }
+    else if (L !== null && L > v) { verdict = 'NEEDS_HIDDEN_CAPITOL'; why = fmt(t('whyDemand'), L, v, produced ? '' : fmt(t('whyDemandExtra'), v)); }
+    else if (L !== null && L === v) { verdict = 'TIGHT_CHEAPEST'; why = fmt(t('whyTightCheap'), v, v, v); }
+    else { verdict = 'NEEDS_EXACT_PATH'; why = fmt(t('whyNeedsPath'), v); }
     verdictOf[i] = verdict;
     rows.push({ i, v, L, U, verdict, why, route: U !== null ? farKnown.route(i) : null,
                 produced, payable, witness, witnessCosts,
@@ -747,13 +879,13 @@ function buildAxes() {
   for (let c = 0; c < N; c++) {
     const s = document.createElement('span');
     s.textContent = String(c);
-    s.title = 'column ' + c;
+    s.title = fmt(t('axisColumn'), c);
     cols.appendChild(s);
   }
   for (let r = 0; r < N; r++) {
     const s = document.createElement('span');
     s.textContent = String(r);
-    s.title = 'row ' + r;
+    s.title = fmt(t('axisRow'), r);
     rows.appendChild(s);
   }
 }
@@ -861,17 +993,16 @@ function refresh() {
     const range = (r.L === null ? '–' : r.L) + '–' + (r.U === null ? '∞' : r.U);
     let canPay;
     if (r.payable === 'PRODUCED') {
-      const simple = r.witnessSimple ? '' : '(这条绕了圈,所以还有更便宜的路:这个数不是最小值)';
-      canPay = '<div class="pay ok">付得起,而且<b>与空格无关</b>:'
+      const simple = r.witnessSimple ? '' : t('paySimpleNote');
+      canPay = t('payOkHead')
         + (r.witness ? r.witness.map(p2 => cellName(p2[0] * N + p2[1])).join(' → ') + ' = ' + r.witnessCosts.join('+') + ' = ' + r.witnessCosts.reduce((a, b) => a + b, 0) : '')
         + simple + '</div>';
     } else if (r.payable === 'TUNABLE') {
-      canPay = '<div class="pay mid">付得起,<b>但要空格来凑</b>:已知格子的路线凑不出 ' + r.v
-        + ',空格必须额外贡献 ' + r.tuning + ' 的代价(可走代价 ' + r.reachable[0] + '–' + r.reachable[r.reachable.length - 1] + ')</div>';
+      canPay = fmt(t('payMid'), r.v, r.tuning, r.reachable[0] + '–' + r.reachable[r.reachable.length - 1]);
     } else {
-      canPay = '<div class="pay no">付不起:没有任何一条路能正好花掉 ' + r.v
-        + (r.reachable.length ? '(已知首都能凑出 ' + r.reachable[0] + '–' + r.reachable[r.reachable.length - 1] + ')' : '(连已知首都都到不了)')
-        + ' ⇒ 只能靠一个隐藏首都</div>';
+      canPay = fmt(t('payNo'), r.v,
+        r.reachable.length ? fmt(t('payNoKnown'), r.reachable[0] + '–' + r.reachable[r.reachable.length - 1])
+                           : t('payNoNone'));
     }
     return '<tr data-i="' + r.i + '"><td>' + cellName(r.i) + '</td><td>' + r.v + '</td><td>' + range + '</td>' +
       '<td><span class="v ' + r.verdict + '">' + r.verdict + '</span><div class="why">' + r.why + '</div>' + canPay +
@@ -881,47 +1012,54 @@ function refresh() {
 
   const nStates = led.list.length;
   $('undoBtn').disabled = undoStack.length === 0;
-  $('stateCount').textContent = nStates ? nStates + ' state' + (nStates > 1 ? 's' : '') + ' · ' +
-    led.list.filter(s => s.capitol >= 0).length + ' with a capitol · ' + (N * N - led.sizeOf.size) + ' squares unknown' : 'no states yet';
+  $('stateCount').textContent = nStates ? fmt(t('stateCount'), nStates,
+    led.list.filter(s => s.capitol >= 0).length, (N * N - led.sizeOf.size)) : t('noStatesYet');
+  // the same three numbers, in a language-independent form: the prose is
+  // translated, the counts are not
+  $('stateCount').dataset.states = String(nStates);
+  $('stateCount').dataset.capitols = String(led.list.filter(s => s.capitol >= 0).length);
+  $('stateCount').dataset.unknown = String(N * N - led.sizeOf.size);
 
   const bad = led.rows.filter(r => r.verdict === 'CONTRADICTED' || r.verdict === 'UNPRODUCIBLE');
   const st = $('status');
-  if (bad.length) { st.className = 'status bad'; st.innerHTML = '<b>' + bad.length + ' published number' + (bad.length > 1 ? 's are' : ' is') + ' contradicted.</b> ' + bad.map(r => cellName(r.i) + ' reads ' + r.v + ' but ' + r.why).join('; ') + '.'; }
-  else if (!nStates && !assumed.size) { st.className = 'status'; st.textContent = 'Paint a state, or load the corner hypothesis.'; }
+  if (bad.length) { st.className = 'status bad'; st.innerHTML = fmt(t('statusContradicted'), bad.length,
+    bad.map(r => cellName(r.i) + ' reads ' + r.v + ' but ' + r.why).join('; ') + '.'); }
+  else if (!nStates && !assumed.size) { st.className = 'status'; st.textContent = t('statusIdle'); }
   else if (led.complete) {
     const sat = led.satisfaction;
     st.className = 'status good';
-    st.innerHTML = 'The tiling is complete and <b>every published number is produced and is the cheapest one</b>: ' + led.rows.length + '/' + led.rows.length + ' check out.';
+    st.innerHTML = fmt(t('statusComplete'), led.rows.length, led.rows.length);
   }
-  else { st.className = 'status good'; st.innerHTML = 'No contradiction: every published number is still reachable under these assumptions.'; }
+  else { st.className = 'status good'; st.innerHTML = t('statusOk'); }
 
   const notes = led.notes.slice();
   {
     const cnt = { PRODUCED: 0, TUNABLE: 0, UNPAYABLE: 0 };
     for (const r of led.rows) cnt[r.payable]++;
-    notes.push({ k: 'info', t: '满足轴(与"是不是最小值"无关):' + cnt.PRODUCED + ' 个数有一条代价完全确定的路(与空格怎么填无关),'
-      + cnt.TUNABLE + ' 个数要靠空格调节才凑得出,' + cnt.UNPAYABLE + ' 个数任何路都凑不出(得靠隐藏首都)。' });
+    notes.push({ k: 'info', t: fmt(t('noteSatisfactionAxis'), cnt.PRODUCED, cnt.TUNABLE, cnt.UNPAYABLE) });
   }
   if (led.complete && led.satisfaction) {
     const sat = led.satisfaction, wrong = Object.keys(sat.wrong);
     notes.push({ k: sat.all_numbers_produced && sat.all_numbers_are_the_cheapest ? 'good' : 'bad',
-      t: '铺砌已填满(121 格全归了州),这时候可达代价集合是精确的。' +
-         '满足性检验:33 个已发布数里,' + (sat.all_numbers_produced ? '每一个都能被某条路走出来' : '有 ' + (33 - Object.values(sat.wrong).filter(x => x.actual !== null).length) + ' 个走不出来') +
-         ';且' + (sat.all_numbers_are_the_cheapest ? '每一个都恰好是最小值' : '其中 ' + wrong.length + ' 个不是最小值') + '。' +
-         (wrong.length ? '对不上的: ' + wrong.map(k => k + ' 读 ' + sat.wrong[k].published + ' 但实际是 ' + sat.wrong[k].actual).join('; ') + '。' : '') });
+      t: fmt(t('noteSatisfactionFull'),
+        sat.all_numbers_produced ? t('noteSatAllProduced')
+          : fmt(t('noteSatSomeUnproduced'), 33 - Object.values(sat.wrong).filter(x => x.actual !== null).length),
+        sat.all_numbers_are_the_cheapest ? t('noteSatAllCheapest') : fmt(t('noteSatSomeNotCheapest'), wrong.length),
+        wrong.length ? t('noteSatWrong') + ' ' + wrong.map(k => k + ' ' + t('noteSatWrongOne') + ' ' + sat.wrong[k].published + ' ' + sat.wrong[k].actual).join('; ') + t('noteSatEnd') : '') });
   }
   const singles = singletonCandidates();
   if (singles.length) {
-    notes.push({ k: 'warn', t: 'A square that reads 1 needs a 1×1 state right next to it (a step of cost 1). Candidates: ' +
-      singles.map(s => cellName(s.i) + ' → ' + s.cand.map(cellName).join('/')).join('; ') + '.' });
+    notes.push({ k: 'warn', t: fmt(t('noteSingleton'),
+      singles.map(s => cellName(s.i) + ' → ' + s.cand.map(cellName).join('/')).join('; ')) });
   }
   $('notes').innerHTML = notes.map(n => '<div class="note ' + n.k + '">' + n.t + '</div>').join('') ||
-    '<div class="hint">Nothing to flag. Assumptions that fit the numbers are not the same as assumptions that are true.</div>';
+    '<div class="hint">' + t('notesNone') + '</div>';
 
   const cands = hiddenCapitolCandidates(led.rows);
   $('cands').innerHTML = cands.length
-    ? cands.map(c => '<p><b>' + cellName(c.row.i) + ' reads ' + c.row.v + '</b>: a hidden capitol within ' + Math.floor((c.row.v + 1) / 2) + ' steps, i.e. ' + c.cand.map(cellName).join(', ') + '.</p>').join('')
-    : '<p>No square currently demands a hidden capitol.</p>';
+    ? cands.map(c => '<p>' + fmt(t('hiddenCap'), cellName(c.row.i), c.row.v,
+        Math.floor((c.row.v + 1) / 2), c.cand.map(cellName).join(', ')) + '</p>').join('')
+    : t('hiddenCapNone');
 
   save();
 }
@@ -961,15 +1099,15 @@ function renderIterations() {
     const forced = it.tally.FORCED || 0;
     return '<div class="iterrow"><b>' + it.name + '</b>'
       + '<span class="n">' + it.at.slice(5, 16).replace('T', ' ') + '</span>'
-      + '<span class="' + (bad ? 'bad' : 'good') + '">' + (bad ? bad + ' contradicted' : 'no contradiction') + '</span>'
-      + '<span class="n">' + forced + ' forced · ' + (it.tally.NEEDS_HIDDEN_CAPITOL || 0) + ' need a hidden capitol</span>'
-      + '<button class="btn" data-restore="' + i + '">Restore</button>'
-      + '<button class="btn" data-del="' + i + '">Drop</button></div>';
+      + '<span class="' + (bad ? 'bad' : 'good') + '">' + (bad ? fmt(t('iterContradicted'), bad) : t('iterOk')) + '</span>'
+      + '<span class="n">' + fmt(t('iterForced'), forced, (it.tally.NEEDS_HIDDEN_CAPITOL || 0)) + '</span>'
+      + '<button class="btn" data-restore="' + i + '">' + t('btnRestore') + '</button>'
+      + '<button class="btn" data-del="' + i + '">' + t('btnDrop') + '</button></div>';
   }).join('');
   box.querySelectorAll('[data-restore]').forEach(b => b.addEventListener('click', () => {
     const res = loadJSON(iterations[+b.dataset.restore].board);
     if (res && res.ok === false) { setStatus(res.message, 'bad'); return; }
-    setStatus('Restored <b>' + iterations[+b.dataset.restore].name + '</b>.', 'good');
+    setStatus(fmt(t('iterRestored'), iterations[+b.dataset.restore].name), 'good');
   }));
   box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     iterations.splice(+b.dataset.del, 1);
@@ -1008,10 +1146,8 @@ function boardJSON() {
     format: 'metric-too-ledger/1',
     n: N,
     saved: new Date().toISOString(),
-    published: "Jane Street, It's a Metric, Too (October 2026) -- the 33 official numbers",
-    what_this_is: "the board only: the states you are assuming and the capitols you are assuming. "
-      + "The verdicts and notes are NOT here on purpose -- they are derived from this board and the "
-      + "published numbers, so a rule tool recomputes them instead of trusting a stored conclusion.",
+    published: t('jsonPublished'),
+    what_this_is: t('jsonWhat'),
     states: led.list.map((s, id) => ({
       id,
       colour: colors[s.cells[0]],          // the palette colour it was painted with
@@ -1058,12 +1194,11 @@ function parseBoard(data) {
     const first = cells[0][0] * N + cells[0][1];
     const cid = comp[first];
     for (const p of cells) if (comp[p[0] * N + p[1]] !== cid) {
-      return { ok: false, message: 'The state at ' + cellName(first) + ' is not one connected shape, so it cannot carry a colour of its own.' };
+      return { ok: false, message: fmt(t('errDisconnected'), cellName(first)) };
     }
     if (owner.has(cid)) {
       const was = owner.get(cid);
-      return { ok: false, message: 'Colour conflict: the states at ' + cellName(was.cell) + ' and ' + cellName(first)
-        + ' both ask for colour ' + wanted[id] + ' and they touch, so they would melt into a single state. Give one of them a different colour.' };
+      return { ok: false, message: fmt(t('errColourConflict'), cellName(was.cell), cellName(first), wanted[id]) };
     }
     owner.set(cid, { id: id, cell: first });
   }
@@ -1143,11 +1278,9 @@ function loadBundle(data) {
   candidates = list;
   const panel = $('candPanel');
   panel.hidden = false;
-  $('candMeta').innerHTML = '<b>' + list.length + '</b> candidate states proposed for <b>' + (data.cell || '?')
-    + '</b> (it reads ' + (data.published == null ? '?' : data.published) + '), sizes '
-    + ((data.sizes || []).join(', ') || '?') + '. <b>Each one is judged again here</b> — the word on the left is '
-    + 'goal.py\'s, the word on the right is this page\'s, and they come from different code.'
-    + (data.truncated ? ' <b>This round stopped at the candidate limit: it did NOT exhaust the possibilities.</b>' : '');
+  $('candMeta').innerHTML = fmt(t('candMeta'), list.length, (data.cell || '?'),
+    (data.published == null ? '?' : data.published), ((data.sizes || []).join(', ') || '?'))
+    + (data.truncated ? t('candTruncated') : '');
   const SHORT = { FORCED: 'FORCED', TIGHT_GEODESIC: 'TIGHT', TIGHT_CHEAPEST: 'TIGHT',
                   NEEDS_EXACT_PATH: 'NEEDS', NEEDS_HIDDEN_CAPITOL: 'NEEDS',
                   CONTRADICTED: 'CONTRADICTED', UNPRODUCIBLE: 'UNPRODUCIBLE' };
@@ -1160,17 +1293,17 @@ function loadBundle(data) {
       + '<td><b class="v ' + (r.word || 'PARK') + '">' + (r.word || '?') + '</b>'
       + (short ? ' <span class="hint">' + short + '</span>' : '')
       + (r.agree ? '' : ' <span class="v BACKTRACK">!</span>') + '</td>'
-      + '<td><button class="btn" data-cand="' + r.i + '">load</button></td></tr>';
+      + '<td><button class="btn" data-cand="' + r.i + '">' + t('btnLoad') + '</button></td></tr>';
   }).join('');
   tb.querySelectorAll('[data-cand]').forEach(b => b.addEventListener('click', () => {
     const c = candidates[+b.dataset.cand];
     const res = loadJSON(c.board || c);
     if (res && res.ok === false) { setStatus(res.message, 'bad'); return; }
-    setStatus('Loaded candidate: ' + (c.name || ''), 'good');
+    setStatus(fmt(t('candLoaded'), c.name || ''), 'good');
   }));
   const bad = rows.filter(r => !r.agree).length;
-  setStatus('Loaded ' + list.length + ' candidate' + (list.length === 1 ? '' : 's') + ' for '
-    + (data.cell || '?') + (bad ? ' — <b>' + bad + ' disagree</b> with goal.py.' : ' — this page agrees with goal.py on all of them.'), bad ? 'warn' : 'good');
+  setStatus(fmt(t('candStatus'), (data.cell || '?'), list.length,
+    bad ? fmt(t('candDisagree'), bad) : t('candAgree')), bad ? 'warn' : 'good');
   return { ok: true, states: 0, candidates: list.length };
 }
 function drawBoardCanvas() {
@@ -1185,12 +1318,11 @@ function drawBoardCanvas() {
   g.fillStyle = C('--ground'); g.fillRect(0, 0, W, H);
   g.fillStyle = C('--ink');
   g.font = '700 18px system-ui, sans-serif';
-  g.fillText("It's a Metric, Too - assumption ledger", pad, 26);
+  g.fillText(t('pngTitle'), pad, 26);
   g.font = '12px system-ui, sans-serif';
   g.fillStyle = C('--muted');
-  g.fillText(new Date().toLocaleString() + '  |  ' + led.list.length + ' states, ' +
-    led.list.filter(s => s.capitol >= 0).length + ' with a capitol, ' + assumed.size + ' assumed capitols',
-    pad, 44);
+  g.fillText(new Date().toLocaleString() + '  |  ' + fmt(t('pngCounts'), led.list.length,
+    led.list.filter(s => s.capitol >= 0).length, assumed.size), pad, 44);
   const x0 = pad + gut, y0 = head + gut;
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
     const i = r * N + c, x = x0 + c * S, y = y0 + r * S;
@@ -1298,10 +1430,8 @@ function drawBoardCanvas() {
   for (const row of led.rows) tally[row.verdict] = (tally[row.verdict] || 0) + 1;
   g.fillStyle = C('--muted'); g.font = '11px system-ui, sans-serif';
   g.textAlign = 'left'; g.textBaseline = 'top';
-  g.fillText('top-left = the area of the state   (* = that state has no capitol)',
-    pad, y0 + N * S + 10);
-  g.fillText('bottom-right = the cheapest distance to a capitol we already know about',
-    pad, y0 + N * S + 28);
+  g.fillText(t('pngLegend1'), pad, y0 + N * S + 10);
+  g.fillText(t('pngLegend2'), pad, y0 + N * S + 28);
   g.fillText(Object.entries(tally).map(([k, v]) => v + ' ' + k.replace(/_/g, ' ').toLowerCase()).join('   '),
     pad, y0 + N * S + 46);
   return cv;
@@ -1310,14 +1440,14 @@ function boardPNG() {
   const cv = drawBoardCanvas();
   const name = 'metric-too-ledger-' + stamp() + '.png';
   cv.toBlob(b => {
-    if (!b) { toast('The picture could not be made in this browser.', 'bad'); return; }
+    if (!b) { toast(t('pngFail'), 'bad'); return; }
     const url = URL.createObjectURL(b);
     const img = $('pngOut');
     img.src = url; img.hidden = false;
     $('pngRow').hidden = false;
     download(b, name);
-    toast('Picture ready: ' + name + '. It is also shown below - long-press it to save on a phone.', 'good');
-    setStatus('Picture ready: <b>' + name + '</b>. It is shown below the board as well; on a phone, long-press it to save.', 'good');
+    toast(fmt(t('pngReadyToast'), name), 'good');
+    setStatus(fmt(t('pngReadyStatus'), name), 'good');
   }, 'image/png');
 }
 
@@ -1361,10 +1491,8 @@ $('saveJson').addEventListener('click', () => {
   const text = JSON.stringify(data, null, 2);
   const name = 'metric-too-ledger-' + stamp() + '.json';
   download(new Blob([text], { type: 'application/json' }), name);
-  toast('JSON ready: ' + name + '. Copy JSON puts the very same text on your clipboard.', 'good');
-  setStatus('JSON ready: <b>' + name + '</b> - ' + data.states.length + ' states and ' +
-    data.assumed_capitols.length + ' assumed capitols. <b>Copy JSON</b> puts the same text on your ' +
-    'clipboard, and a rule tool can read it with <code>python3 lr11/assume.py ' + name + '</code>.', 'good');
+  toast(fmt(t('jsonReadyToast'), name), 'good');
+  setStatus(fmt(t('jsonReadyStatus'), name, data.states.length, data.assumed_capitols.length, name), 'good');
 });
 $('copyJson').addEventListener('click', async () => {
   const text = JSON.stringify(boardJSON(), null, 2);
@@ -1383,8 +1511,8 @@ $('copyJson').addEventListener('click', async () => {
     tmp.remove();
   }
   if (ok) {
-    toast('JSON copied to the clipboard - paste it to a friend, or to a rule tool.', 'good');
-    setStatus('JSON copied to the clipboard.', 'good');
+    toast(t('jsonCopiedToast'), 'good');
+    setStatus(t('jsonCopiedStatus'), 'good');
     return;
   }
   // last resort: show it, selected, so it can be copied by hand
@@ -1392,7 +1520,7 @@ $('copyJson').addEventListener('click', async () => {
   box.hidden = false;
   box.value = text;
   box.focus(); box.select();
-  toast('The browser would not let the page copy. The JSON is now in a box, selected - press Cmd/Ctrl+C.', 'bad');
+  toast(t('jsonCopyFailed'), 'bad');
 });
 $('openJson').addEventListener('click', () => $('fileIn').click());
 $('fileIn').addEventListener('change', async e => {
@@ -1406,9 +1534,9 @@ $('fileIn').addEventListener('change', async e => {
       return;
     }
     if (res && res.bundle) return;          // the bundle sets its own status
-    setStatus('Loaded ' + f.name + '.', 'good');
+    setStatus(fmt(t('jsonLoaded'), f.name), 'good');
   } catch (err) {
-    setStatus('Could not read that file: ' + err.message, 'bad');
+    setStatus(fmt(t('fileUnreadable'), err.message), 'bad');
   }
   e.target.value = '';
 });
@@ -1420,15 +1548,15 @@ $('saveIter').addEventListener('click', () => {
   iterations.push({ name: name, at: new Date().toISOString(), board: board, tally: tallyOf(lastLedger.rows) });
   $('iterName').value = '';
   renderIterations(); save();
-  toast('Saved iteration "' + name + '".', 'good');
+  toast(fmt(t('iterSaved'), name), 'good');
 });
 $('exportIter').addEventListener('click', () => {
-  if (!iterations.length) { toast('No iterations saved yet.', 'bad'); return; }
+  if (!iterations.length) { toast(t('iterNone'), 'bad'); return; }
   const data = { format: 'metric-too-ledger-iterations/1', n: N, saved: new Date().toISOString(),
     iterations: iterations.map(it => ({ name: it.name, at: it.at, board: it.board, tally: it.tally })) };
   download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
     'metric-too-ledger-iterations-' + stamp() + '.json');
-  toast('Exported ' + iterations.length + ' iteration(s).', 'good');
+  toast(fmt(t('iterExported'), iterations.length), 'good');
 });
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); doUndo(); return; }
@@ -1439,7 +1567,7 @@ document.addEventListener('keydown', e => {
 const pal = $('palette');
 for (let i = 0; i < NCOL; i++) {
   const s = document.createElement('span');
-  s.className = 'chip'; s.dataset.id = i; s.title = 'state colour ' + i;
+  s.className = 'chip'; s.dataset.id = i; s.title = fmt(t('paletteTitle'), i);
   s.setAttribute('aria-pressed', String(i === 0));
   s.innerHTML = '<span class="swatch" style="background:var(' + TONES[i] + ')"></span>' + i;
   pal.appendChild(s);
@@ -1448,6 +1576,7 @@ for (let i = 0; i < NCOL; i++) {
 /* ---------- persistence ---------- */
 function save() { store.set('mt2ledger', { c: colors, a: [...assumed], it: iterations }); }
 (function boot() {
+  applyI18n();
   const saved = store.get('mt2ledger');
   if (saved) { colors = saved.c; assumed = new Map(saved.a); iterations = saved.it || []; }
   buildBoard();

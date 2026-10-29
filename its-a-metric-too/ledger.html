@@ -72,18 +72,34 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 .plate { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: clamp(10px, 2.5vw, 20px); display: grid; gap: 10px; }
 .plate-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .plate-head b { color: var(--ink); font-weight: 600; }
-.boardbox { container-type: inline-size; width: 100%; max-width: 560px; margin: 0 auto; }
-/* coordinate rulers: columns (X) on top, rows (Y) on the left */
-.axes { display: grid; grid-template-columns: 1.6em minmax(0, 1fr); grid-template-rows: 1.6em minmax(0, 1fr); }
-.ax-corner { display: grid; place-items: center; font: 600 0.62rem/1 var(--f-num); color: var(--muted); letter-spacing: 0.04em; }
-.ax-cols { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+.boardbox { container-type: inline-size; width: 100%; max-width: 640px; margin: 0 auto; }
+/* coordinate rulers: columns (X) on top, rows (Y) on the left.
+   On the right there is a third ruler -- what the rows of the answer add up
+   to -- and under the board a foot with the total.  The space for them is
+   always reserved, so the board never jumps when the numbers appear. */
+.axes { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) 4.4em;
+  grid-template-rows: 1.6em minmax(0, 1fr) 2.6em;
+  grid-template-areas: "corner cols ." "rows board sums" ". foot foot"; }
+.ax-corner { grid-area: corner; display: grid; place-items: center; font: 600 0.62rem/1 var(--f-num); color: var(--muted); letter-spacing: 0.04em; }
+.ax-cols { grid-area: cols; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr));
   padding: 0 2.5px 2px; }
-.ax-rows { display: grid; grid-template-rows: repeat(var(--n), minmax(0, 1fr));
+.ax-rows { grid-area: rows; display: grid; grid-template-rows: repeat(var(--n), minmax(0, 1fr));
   padding: 2.5px 2px 2.5px 0; }
 .ax-cols span, .ax-rows span { display: grid; place-items: center;
   font: 500 max(8px, calc(100cqw / var(--n) * 0.20)) / 1 var(--f-num);
   font-variant-numeric: tabular-nums; color: var(--muted); }
 .ax-rows span { justify-items: end; padding-right: 2px; }
+/* the right-hand ruler: a row's sum, and under it the square of that sum */
+.ax-sums { grid-area: sums; display: grid; grid-template-rows: repeat(var(--n), minmax(0, 1fr));
+  padding: 2.5px 0 2.5px 4px; }
+.ax-sums span { display: grid; justify-items: start; align-content: center;
+  font: 600 max(8px, calc(100cqw / var(--n) * 0.19)) / 1.25 var(--f-num);
+  font-variant-numeric: tabular-nums; color: var(--ink); }
+.ax-sums span em { font-style: normal; font-weight: 500; font-size: 0.8em; color: var(--muted); }
+/* the foot: the sum of those squares */
+.foot-sum { grid-area: foot; display: flex; align-items: baseline; justify-content: center; gap: 8px;
+  padding-top: 6px; font: 500 0.78rem/1 var(--f-num); color: var(--muted); }
+.foot-sum b { font: 700 1.05rem/1 var(--f-num); color: var(--ink); letter-spacing: 0.02em; }
 .axes .axis-note { position: absolute; }
 #board {
   display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-rows: repeat(var(--n), minmax(0, 1fr));
@@ -93,7 +109,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 /* The board sits inside a wrapper so that the route overlay can lie exactly on
    top of it: the SVG's user units ARE the cells, one unit per square, so a
    line from (c+0.5, r+0.5) to the next cell's centre always hits the square. */
-.boardwrap { position: relative; }
+.boardwrap { grid-area: board; position: relative; }
 .routesvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .routesvg .rl { stroke: var(--accent); stroke-width: 0.17; stroke-linecap: round; stroke-linejoin: round; }
 .routesvg .rl.far { stroke-dasharray: 0.22 0.16; stroke-width: 0.12; opacity: 0.85; }
@@ -271,6 +287,8 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <label class="hint" for="boardSel" data-i18n="labelBoard">Board</label>
         <select class="btn" id="boardSel"></select>
         <button class="btn" id="showSolution" data-i18n="btnShowSolution" hidden>Show solution</button>
+        <button class="btn" id="sumBtn" data-i18n="btnRowSums">Row sums and answer</button>
+        <span class="hint" id="sumHint"></span>
         <span class="hint" id="boardNote" data-i18n="boardNote">A practice board: it comes with a solution, so you can check yourself against one.</span>
       </div>
       <div class="boardbox">
@@ -282,6 +300,8 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
             <div id="board" style="--n:11"></div>
             <svg class="routesvg" id="routeSvg" aria-hidden="true" viewBox="0 0 11 11"></svg>
           </div>
+          <div class="ax-sums" id="axSums"></div>
+          <div class="foot-sum" id="footSum"></div>
         </div>
       </div>
 
@@ -508,6 +528,15 @@ const I18N = {
   boardOfficial: 'official example',
   boardNote: 'A practice board: it comes with a solution, so you can check yourself against one.',
   btnShowSolution: 'Show solution',
+  btnRowSums: 'Row sums and answer',
+  sumReady: 'the sheet is tiled and every published number is settled',
+  sumWhyTiling: 'the sheet is not tiled yet',
+  sumWhyState: 'a painted region is not a state yet',
+  sumWhyAssumption: 'an assumed capitol does not match the state it sits in',
+  sumWhyVerdicts: '%s published numbers are not settled yet',
+  sumAxisTitle: 'row sum %s · its square %s',
+  sumFootLabel: 'answer',
+  sumFootCaption: 'computed from what you painted',
   toggleRoute: 'Show route on hover (hold on a touch screen)',
   labelAnswer: 'Computed answer',
   labelRowSums: 'row sums %s',
@@ -1261,8 +1290,10 @@ function refresh() {
         Math.floor((c.row.v + 1) / 2), c.cand.map(cellName).join(', ')) + '</p>').join('')
     : t('hiddenCapNone');
 
-  // the computed answer -- practice boards only.  The 11x11 never shows one:
-  // that puzzle is still open.
+  // the computed answer -- practice boards only.  The 11x11 never shows one
+  // here: that puzzle is still open.  (The row sums have their own button,
+  // below, which computes them from whatever YOU painted -- it reads nothing
+  // out of a file either.)
   const ans = BOARD.id === LEDGER_BOARD.id ? null : computedAnswer();
   $('answerBox').hidden = !ans;
   if (ans) {
@@ -1270,6 +1301,7 @@ function refresh() {
     $('rowSums').textContent = fmt(t('labelRowSums'), ans.rows.join(' / '));
   }
 
+  drawSums();
   drawRoute();
   save();
 }
@@ -1396,18 +1428,91 @@ function showSolution() {
    spans three rows counts in all three.  The answer is the sum of the
    squares of those row sums. */
 function computedAnswer() {
-  const led = lastLedger;
-  if (!led || !led.list.length) return null;
-  const area = new Map();
-  for (const s of led.list) for (const c of s.cells) area.set(c, s.cells.length);
-  if (area.size !== N * N) return null;          // not a complete tiling yet
+  const s = rowSums();
+  return s ? { rows: s.rows, answer: s.total } : null;
+}
+
+/* ---------- the row sums, their squares, and the total ----------
+   The arithmetic of the answer, from the painting alone.  A row's sum is the
+   total area of the states that touch that row: every square contributes the
+   area of the state it belongs to, so a state that spans three rows counts in
+   all three of them.  The answer is the sum of the squares of those row sums.
+
+   Two identities ride along, and both are checked by our own Python kernel
+   (src/cost.py):  sum(row sums) == sum(area^2) over the states, and the
+   official 5x5 example comes out at 8045 with rows 37/29/31/43/55.
+
+   This computes the answer of WHAT IS PAINTED -- not a stored answer.  The
+   11x11 carries no solution, no answer and no capitol coordinates here. */
+function rowSums() {
+  const area = paintedAreas();
+  if (area.size !== N * N) return null;             // not a complete tiling yet
   const rows = [];
   for (let r = 0; r < N; r++) {
     let sum = 0;
     for (let c = 0; c < N; c++) sum += area.get(r * N + c);
     rows.push(sum);
   }
-  return { rows: rows, answer: rows.reduce((a, b) => a + b * b, 0) };
+  return { rows: rows, squares: rows.map(x => x * x), total: rows.reduce((a, b) => a + b * b, 0) };
+}
+
+/* The area of the state every square belongs to, right now. */
+function paintedAreas() {
+  const area = new Map();
+  const led = lastLedger;
+  if (!led) return area;
+  for (const s of led.list) for (const c of s.cells) area.set(c, s.cells.length);
+  return area;
+}
+
+/* When is it honest to show the numbers?  Four things have to hold:
+     (a) the tiling is complete -- every square belongs to a state;
+     (b) every painted region is a real state (it has a non-trivial
+         self-symmetry) -- otherwise its "area" is not a state's area;
+     (c) an assumed capitol's declared size is the area of the state it sits
+         in -- otherwise the cost field and the painting disagree;
+     (d) every published number is settled -- no contradiction, nothing left
+         open.  (On a complete tiling the two books agree, so the only
+         verdicts left are FORCED, CONTRADICTED and UNPRODUCIBLE.) */
+const SETTLED_VERDICTS = new Set(['FORCED', 'TIGHT_GEODESIC', 'TIGHT_CHEAPEST']);
+function sumsGate() {
+  const led = lastLedger;
+  if (!led) return { ok: false, why: 'tiling' };
+  const area = paintedAreas();
+  if (area.size !== N * N) return { ok: false, why: 'tiling' };
+  if (led.list.some(s => !s.sym)) return { ok: false, why: 'state' };
+  for (const [i, k] of assumed) if (area.get(i) !== k) return { ok: false, why: 'assumption' };
+  const unsettled = led.rows.filter(r => !SETTLED_VERDICTS.has(r.verdict));
+  if (unsettled.length) return { ok: false, why: 'verdicts', n: unsettled.length };
+  return { ok: true };
+}
+
+function sumsWhy(gate) {
+  if (gate.why === 'state') return t('sumWhyState');
+  if (gate.why === 'assumption') return t('sumWhyAssumption');
+  if (gate.why === 'verdicts') return fmt(t('sumWhyVerdicts'), gate.n);
+  return t('sumWhyTiling');
+}
+
+/* The right-hand ruler and the foot under the board.  The reader asks for
+   them once, and from then on they follow the painting; when the sheet stops
+   qualifying, they go away again. */
+let showSums = false;
+function drawSums() {
+  const axis = $('axSums'), foot = $('footSum'), btn = $('sumBtn'), hint = $('sumHint');
+  if (!axis || !foot || !btn) return;
+  const gate = sumsGate();
+  btn.disabled = !gate.ok;
+  btn.title = gate.ok ? t('sumReady') : sumsWhy(gate);
+  if (hint) hint.textContent = gate.ok ? t('sumReady') : sumsWhy(gate);
+  if (!showSums || !gate.ok) { axis.innerHTML = ''; foot.innerHTML = ''; return; }
+  const s = rowSums();
+  if (!s) { axis.innerHTML = ''; foot.innerHTML = ''; return; }
+  axis.innerHTML = s.rows.map((v, r) =>
+    '<span title="' + fmt(t('sumAxisTitle'), v, s.squares[r]) + '">' + v +
+    '<em>' + s.squares[r] + '</em></span>').join('');
+  foot.innerHTML = '<span>' + t('sumFootLabel') + ' =</span><b>' + s.total + '</b>' +
+    '<span>' + t('sumFootCaption') + '</span>';
 }
 
 /* ---------- cell constraints ----------
@@ -2220,6 +2325,9 @@ $('presetCorner').addEventListener('click', () => { pushUndo(); loadPreset(PRESE
 $('presetClear').addEventListener('click', () => { pushUndo(); colors = new Array(N * N).fill(-1); assumed = new Map(); refresh(); });
 $('boardSel').addEventListener('change', e => loadBoard(e.target.value));
 $('showSolution').addEventListener('click', showSolution);
+// The row sums and the total.  One press, and from then on they follow the
+// painting; they go away again if the sheet stops qualifying.
+$('sumBtn').addEventListener('click', () => { showSums = true; drawSums(); });
 $('tPath').addEventListener('change', e => {
   routeOn = e.target.checked;
   if (!routeOn) hoverCell = -1;

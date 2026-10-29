@@ -90,6 +90,28 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
   width: 100%; aspect-ratio: 1; border: 2.5px solid var(--ink); touch-action: none; user-select: none; -webkit-user-select: none;
   -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
 }
+/* The board sits inside a wrapper so that the route overlay can lie exactly on
+   top of it: the SVG's user units ARE the cells, one unit per square, so a
+   line from (c+0.5, r+0.5) to the next cell's centre always hits the square. */
+.boardwrap { position: relative; }
+.routesvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.routesvg .rl { stroke: var(--accent); stroke-width: 0.17; stroke-linecap: round; stroke-linejoin: round; }
+.routesvg .rl.far { stroke-dasharray: 0.22 0.16; stroke-width: 0.12; opacity: 0.85; }
+.routesvg .rc { fill: none; stroke: var(--accent); stroke-width: 0.09; }
+.routesvg .rh { fill: var(--accent); }
+.cell.hov { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* the board bar: which board is on the sheet, and the button that solves it */
+.boardbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 10px; }
+.boardbar select { max-width: 15em; }
+/* the computed answer, for the practice boards only */
+.answerbox { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+  margin: 8px 0 0; padding: 8px 12px; background: var(--sheet);
+  border: 1px solid var(--line); border-radius: 10px; font-size: 0.92rem; }
+.answerbox b { font-family: var(--f-num); font-size: 1.15rem; letter-spacing: 0.02em; }
+.answerbox .rows { font-family: var(--f-num); color: var(--muted); }
+/* the credit line at the very bottom */
+.credits { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 0.82rem; }
+.credits a { color: inherit; }
 .cell { position: relative; display: grid; place-items: center; background: var(--blank);
   border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
   font-family: var(--f-num); font-weight: 600; font-size: calc(100cqw / var(--n) * 0.34); font-variant-numeric: tabular-nums; color: var(--ink);
@@ -215,15 +237,26 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 
   <main>
     <div class="plate">
-      <div class="plate-head"><span data-i18n="plateHead"><b>原题</b> · 11×11</span><span id="stateCount" data-i18n="noStatesYet">还没有州</span></div>
+      <div class="plate-head"><span id="plateName"></span><span id="stateCount" data-i18n="noStatesYet">还没有州</span></div>
+      <div class="boardbar">
+        <label class="hint" for="boardSel" data-i18n="labelBoard">棋盘</label>
+        <select class="btn" id="boardSel"></select>
+        <button class="btn" id="showSolution" data-i18n="btnShowSolution" hidden>显示解</button>
+        <span class="hint" id="boardNote" data-i18n="boardNote">练习盘：自带解，可以拿来对账。</span>
+      </div>
       <div class="boardbox">
-        <div class="axes" style="--n:11">
+        <div class="axes" style="--n:11" id="axes">
           <div class="ax-corner" data-i18n="axCornerTitle">行（Y）—— 索引在左边</div>
           <div class="ax-cols" id="axCols"></div>
           <div class="ax-rows" id="axRows"></div>
-          <div id="board" style="--n:11"></div>
+          <div class="boardwrap">
+            <div id="board" style="--n:11"></div>
+            <svg class="routesvg" id="routeSvg" aria-hidden="true" viewBox="0 0 11 11"></svg>
+          </div>
         </div>
       </div>
+
+      <div class="routeline hint" id="routeLine"></div>
 
       <div class="tools" id="tools">
         <span class="chip" aria-pressed="true" data-tool="paint"><span class="swatch" style="background:var(--t0)"></span><span data-i18n="toolPaint">涂州</span></span>
@@ -232,6 +265,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <span class="sep"></span>
         <span id="palette" class="tools"></span>
         <span class="sep"></span>
+        <label class="hint" for="tPath"><input type="checkbox" id="tPath" checked> <span data-i18n="toggleRoute">悬停显示路线（触屏请长按）</span></label>
         <label class="hint" for="capSize" data-i18n="capSizeLabel">所假设首都所在州的大小</label>
         <input class="btn" id="capSize" type="number" min="1" max="121" value="1" style="width:5.2em">
         <span class="sep"></span>
@@ -240,6 +274,10 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
       </div>
 
       <div class="status" id="status" data-i18n="statusIdle">涂一个州，或者载入角落假设。</div>
+      <div class="answerbox" id="answerBox" hidden>
+        <span data-i18n="labelAnswer">算出来的答案</span><b id="answerNum"></b>
+        <span class="rows" id="rowSums"></span>
+      </div>
 
       <div class="io">
         <span class="io-label" data-i18n="labelIterations">迭代</span>
@@ -260,7 +298,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <label data-i18n="pngPreviewLabel">PNG 预览 —— 长按可以保存</label>
         <img id="pngOut" alt="the painted board">
       </div>
-      <div class="build" data-i18n="buildLine">build 2026-10-29a · 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a></div>
+      <div class="build" data-i18n="buildLine">build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a></div>
       <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
     </div>
 
@@ -316,6 +354,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <b>&#9675;</b> 待定（付得起，但还没钉死），
         <b>&#9650;</b> 要求（必须有一个还没露面的首都更近），
         <b>&#10005;</b> 矛盾（已知首都更便宜，所以这个数是错的）。</p>
+      <p class="hint credits" id="credits" data-i18n="credits">练习盘和"悬停显示路线"的想法都来自两个公开页面：题目来自 <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a>，Jane Street 官方的 5×5 例子来自 <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>。两者都没有许可证，所以没有抄任何代码：每一块盘都用本页自己的规则内核重算，路线功能也是在我们自己的代价模型上重写的。</p>
 
 </div>
 
@@ -347,15 +386,40 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
    contradiction -- it is a DEMAND for a hidden capitol.
 --------------------------------------------------------------------------- */
 
-const N = 11;
-const CLUES = [[0,1,8],[0,2,4],[0,5,11],[0,9,5],[1,7,11],[2,2,7],[2,5,1],[2,10,14],[3,0,28],[3,3,51],[3,6,1],[3,8,6],
+/* ---------- the boards ----------
+   The sheet can hold more than one puzzle.  The first is the one this whole
+   notebook was built for: Jane Street's 11x11, with its 33 published numbers.
+   The rest are practice boards -- smaller puzzles that come with a solution,
+   so a reader can check a solution against one.  The 11x11 has NO solution
+   here on purpose: it is still an open puzzle.
+
+   The practice boards are vendored from two public pages; the credits are at
+   the bottom of this page, and the details are in note 28 of
+   docs/inference-notes-11x11/.  Their data lives in
+   tools/lr11/data/practice_boards.json and is copied into this file by
+   tools/lr11/page/sync_boards.py, which also checks that the copy is the
+   same data. */
+const LEDGER_CLUES = [[0,1,8],[0,2,4],[0,5,11],[0,9,5],[1,7,11],[2,2,7],[2,5,1],[2,10,14],[3,0,28],[3,3,51],[3,6,1],[3,8,6],
   [4,1,22],[4,8,4],[4,10,1],[5,3,15],[5,5,10],[5,7,0],[6,0,11],[6,2,11],[6,9,9],[7,2,17],[7,4,14],[7,7,10],[7,10,13],
   [8,0,30],[8,5,6],[8,8,45],[9,3,10],[10,1,26],[10,5,0],[10,8,77],[10,9,61]];
 const NCOL = 10;
 const TONES = ['--t0','--t1','--t2','--t3','--t4','--t5','--t6','--t7','--t8','--t9'];
 
-const clueAt = new Array(N * N).fill(-1);
-for (const [r, c, v] of CLUES) clueAt[r * N + c] = v;
+const LEDGER_BOARD = { id: 'jane-11x11', n: 11, clues: LEDGER_CLUES, solution: null };
+
+let N = LEDGER_BOARD.n;
+let CLUES = LEDGER_BOARD.clues;
+let BOARD = LEDGER_BOARD;
+let clueAt = [];
+function setClues(list) {
+  clueAt = new Array(N * N).fill(-1);
+  for (const [r, c, v] of list) clueAt[r * N + c] = v;
+}
+setClues(CLUES);
+
+/* PRACTICE BOARDS:BEGIN -- generated by tools/lr11/page/sync_boards.py, do not edit */
+const PRACTICE_BOARDS = [{"id":"up-0","n":6,"clue":[-1,7,4,-1,-1,13,-1,-1,1,0,1,-1,-1,-1,-1,-1,4,12,-1,9,-1,-1,7,-1,-1,-1,-1,7,-1,14,2,-1,6,8,10,14],"owner":[0,0,0,0,1,1,2,2,2,3,1,1,4,5,5,6,1,1,4,5,5,6,1,1,4,4,4,6,7,7,8,8,9,9,7,7]},{"id":"up-1","n":6,"clue":[25,21,-1,17,-1,12,22,-1,15,13,9,9,19,15,-1,9,7,6,21,17,-1,7,5,3,23,-1,12,6,-1,0,-1,13,9,-1,-1,-1],"owner":[0,1,2,3,3,4,0,1,2,3,3,4,0,1,2,5,6,4,0,1,5,5,6,7,0,5,5,5,7,7,0,8,8,8,8,9]},{"id":"up-2","n":7,"clue":[11,-1,3,1,-1,9,15,-1,7,-1,0,1,-1,-1,19,-1,8,1,3,10,-1,17,-1,5,-1,1,3,-1,-1,-1,-1,-1,-1,1,-1,26,20,-1,8,-1,8,-1,-1,19,17,15,8,15,23],"owner":[0,1,2,2,3,3,3,0,1,4,5,3,3,3,0,1,4,4,4,4,4,0,1,4,6,6,7,7,0,1,8,8,9,7,7,0,1,8,8,8,7,7,0,10,10,8,8,7,7]},{"id":"up-3","n":6,"clue":[37,-1,25,-1,-1,-1,-1,-1,-1,-1,19,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,7,6,-1,-1,-1,5,6,1,-1],"owner":[0,0,0,0,0,0,1,1,2,3,4,4,1,1,2,3,4,4,1,1,2,3,4,4,1,1,2,2,2,2,5,5,5,5,5,6]},{"id":"up-4","n":7,"clue":[0,-1,-1,1,7,9,13,1,-1,-1,0,-1,-1,-1,4,5,3,1,6,7,-1,7,7,5,-1,-1,-1,11,10,-1,-1,11,-1,17,19,-1,24,-1,16,21,-1,27,28,-1,25,21,26,32,35],"owner":[0,1,1,1,1,2,2,3,1,1,4,5,2,2,3,1,6,7,5,8,8,3,1,6,7,5,9,9,10,10,10,7,5,9,9,10,10,10,7,5,9,9,10,10,10,7,5,9,9]},{"id":"official-5x5","n":5,"official":true,"clue":[12,-1,-1,-1,17,8,-1,6,3,-1,-1,-1,-1,-1,-1,-1,7,6,-1,10,25,-1,-1,-1,0],"owner":[0,1,1,3,3,0,1,1,2,3,0,0,2,2,3,3,0,0,0,3,3,3,3,3,3]},{"id":"up-5","n":5,"clue":[-1,9,-1,-1,-1,-1,-1,-1,1,4,-1,-1,-1,-1,-1,-1,-1,5,1,9,17,-1,-1,-1,-1],"owner":[0,0,1,1,1,2,3,3,3,4,2,5,5,6,4,2,5,5,4,4,2,4,4,4,4]},{"id":"up-6","n":5,"clue":[7,-1,-1,-1,21,-1,-1,-1,-1,-1,-1,-1,11,-1,26,1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,0,0,0,0,1,2,2,3,3,1,4,4,3,3,4,4,4,3,3,5,4,4,3,3]},{"id":"up-7","n":5,"clue":[-1,3,-1,5,-1,3,-1,-1,-1,3,-1,-1,-1,-1,5,11,-1,9,-1,-1,-1,15,-1,-1,9],"owner":[0,0,0,0,1,2,2,3,4,1,5,4,4,4,4,5,5,4,4,6,5,5,5,4,6]},{"id":"up-8","n":6,"clue":[-1,7,-1,-1,0,3,-1,9,7,-1,3,-1,13,14,9,-1,-1,11,-1,11,10,-1,10,-1,-1,-1,-1,0,-1,-1,-1,11,-1,-1,6,11],"owner":[0,1,2,3,3,4,0,1,2,5,3,4,6,1,5,5,5,4,6,1,5,5,5,4,6,1,5,7,5,4,6,8,8,8,8,8]},{"id":"up-9","n":5,"clue":[-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,14,11,-1,-1,-1,21,-1,12,-1,-1,-1,-1,-1,20],"owner":[0,0,0,1,2,2,2,2,2,2,3,3,3,3,2,4,3,3,5,5,4,3,3,5,5]},{"id":"up-10","n":5,"clue":[7,-1,14,-1,-1,-1,-1,-1,-1,-1,3,-1,-1,1,-1,-1,-1,10,-1,-1,-1,12,-1,-1,-1],"owner":[0,1,2,2,2,0,1,2,2,2,3,1,1,1,4,3,5,5,5,5,3,5,5,5,5]},{"id":"up-11","n":5,"clue":[-1,-1,14,18,-1,-1,14,-1,-1,18,-1,-1,-1,12,-1,0,-1,-1,-1,-1,-1,6,-1,-1,-1],"owner":[0,0,1,1,2,3,3,1,1,2,3,3,3,4,2,5,3,3,4,2,6,6,6,6,6]},{"id":"up-12","n":5,"clue":[-1,-1,-1,-1,0,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,30,27,26,-1,-1],"owner":[0,1,2,2,2,0,1,3,3,2,0,1,3,3,2,4,4,4,4,4,5,5,5,5,5]},{"id":"up-13","n":5,"clue":[-1,16,-1,-1,-1,-1,18,-1,-1,-1,20,14,-1,-1,10,-1,-1,-1,-1,-1,-1,9,-1,0,-1],"owner":[0,0,1,1,2,0,0,3,3,2,0,0,3,3,2,4,4,4,5,2,4,4,4,5,5]},{"id":"up-14","n":5,"clue":[-1,-1,-1,-1,8,4,-1,0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,12,17,-1],"owner":[0,1,2,3,3,0,2,2,3,3,0,4,5,5,5,0,4,5,5,5,6,6,6,6,6]},{"id":"up-15","n":5,"clue":[21,-1,-1,-1,13,-1,9,-1,-1,-1,-1,-1,1,-1,9,-1,-1,-1,-1,7,-1,5,-1,-1,-1],"owner":[0,0,0,0,1,0,0,0,0,1,2,2,2,2,3,4,4,5,3,3,4,4,3,3,3]},{"id":"up-16","n":5,"clue":[-1,-1,-1,15,-1,17,-1,-1,11,-1,13,11,9,-1,4,11,-1,-1,-1,-1,-1,-1,5,-1,0],"owner":[0,0,0,0,0,1,1,2,3,3,1,1,2,3,3,4,4,5,5,5,6,6,6,6,7]},{"id":"up-17","n":5,"clue":[-1,-1,-1,-1,-1,-1,9,1,-1,-1,25,17,-1,-1,-1,27,-1,-1,17,21,-1,-1,-1,-1,25],"owner":[0,0,1,2,2,0,0,0,2,2,0,0,0,2,2,3,3,3,4,4,3,3,3,4,4]},{"id":"up-18","n":6,"clue":[2,-1,-1,-1,0,1,-1,-1,5,-1,1,-1,-1,-1,7,5,3,9,0,3,-1,-1,-1,15,3,-1,-1,-1,-1,-1,-1,-1,-1,14,22,27],"owner":[0,1,1,1,2,3,0,1,4,5,5,3,6,1,4,7,7,3,6,6,8,7,7,3,8,8,8,7,7,3,9,9,8,7,7,3]},{"id":"up-19","n":6,"clue":[-1,11,8,15,-1,17,11,-1,-1,8,-1,-1,-1,-1,0,-1,3,-1,-1,-1,-1,-1,5,7,-1,-1,5,-1,-1,6,-1,7,-1,-1,-1,3],"owner":[0,1,2,2,2,3,0,1,2,2,2,3,0,1,4,2,5,3,0,1,6,6,5,3,0,1,6,6,7,3,0,8,8,7,7,3]},{"id":"up-20","n":5,"clue":[-1,-1,-1,-1,-1,18,-1,-1,-1,1,-1,-1,4,-1,-1,17,9,6,-1,1,19,-1,-1,-1,-1],"owner":[0,0,0,0,0,1,1,2,2,2,1,1,3,4,5,1,1,3,4,6,1,1,3,4,6]},{"id":"up-21","n":5,"clue":[5,-1,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,5,-1,0,3,11],"owner":[0,1,1,1,1,0,2,3,4,4,2,2,2,4,4,5,2,6,4,4,5,6,6,4,4]},{"id":"up-22","n":5,"clue":[-1,-1,-1,16,17,11,-1,-1,-1,13,-1,-1,3,5,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,3],"owner":[0,0,0,0,0,1,2,2,2,3,1,2,2,2,3,1,4,4,5,3,6,6,7,5,3]},{"id":"up-23","n":4,"clue":[-1,21,-1,-1,-1,-1,-1,-1,-1,-1,13,-1,-1,-1,-1,-1],"owner":[0,0,1,1,0,0,0,2,0,0,2,2,3,2,2,2]},{"id":"up-24","n":4,"clue":[-1,-1,-1,7,4,-1,3,6,-1,0,-1,-1,-1,-1,3,-1],"owner":[0,0,1,1,2,2,2,3,4,5,6,3,4,4,6,3]},{"id":"up-25","n":5,"clue":[-1,-1,4,-1,-1,11,-1,1,-1,-1,-1,-1,-1,-1,-1,-1,15,-1,5,-1,-1,19,-1,9,11],"owner":[0,1,1,1,2,0,3,3,4,2,0,3,3,5,5,0,3,3,5,5,6,6,6,6,6]},{"id":"up-26","n":4,"clue":[5,-1,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,15,11],"owner":[0,0,1,2,3,1,1,1,3,4,4,4,3,4,4,4]},{"id":"up-27","n":4,"clue":[1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,13,10,-1,9,-1],"owner":[0,1,2,2,0,3,2,2,0,3,2,2,0,3,4,4]},{"id":"up-28","n":4,"clue":[-1,1,-1,-1,-1,0,-1,5,-1,-1,-1,-1,7,-1,13,-1],"owner":[0,1,1,2,0,3,4,2,0,4,4,2,4,4,4,2]},{"id":"up-29","n":4,"clue":[11,-1,-1,-1,-1,8,-1,-1,-1,-1,-1,-1,-1,12,-1,-1],"owner":[0,0,1,2,0,0,1,3,0,0,1,3,4,4,1,3]},{"id":"up-30","n":4,"clue":[-1,-1,-1,-1,6,-1,-1,-1,-1,-1,-1,10,-1,7,-1,12],"owner":[0,1,1,2,0,1,3,2,0,4,3,2,0,4,3,2]},{"id":"up-31","n":4,"clue":[-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,7,17,-1,-1,-1],"owner":[0,0,1,2,3,3,3,2,3,3,3,2,2,2,2,2]},{"id":"up-32","n":4,"clue":[7,-1,-1,-1,-1,-1,-1,-1,-1,5,3,-1,-1,8,-1,8],"owner":[0,0,1,2,0,0,3,2,0,0,3,2,4,4,4,2]},{"id":"up-33","n":4,"clue":[-1,12,-1,-1,4,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,0,0,1,0,0,0,1,2,2,2,3,4,5,5,3]},{"id":"up-34","n":4,"clue":[-1,1,-1,-1,-1,-1,-1,-1,4,-1,-1,7,-1,-1,9,11],"owner":[0,0,1,2,0,3,1,2,4,4,4,2,4,4,4,2]},{"id":"up-35","n":4,"clue":[-1,-1,-1,-1,-1,-1,3,5,-1,-1,-1,3,9,-1,-1,1],"owner":[0,0,1,1,0,0,2,3,0,0,2,3,0,0,4,3]},{"id":"up-36","n":4,"clue":[-1,6,-1,-1,-1,-1,-1,-1,-1,-1,10,-1,3,-1,-1,-1],"owner":[0,0,1,1,2,0,0,1,0,0,3,3,4,4,3,3]},{"id":"up-37","n":4,"clue":[0,-1,4,-1,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,-1],"owner":[0,0,0,0,0,1,2,3,0,1,2,4,0,1,2,4]},{"id":"up-38","n":4,"clue":[-1,-1,-1,-1,3,-1,-1,-1,-1,-1,-1,15,-1,-1,10,-1],"owner":[0,1,2,2,0,3,2,2,4,3,2,2,4,3,2,2]},{"id":"up-39","n":4,"clue":[-1,-1,-1,-1,-1,-1,5,-1,-1,9,-1,-1,-1,-1,11,14],"owner":[0,1,1,2,3,3,4,2,3,3,4,2,3,3,4,2]},{"id":"up-40","n":4,"clue":[-1,-1,13,-1,8,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,1,1,2,0,1,1,2,0,1,1,2,3,3,4,2]},{"id":"up-41","n":4,"clue":[-1,-1,-1,-1,-1,3,-1,-1,11,-1,-1,-1,13,-1,-1,8],"owner":[0,0,1,2,0,0,3,2,0,0,3,2,4,4,4,4]},{"id":"up-42","n":4,"clue":[9,3,-1,-1,7,-1,-1,-1,-1,-1,-1,3,-1,5,-1,-1],"owner":[0,0,1,1,0,0,2,3,0,0,4,3,5,5,4,3]},{"id":"up-43","n":4,"clue":[-1,-1,14,-1,-1,-1,-1,-1,7,-1,-1,-1,9,-1,-1,-1],"owner":[0,0,0,0,0,0,0,0,1,1,2,2,3,3,3,2]},{"id":"up-44","n":5,"clue":[30,-1,-1,-1,-1,-1,-1,-1,-1,-1,14,10,-1,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1],"owner":[0,0,0,1,1,0,0,0,2,2,0,0,2,2,2,3,3,4,2,2,3,3,4,4,5]},{"id":"up-45","n":5,"clue":[-1,-1,9,-1,19,-1,5,-1,18,-1,-1,-1,-1,-1,-1,0,1,-1,-1,23,-1,-1,-1,-1,-1],"owner":[0,1,1,2,2,0,3,3,2,2,3,3,3,2,2,4,3,3,2,2,5,5,5,5,5]},{"id":"up-46","n":5,"clue":[-1,5,3,-1,3,-1,-1,-1,-1,-1,-1,3,-1,-1,-1,14,-1,-1,3,-1,16,11,-1,-1,-1],"owner":[0,0,1,2,2,0,0,1,3,4,0,0,5,5,4,0,0,5,6,6,7,7,7,7,7]},{"id":"up-47","n":5,"clue":[-1,-1,4,7,-1,-1,-1,-1,-1,8,-1,-1,0,1,-1,-1,3,-1,-1,-1,11,-1,7,13,-1],"owner":[0,0,0,1,1,2,2,2,1,1,3,3,4,5,5,6,6,6,5,5,6,6,6,5,5]}];
+/* PRACTICE BOARDS:END */
 
 /* ---------- the two languages ----------
    Every user-visible string lives here: [English, Chinese].  The build
@@ -373,6 +437,24 @@ const I18N = {
   backLink: '← 全部谜题',
   noscript: '<b>这个页面需要 JavaScript</b>，下面的棋盘由它绘制。<br><br>如果你是从预览里打开这个文件的（iOS：信息附件、隔空投送，或者「文件」App），你看到的是页面的图片，不是页面本身 —— iOS 的预览不跑脚本，所以棋盘会是空的，按钮也没有用。请改用浏览器打开：在 iOS 上分享文件并选择<b>用 Safari 打开</b>；在电脑上双击它，或者用 <code>python3 -m http.server</code> 起一个服务，然后打开它打印出来的地址。',
   plateHead: '<b>原题</b> · 11×11',
+  labelBoard: '棋盘',
+  boardGroupLedger: '原题',
+  boardLedger: '原题 · 11×11',
+  boardOfficial: '官方例子',
+  boardNote: '练习盘：自带解，可以拿来对账。',
+  btnShowSolution: '显示解',
+  toggleRoute: '悬停显示路线（触屏请长按）',
+  labelAnswer: '算出来的答案',
+  labelRowSums: '行和 %s',
+  routeText: '%s · %s = %s',
+  routeNear: '最便宜的一条路：%s · %s = %s',
+  routeFar: '上界：%s · %s = %s',
+  routeExact: '板子画满了，这就是真正最便宜的那条路',
+  routeOptimistic: '乐观：未知格按最小算',
+  routeUpper: '能证明上界的那条路，它可能穿过未知格',
+  routeNone: '还没有路线：按现在的假设，这个格子走不到任何首都。',
+  jsonPractice: '练习盘 —— %s×%s',
+  credits: '练习盘和"悬停显示路线"的想法都来自两个公开页面：题目来自 <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a>，Jane Street 官方的 5×5 例子来自 <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>。两者都没有许可证，所以没有抄任何代码：每一块盘都用本页自己的规则内核重算，路线功能也是在我们自己的代价模型上重写的。',
   axCornerTitle: '行（Y）—— 索引在左边',
   cellKey: '<b>坐标</b> —— 列（X）横着编号在上方，行（Y）竖着编号在左边；\n        一个格子叫作 <b>rNcM</b>，所以 r2c5 就是第 2 行第 5 列。\n        <b>格子左上角</b> —— 它所在州的面积；<b>✱</b> 表示那个州<b>没有首都</b>\n        （它的对称固定了不止一个格子，或者一个也不固定），所以它不提供终点，\n        而且在它里面的每一步都按整块面积计代价。<b>墙</b> —— 格子之间的粗线就是州的边界，\n        同时还带着对称检查的结果：<b>深色</b>线是普通边界，<b>琥珀色</b>线标出一个没有首都的州\n        （它哪儿也不去），<b>红色</b>线标出一块完全没有对称的区域 —— 那还不是一个州，\n        请用镜像或者旋转重新涂一个。<b>右下角</b> —— 在「每个未知格都尽量小」的假设下，\n        从那格走到我们已经知道的某个首都的最小代价。它是下界，不是答案：隐藏的首都可能更近，\n        而一个低于这个下界的数要求的正是这件事。<b>左下角</b> —— 当前假设真正钉住的代价：\n        只经过那些州大小已知的格子，走到已知或假想首都的最便宜路线。\n        如果暂时还没有这样的路线，那里就不显示任何东西 —— 得先给那些自由格定大小。\n        它的颜色把那个代价和同一格里的已发布数作比较：<b>黑色加粗</b>表示两者一致，\n        <b>绿色</b>表示算出来的代价更高，<b>琥珀色</b>表示更低。<b>右上角</b> —— 判定，做成徽章：\n        <b>&#9679;</b> 确认（假设把这个数正好钉死），\n        <b>&#9675;</b> 待定（付得起，但还没钉死），\n        <b>&#9650;</b> 要求（必须有一个还没露面的首都更近），\n        <b>&#10005;</b> 矛盾（已知首都更便宜，所以这个数是错的）。',
   toolPaint: '涂州',
@@ -393,7 +475,7 @@ const I18N = {
   btnOpenJson: '打开 JSON',
   btnSavePng: '保存 PNG',
   pngPreviewLabel: 'PNG 预览 —— 长按可以保存',
-  buildLine: 'build 2026-10-29a · 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a>',
+  buildLine: 'build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="ledger.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/ledger.html" target="_blank" rel="noopener">源码</a>',
   panelCandidates: '候选',
   thCandidate: '候选',
   thGoalPy: 'goal.py',
@@ -418,7 +500,7 @@ const I18N = {
   noteZeroElsewhere: '%s 处的那个 0 所在的州，首都却在别处。',
   noteEvenAssumed: '你给 %s 处的首都假设了一个 %s 格的州，可是有首都的州一定是奇数：偶数大小的州有一条沿着一列格子走的镜像轴，它固定了不止一个格子，所以根本没有首都。请用奇数。',
   noteSatisfactionAxis: '满足轴（跟「是不是最小值」无关）：%s 个数有一条代价完全确定的路（与空格怎么填无关），%s 个数要靠空格调节才凑得出，%s 个数任何路都凑不出（得靠隐藏首都）。',
-  noteSatisfactionFull: '铺砌已填满（121 格全归了州），这时候可达代价集合是精确的。满足性检验：33 个已发布数里，%s；且%s。%s',
+  noteSatisfactionFull: '铺砌已填满（%s 格全归了州），这时候可达代价集合是精确的。满足性检验：%s 个已发布数里，%s；且%s。%s',
   noteSingleton: '读数为 1 的格子旁边必须有一个 1×1 的州（一步代价 1）。候选位置：%s。',
   notesNone: '没有什么要标出来的。能对上这些数的假设，和为真的假设，不是同一回事。',
   whyForced: '你的假设把距离正好钉成 %s',
@@ -1038,9 +1120,9 @@ function refresh() {
   if (led.complete && led.satisfaction) {
     const sat = led.satisfaction, wrong = Object.keys(sat.wrong);
     notes.push({ k: sat.all_numbers_produced && sat.all_numbers_are_the_cheapest ? 'good' : 'bad',
-      t: fmt(t('noteSatisfactionFull'),
+      t: fmt(t('noteSatisfactionFull'), String(N * N), String(led.rows.length),
         sat.all_numbers_produced ? t('noteSatAllProduced')
-          : fmt(t('noteSatSomeUnproduced'), 33 - Object.values(sat.wrong).filter(x => x.actual !== null).length),
+          : fmt(t('noteSatSomeUnproduced'), led.rows.length - Object.values(sat.wrong).filter(x => x.actual !== null).length),
         sat.all_numbers_are_the_cheapest ? t('noteSatAllCheapest') : fmt(t('noteSatSomeNotCheapest'), wrong.length),
         wrong.length ? t('noteSatWrong') + ' ' + wrong.map(k => k + ' ' + t('noteSatWrongOne') + ' ' + sat.wrong[k].published + ' ' + sat.wrong[k].actual).join('; ') + t('noteSatEnd') : '') });
   }
@@ -1058,6 +1140,16 @@ function refresh() {
         Math.floor((c.row.v + 1) / 2), c.cand.map(cellName).join(', ')) + '</p>').join('')
     : t('hiddenCapNone');
 
+  // the computed answer -- practice boards only.  The 11x11 never shows one:
+  // that puzzle is still open.
+  const ans = BOARD.id === LEDGER_BOARD.id ? null : computedAnswer();
+  $('answerBox').hidden = !ans;
+  if (ans) {
+    $('answerNum').textContent = String(ans.answer);
+    $('rowSums').textContent = fmt(t('labelRowSums'), ans.rows.join(' / '));
+  }
+
+  drawRoute();
   save();
 }
 
@@ -1077,6 +1169,122 @@ function loadPreset(p) {
   p.states.forEach((cells, id) => cells.forEach(([r, c]) => { colors[r * N + c] = id; }));
   assumed = new Map(p.assumed.map(([r, c, k]) => [r * N + c, k]));
   refresh();
+}
+
+/* ---------- the board switcher ----------
+   One sheet, many puzzles.  The 11x11 is the reason this page exists; the
+   practice boards are there to try a thing out on a puzzle that is already
+   solved, so the page can be checked against a known answer.  Every board is
+   judged by the SAME kernel -- the page recomputes the symmetry, the capitol
+   and the cost field itself -- so a practice board is a second judge for the
+   11x11 as well. */
+function clueTriples(n, flat) {
+  const out = [];
+  for (let k = 0; k < flat.length; k++) {
+    if (flat[k] >= 0) out.push([(k / n) | 0, k % n, flat[k]]);
+  }
+  return out;
+}
+const BOARDS = [LEDGER_BOARD].concat(PRACTICE_BOARDS.map(b => ({
+  id: b.id, n: b.n, clues: clueTriples(b.n, b.clue), solution: b.owner,
+  official: !!b.official,
+})));
+const boardById = id => BOARDS.find(b => b.id === id) || BOARDS[0];
+
+function boardLabel(b) {
+  if (b.id === LEDGER_BOARD.id) return t('boardLedger');
+  const base = b.n + '×' + b.n;
+  if (b.official) return base + ' · ' + t('boardOfficial');
+  const same = BOARDS.filter(x => x.n === b.n);
+  return base + ' · #' + (same.indexOf(b) + 1);
+}
+
+function fillBoardPicker() {
+  const sel = $('boardSel');
+  sel.innerHTML = '';
+  const g0 = document.createElement('optgroup');
+  g0.label = t('boardGroupLedger');
+  const o0 = document.createElement('option');
+  o0.value = LEDGER_BOARD.id; o0.textContent = boardLabel(LEDGER_BOARD);
+  g0.appendChild(o0); sel.appendChild(g0);
+  for (const n of [4, 5, 6, 7]) {
+    const group = BOARDS.filter(b => b.n === n);
+    if (!group.length) continue;
+    const g = document.createElement('optgroup');
+    g.label = n + '×' + n;
+    for (const b of group) {
+      const o = document.createElement('option');
+      o.value = b.id; o.textContent = boardLabel(b);
+      g.appendChild(o);
+    }
+    sel.appendChild(g);
+  }
+  sel.value = BOARD.id;
+}
+
+function loadBoard(id) {
+  const b = boardById(id);
+  const saved = store.get('mt2ledger:' + b.id);
+  BOARD = b; N = b.n; CLUES = b.clues;
+  setClues(CLUES);
+  colors = new Array(N * N).fill(-1);
+  assumed = new Map();
+  selected = -1;
+  undoStack = [];
+  iterations = [];
+  hoverCell = -1;
+  if (saved && Array.isArray(saved.c) && saved.c.length === N * N) {
+    colors = saved.c;
+    assumed = new Map(saved.a || []);
+    iterations = saved.it || [];
+  }
+  $('axes').style.setProperty('--n', N);
+  $('board').style.setProperty('--n', N);
+  $('routeSvg').setAttribute('viewBox', '0 0 ' + N + ' ' + N);
+  $('capSize').max = String(N * N);
+  $('showSolution').hidden = !b.solution;
+  $('presetCorner').hidden = b.id !== LEDGER_BOARD.id;
+  $('boardNote').hidden = b.id === LEDGER_BOARD.id;
+  $('plateName').textContent = boardLabel(b);
+  $('boardSel').value = b.id;
+  buildBoard();
+  renderIterations();
+  refresh();
+  save();
+}
+
+/* The solution of a practice board, painted on.  The 11x11 has none: it is
+   still an open puzzle, and this page does not carry its answer. */
+function showSolution() {
+  if (!BOARD.solution) return;
+  pushUndo();
+  colors = new Array(N * N).fill(-1);
+  for (let k = 0; k < BOARD.solution.length; k++) {
+    const o = BOARD.solution[k];
+    if (o === null || o === undefined) continue;
+    colors[k] = o;
+  }
+  refresh();
+}
+
+/* The answer, computed from what is painted right now -- never read out of a
+   file.  A row's sum is the total area of the states that touch that row: a
+   square contributes the area of the state it belongs to, so a state that
+   spans three rows counts in all three.  The answer is the sum of the
+   squares of those row sums. */
+function computedAnswer() {
+  const led = lastLedger;
+  if (!led || !led.list.length) return null;
+  const area = new Map();
+  for (const s of led.list) for (const c of s.cells) area.set(c, s.cells.length);
+  if (area.size !== N * N) return null;          // not a complete tiling yet
+  const rows = [];
+  for (let r = 0; r < N; r++) {
+    let sum = 0;
+    for (let c = 0; c < N; c++) sum += area.get(r * N + c);
+    rows.push(sum);
+  }
+  return { rows: rows, answer: rows.reduce((a, b) => a + b * b, 0) };
 }
 
 /* ---------- the iteration stack ---------- */
@@ -1143,7 +1351,8 @@ function boardJSON() {
     format: 'metric-too-ledger/1',
     n: N,
     saved: new Date().toISOString(),
-    published: t('jsonPublished'),
+    published: BOARD.id === LEDGER_BOARD.id ? t('jsonPublished')
+      : fmt(t('jsonPractice'), String(N), String(N)),
     what_this_is: t('jsonWhat'),
     states: led.list.map((s, id) => ({
       id,
@@ -1448,26 +1657,201 @@ function boardPNG() {
   }, 'image/png');
 }
 
+/* ---------- the route on hover ----------
+   The idea is borrowed from the practice page by sharmavedic -- a checkbox
+   that says "Show route on hover", and the mouse resting on a square shows
+   the cheapest walk from it to a capitol.  The code here is ours and runs on
+   our own cost model, and it draws the route the way the plan in
+   docs/inference-notes-11x11/15-route-view-plan.md says it must:
+
+     * the NEAR book (unknown squares charged as little as possible) is the
+       solid line -- that is "the cheapest walk to a capitol", the same walk
+       the practice page draws;
+     * the FAR book (the walk that proves the upper bound; it may cross
+       unknown squares) is the dashed line, and only when the two differ;
+     * when the board is not full the line says WHICH book it is, so nobody
+       mistakes a bound for the truth.
+
+   A finger has no hover, so on a touch screen the route is shown by holding
+   the square down instead. */
+const HOVER_MS = 900;          // the mouse has to rest a moment
+const LONG_PRESS_MS = 450;     // a finger has no hover, so it holds instead
+const SVGNS = 'http://www.w3.org/2000/svg';
+let hoverCell = -1, hoverTimer = null, routeOn = true;
+
+function stepCost(u, v) {
+  const led = lastLedger;
+  if (!led) return null;
+  const ku = led.sizeOf.get(u), kv = led.sizeOf.get(v);
+  if (ku === undefined && kv === undefined) return null;
+  if (ku === undefined) return kv;
+  if (kv === undefined) return ku;
+  return Math.min(ku, kv);
+}
+
+/* The two books, each turned round so the route reads "from where you rest
+   to where it ends".  The near book is the optimistic one (unknown squares
+   charged as little as possible); the far book is the walk that proves the
+   upper bound.  On a full board they are the same walk. */
+function routesOf(i) {
+  const led = lastLedger;
+  if (!led) return null;
+  const flip = p => p.slice().reverse();
+  const near = flip(led.nearKnown.route(i));
+  const far = flip(led.farKnown.route(i));
+  if (near.length < 2 && far.length < 2) return null;
+  const costs = path => {
+    const out = [];
+    for (let k = 0; k + 1 < path.length; k++) out.push(stepCost(path[k], path[k + 1]));
+    return out;
+  };
+  const same = near.length === far.length && near.every((c, k) => c === far[k]);
+  return { near: near, far: far, nearCosts: costs(near), farCosts: costs(far), same: same };
+}
+
+function svgEl(tag, attrs) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function drawRoute() {
+  const svg = $('routeSvg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  for (const d of $('board').children) d.classList.remove('hov');
+  const line = $('routeLine');
+  if (line) line.textContent = '';
+  if (!routeOn || hoverCell < 0 || hoverCell >= N * N) return;
+  const cell = $('board').children[hoverCell];
+  if (cell) cell.classList.add('hov');
+  const r = routesOf(hoverCell);
+  if (!r) {
+    if (line) line.textContent = t('routeNone');
+    return;
+  }
+  const led = lastLedger;
+  const exact = led && led.complete;
+  const pt = i => [(i % N) + 0.5, ((i / N) | 0) + 0.5];
+
+  const drawOne = (path, cls) => {
+    if (path.length < 2) return;
+    let d = '';
+    path.forEach((c, k) => { const p = pt(c); d += (k ? 'L' : 'M') + p[0] + ' ' + p[1] + ' '; });
+    svg.appendChild(svgEl('path', { d: d, class: cls, fill: 'none' }));
+    // the capitol it ends at gets a ring
+    const a = pt(path[path.length - 1]);
+    svg.appendChild(svgEl('circle', { cx: a[0], cy: a[1], r: 0.3, class: 'rc' }));
+    // and the last step gets an arrow head
+    if (path.length >= 2) {
+      const p0 = pt(path[path.length - 2]), p1 = pt(path[path.length - 1]);
+      const dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len, s = 0.17;
+      const tip = [p1[0] - ux * s * 0.5, p1[1] - uy * s * 0.5];
+      const l = [tip[0] - ux * s + uy * s * 0.6, tip[1] - uy * s - ux * s * 0.6];
+      const rr = [tip[0] - ux * s - uy * s * 0.6, tip[1] - uy * s + ux * s * 0.6];
+      svg.appendChild(svgEl('polygon', { points: [tip, l, rr].map(q => q.join(',')).join(' '), class: 'rh' }));
+    }
+  };
+
+  // the near book is the solid line; the far one is dashed, and only if the
+  // two walks are not the same
+  drawOne(r.near, 'rl');
+  if (!r.same) drawOne(r.far, 'rl far');
+
+  if (line) {
+    const parts = [];
+    const chain = p => p.map(cellName).join(' → ');
+    const sum = cs => cs.reduce((a, b) => a + b, 0);
+    if (r.near.length > 1) {
+      parts.push(fmt(t('routeNear'), chain(r.near), r.nearCosts.join('+'), sum(r.nearCosts))
+        + ' · ' + (exact ? t('routeExact') : t('routeOptimistic')));
+    }
+    if (!r.same && r.far.length > 1) {
+      parts.push(fmt(t('routeFar'), chain(r.far), r.farCosts.join('+'), sum(r.farCosts))
+        + ' · ' + (exact ? t('routeExact') : t('routeUpper')));
+    }
+    line.textContent = parts.join('   |   ');
+  }
+}
+
 /* ---------- events ---------- */
 /* Two fingers can paint at the same time -- handy on a tablet, where you can
    hold one in each hand and tap the two halves of a symmetric pair.  Each
    finger is tracked on its own, so lifting one does not stop the other, and
    the whole stroke is a single undo step. */
+/* Two fingers can paint at the same time -- handy on a tablet, where you can
+   hold one in each hand and tap the two halves of a symmetric pair.  Each
+   finger is tracked on its own, so lifting one does not stop the other, and
+   the whole stroke is a single undo step.  A finger, though, has no hover:
+   it cannot rest on a square without painting it, so a touch waits a moment
+   to find out which gesture it is -- a tap paints, a drag paints as it goes,
+   and a long press shows the route. */
+const touchPending = new Map();     // pointerId -> {i, x, y, timer, long}
+
 $('board').addEventListener('pointerdown', e => {
   const el = e.target.closest('.cell'); if (!el) return;
   e.preventDefault();
+  const i = +el.dataset.i;
+  if (e.pointerType === 'touch') {
+    const p = { i: i, x: e.clientX, y: e.clientY, long: false, timer: null };
+    p.timer = setTimeout(() => { p.long = true; hoverCell = i; drawRoute(); }, LONG_PRESS_MS);
+    touchPending.set(e.pointerId, p);
+    return;
+  }
   if (pointers.size === 0) pushUndo();
   pointers.add(e.pointerId);
-  setCell(+el.dataset.i);
+  setCell(i);
 });
 $('board').addEventListener('pointermove', e => {
+  const pending = touchPending.get(e.pointerId);
+  if (pending) {
+    if (Math.hypot(e.clientX - pending.x, e.clientY - pending.y) < 10) return;  // still a tap
+    clearTimeout(pending.timer);                    // it is a drag after all
+    touchPending.delete(e.pointerId);
+    if (pointers.size === 0) pushUndo();
+    pointers.add(e.pointerId);
+    setCell(pending.i);
+    return;
+  }
   if (!pointers.has(e.pointerId)) return;
   const el = document.elementFromPoint(e.clientX, e.clientY);
   const c = el && el.closest && el.closest('.cell');
   if (c && c.parentNode === $('board')) setCell(+c.dataset.i);
 });
-window.addEventListener('pointerup', e => { pointers.delete(e.pointerId); });
-window.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); });
+window.addEventListener('pointerup', e => {
+  pointers.delete(e.pointerId);
+  const pending = touchPending.get(e.pointerId);
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  touchPending.delete(e.pointerId);
+  if (pending.long) { hoverCell = -1; drawRoute(); return; }
+  if (pointers.size === 0) pushUndo();
+  setCell(pending.i);
+});
+window.addEventListener('pointercancel', e => {
+  pointers.delete(e.pointerId);
+  const pending = touchPending.get(e.pointerId);
+  if (pending) { clearTimeout(pending.timer); touchPending.delete(e.pointerId); }
+});
+/* the mouse has a hover: rest it on a square and the route turns up */
+$('board').addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse' || !routeOn) return;
+  const el = e.target.closest('.cell'); if (!el) return;
+  const i = +el.dataset.i;
+  clearTimeout(hoverTimer);
+  if (i === hoverCell) return;
+  hoverCell = -1; drawRoute();
+  hoverTimer = setTimeout(() => { hoverCell = i; drawRoute(); }, HOVER_MS);
+});
+$('board').addEventListener('pointerout', e => {
+  if (e.pointerType !== 'mouse') return;
+  const to = e.relatedTarget;
+  if (to && to.closest && to.closest('.cell')) return;    // moving to the next square
+  clearTimeout(hoverTimer);
+  if (hoverCell !== -1) { hoverCell = -1; drawRoute(); }
+});
 $('tools').addEventListener('click', e => {
   const chip = e.target.closest('.chip[data-tool]');
   if (chip) {
@@ -1482,6 +1866,13 @@ $('tools').addEventListener('click', e => {
 });
 $('presetCorner').addEventListener('click', () => { pushUndo(); loadPreset(PRESET_CORNER); });
 $('presetClear').addEventListener('click', () => { pushUndo(); colors = new Array(N * N).fill(-1); assumed = new Map(); refresh(); });
+$('boardSel').addEventListener('change', e => loadBoard(e.target.value));
+$('showSolution').addEventListener('click', showSolution);
+$('tPath').addEventListener('change', e => {
+  routeOn = e.target.checked;
+  if (!routeOn) hoverCell = -1;
+  drawRoute();
+});
 $('undoBtn').addEventListener('click', doUndo);
 $('saveJson').addEventListener('click', () => {
   const data = boardJSON();
@@ -1571,15 +1962,18 @@ for (let i = 0; i < NCOL; i++) {
 }
 
 /* ---------- persistence ---------- */
-function save() { store.set('mt2ledger', { c: colors, a: [...assumed], it: iterations }); }
+/* Every board keeps its own sheet, so switching to a practice board and back
+   does not lose what was painted on either of them. */
+function save() {
+  store.set('mt2ledger:' + BOARD.id, { c: colors, a: [...assumed], it: iterations });
+  store.set('mt2ledger:last', BOARD.id);
+}
 (function boot() {
   applyI18n();
-  const saved = store.get('mt2ledger');
-  if (saved) { colors = saved.c; assumed = new Map(saved.a); iterations = saved.it || []; }
-  buildBoard();
+  fillBoardPicker();
+  const last = boardById(store.get('mt2ledger:last') || LEDGER_BOARD.id);
+  loadBoard(last.id);
   setPaintColor(0);
-  renderIterations();
-  refresh();
 })();
 </script>
 </body></html>

@@ -112,6 +112,29 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 /* the credit line at the very bottom */
 .credits { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 0.82rem; }
 .credits a { color: inherit; }
+/* the cell-constraint editor: a small dialog over the sheet */
+.overlay { position: fixed; inset: 0; background: rgba(12, 22, 26, 0.45);
+  display: grid; place-items: center; z-index: 40; padding: 16px; }
+.cm { background: var(--sheet); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 14px; padding: 16px 18px; width: min(30rem, 100%);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3); }
+.cm h2 { margin: 0 0 4px; font-size: 1.05rem; }
+.cm .field { margin-top: 14px; }
+.cm .field > label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.92rem; }
+.cm input[type="text"] { width: 100%; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 9px; background: var(--blank); color: var(--ink); font-family: var(--f-num); }
+.cm .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; max-height: 7.5rem; overflow: auto; }
+.cm .chips .chip { padding: 4px 9px; font-size: 0.8rem; }
+.cm .err { color: var(--bad); font-size: 0.8rem; margin-top: 5px; min-height: 1em; }
+.cm .row { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+.cm .cur { font-family: var(--f-num); color: var(--muted); font-size: 0.85rem; }
+/* the constraint tag on a constrained square */
+.cell .con { position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+  font: 700 max(7px, calc(100cqw / var(--n) * 0.15)) / 1 var(--f-num);
+  color: var(--sheet); background: var(--ink); border-radius: 3px; padding: 1px 2px; }
+.cell .con.ok { background: var(--good); }
+.cell .con.bad { background: var(--bad); }
+.cell .con.open { background: var(--warn); }
 .cell { position: relative; display: grid; place-items: center; background: var(--blank);
   border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
   font-family: var(--f-num); font-weight: 600; font-size: calc(100cqw / var(--n) * 0.34); font-variant-numeric: tabular-nums; color: var(--ink);
@@ -262,6 +285,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <span class="chip" aria-pressed="true" data-tool="paint"><span class="swatch" style="background:var(--t0)"></span><span data-i18n="toolPaint">Paint state</span></span>
         <span class="chip" aria-pressed="false" data-tool="cap"><span data-i18n="toolCap">Assume capitol</span></span>
         <span class="chip" aria-pressed="false" data-tool="erase"><span data-i18n="toolErase">Erase</span></span>
+        <span class="chip" aria-pressed="false" data-tool="constraint"><span data-i18n="toolConstraint">Constraint</span></span>
         <span class="sep"></span>
         <span id="palette" class="tools"></span>
         <span class="sep"></span>
@@ -356,9 +380,41 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <b>&#9679;</b> confirmed (the assumptions pin the number exactly),
         <b>&#9675;</b> open (payable, but not pinned down yet),
         <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),
-        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).</p>
+        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).
+        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet.</p>
       <p class="hint credits" id="credits" data-i18n="credits">The practice boards come from two public pages, and the route-on-hover idea is theirs as well: the puzzle set from <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a> and Jane Street's own 5×5 example from <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>. Neither carries a licence, so no code was copied: this page recomputes every board with its own rule kernel, and the route feature is reimplemented on our own cost model.</p>
 
+</div>
+
+<!-- the cell-constraint editor.  A constraint is a number you made up: "this
+     square's travel cost must be 11, and the state it sits in must have size
+     5 or 7-9".  The page then judges your painting against it, with the same
+     machinery it uses for the published numbers.  The idea (and the shape of
+     the dialog) comes from the practice page by sharmavedic; the checking is
+     ours, on our own cost model. -->
+<div class="overlay" id="cellPop" hidden>
+  <div class="cm" role="dialog" aria-modal="true" aria-labelledby="cellTitle">
+    <h2 id="cellTitle"></h2>
+    <div class="hint" id="cellHelp"></div>
+    <div class="field">
+      <label for="cellSize" data-i18n="conSizeLabel">Allowed state sizes</label>
+      <input id="cellSize" type="text" autocomplete="off" spellcheck="false" placeholder="5, 7-9">
+      <div class="chips" id="sizeChips"></div>
+      <div class="err" id="sizeErr"></div>
+    </div>
+    <div class="field">
+      <label for="cellCost" data-i18n="conCostLabel">Allowed travel costs</label>
+      <input id="cellCost" type="text" autocomplete="off" spellcheck="false" placeholder="11 or 10-14">
+      <div class="chips" id="costChips"></div>
+      <div class="err" id="costErr"></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="useClue" data-i18n="conUseClue" hidden>Use clue (%s)</button>
+      <button class="btn" id="cellReset" data-i18n="conReset">Reset this cell</button>
+      <button class="btn" id="cellDone" data-i18n="conDone">Done</button>
+      <span class="cur" id="cellCur"></span>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -459,7 +515,7 @@ const I18N = {
   jsonPractice: 'Practice board -- %s×%s',
   credits: 'The practice boards come from two public pages, and the route-on-hover idea is theirs as well: the puzzle set from <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a> and Jane Street\'s own 5×5 example from <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>. Neither carries a licence, so no code was copied: this page recomputes every board with its own rule kernel, and the route feature is reimplemented on our own cost model.',
   axCornerTitle: 'rows (Y) — index down the left',
-  cellKey: '<b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;\n        a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.\n        <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has\n        <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no\n        destination and every step inside it costs the whole area. <b>Walls</b> — the bold lines between\n        squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain\n        border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line\n        marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a\n        mirror or a rotation. <b>Bottom-right</b> — the cheapest\n        distance from that square to a capitol we already know about, if every unknown square were as\n        small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is\n        exactly what a number below that floor demands. <b>Bottom-left</b> — the cost the current\n        assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only\n        squares whose state size is known. Where no such route exists yet, nothing is shown there — the\n        free squares would have to be sized first. Its colour compares that cost with the published\n        number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated\n        cost is higher, <b>amber</b> when it is lower. <b>Top-right</b> — the verdict, as a badge:\n        <b>&#9679;</b> confirmed (the assumptions pin the number exactly),\n        <b>&#9675;</b> open (payable, but not pinned down yet),\n        <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),\n        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).',
+  cellKey: '<b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;\n        a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.\n        <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has\n        <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no\n        destination and every step inside it costs the whole area. <b>Walls</b> — the bold lines between\n        squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain\n        border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line\n        marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a\n        mirror or a rotation. <b>Bottom-right</b> — the cheapest\n        distance from that square to a capitol we already know about, if every unknown square were as\n        small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is\n        exactly what a number below that floor demands. <b>Bottom-left</b> — the cost the current\n        assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only\n        squares whose state size is known. Where no such route exists yet, nothing is shown there — the\n        free squares would have to be sized first. Its colour compares that cost with the published\n        number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated\n        cost is higher, <b>amber</b> when it is lower. <b>Top-right</b> — the verdict, as a badge:\n        <b>&#9679;</b> confirmed (the assumptions pin the number exactly),\n        <b>&#9675;</b> open (payable, but not pinned down yet),\n        <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),\n        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).\n        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet.',
   toolPaint: 'Paint state',
   toolCap: 'Assume capitol',
   toolErase: 'Erase',
@@ -573,6 +629,30 @@ const I18N = {
   noteSatWrong: 'the ones that do not match:',
   noteSatWrongOne: 'reads',
   noteSatEnd: '.',
+  toolConstraint: 'Constraint',
+  conSizeLabel: 'Allowed state sizes',
+  conCostLabel: 'Allowed travel costs',
+  conUseClue: 'Use clue (%s)',
+  conReset: 'Reset this cell',
+  conDone: 'Done',
+  conTitle: 'Square %s',
+  conTitleClue: ' · clue %s',
+  conHelp: 'A constraint is a number you made up: the page checks your painting against it, the same way it checks the published numbers.',
+  conBadTokens: 'Ignored: %s. Use numbers and ranges like 5, 7-9.',
+  conSizeBad: 'the state there has size %s, which is not in %s',
+  conCostBad: 'the travel cost there is %s, which is not in %s',
+  conCostTooDear: 'even the cheapest walk costs %s, more than %s allows',
+  conCostTooCheap: 'the dearest walk that can be proven costs %s, less than %s allows',
+  conCostUnknown: 'the travel cost is not known until the sheet is full',
+  conNoState: 'the square has no state yet, so its size is not known',
+  conOk: 'the constraint holds',
+  conTag: 'your constraint',
+  conCurSize: 'state size here: %s · ',
+  conCurCost: 'travel cost here: %s',
+  conCurUpper: ' (an upper bound for now)',
+  noteConBad: 'Your constraint at %s is broken: %s',
+  noteConOpen: 'Your constraint at %s cannot be checked yet: %s',
+  statusConBad: '%s of your own constraints are broken: %s',
 };
 const t = k => (I18N[k] !== undefined ? I18N[k] : k);
 const fmt = (s, ...a) => { let i = 0; return s.replace(/%s/g, () => String(a[i++])); };
@@ -850,6 +930,15 @@ function ledger() {
   const reach = reachableCosts(sizeOf, sources, maxV);
   const det = determinedCosts(sizeOf, sources, maxV);
 
+  // Cell constraints: your own numbers, judged with the same machinery.
+  const conVerdicts = new Map();
+  for (const [i, cfg] of constraints) {
+    const r = constraintVerdict(i, cfg, { list: stateInfo, nearKnown, farKnown, complete });
+    conVerdicts.set(i, r);
+    if (r.verdict === 'BAD') notes.push({ k: 'bad', t: fmt(t('noteConBad'), cellName(i), r.why.join('; ')) });
+    else if (r.verdict === 'OPEN') notes.push({ k: 'warn', t: fmt(t('noteConOpen'), cellName(i), r.why.join('; ')) });
+  }
+
   const rows = [];
   const verdictOf = {};
   for (const [r, c, v] of CLUES) {
@@ -900,7 +989,7 @@ function ledger() {
       wrong: wrong,
     };
   }
-  return { list: stateInfo, comp, flags, sizeOf, sources, nearKnown, farKnown, rows, notes, complete, satisfaction, verdictOf };
+  return { list: stateInfo, comp, flags, sizeOf, sources, nearKnown, farKnown, rows, notes, complete, satisfaction, verdictOf, conVerdicts };
 }
 
 /* ---------- where could a hidden capitol be? ---------- */
@@ -1032,6 +1121,15 @@ function paint(i) {
     d.appendChild(v);
   }
   if (selected === i) d.classList.add('sel'); else d.classList.remove('sel');
+  // the constraint tag: what you asked this square to be
+  const con = led.conVerdicts && led.conVerdicts.get(i);
+  if (con) {
+    const c = document.createElement('span');
+    c.className = 'con ' + (con.verdict === 'BAD' ? 'bad' : con.verdict === 'OPEN' ? 'open' : 'ok');
+    c.textContent = 'C';
+    c.title = (con.why.length ? con.why.join('; ') : t('conOk')) + '   ' + t('conTag');
+    d.appendChild(c);
+  }
 }
 function setStatus(html, kind) { const st = $('status'); st.innerHTML = html; st.className = 'status' + (kind ? ' ' + kind : ''); }
 function pushUndo() { undoStack.push({ c: colors.slice(), a: [...assumed] }); if (undoStack.length > 200) undoStack.shift(); }
@@ -1045,6 +1143,11 @@ function setPaintColor(id) {
   const sw = $('palette').querySelector('.chip[data-id="' + id + '"] .swatch');
   if (sw) sw.style.outline = '2px solid var(--ink)';
   $('palette').querySelectorAll('.chip[data-id] .swatch').forEach(o => { if (o !== sw) o.style.outline = ''; });
+}
+/* The tool decides what a click on a square does. */
+function applyTool(i) {
+  if (tool === 'constraint') { openConstraint(i); return; }
+  setCell(i);
 }
 function setCell(i) {
   if (tool === 'erase') { colors[i] = -1; assumed.delete(i); }
@@ -1103,9 +1206,12 @@ function refresh() {
   $('stateCount').dataset.unknown = String(N * N - led.sizeOf.size);
 
   const bad = led.rows.filter(r => r.verdict === 'CONTRADICTED' || r.verdict === 'UNPRODUCIBLE');
+  const conBad = [...(led.conVerdicts || new Map())].filter(([, r]) => r.verdict === 'BAD');
   const st = $('status');
   if (bad.length) { st.className = 'status bad'; st.innerHTML = fmt(t('statusContradicted'), bad.length,
     bad.map(r => cellName(r.i) + ' reads ' + r.v + ' but ' + r.why).join('; ') + '.'); }
+  else if (conBad.length) { st.className = 'status bad'; st.innerHTML = fmt(t('statusConBad'), conBad.length,
+    conBad.map(([i, r]) => cellName(i) + ': ' + r.why.join('; ')).join('; ') + '.'); }
   else if (!nStates && !assumed.size) { st.className = 'status'; st.textContent = t('statusIdle'); }
   else if (led.complete) {
     const sat = led.satisfaction;
@@ -1232,6 +1338,7 @@ function loadBoard(id) {
   setClues(CLUES);
   colors = new Array(N * N).fill(-1);
   assumed = new Map();
+  constraints = new Map();
   selected = -1;
   undoStack = [];
   iterations = [];
@@ -1240,6 +1347,7 @@ function loadBoard(id) {
     colors = saved.c;
     assumed = new Map(saved.a || []);
     iterations = saved.it || [];
+    constraints = new Map(saved.con || []);
   }
   $('axes').style.setProperty('--n', N);
   $('board').style.setProperty('--n', N);
@@ -1288,6 +1396,106 @@ function computedAnswer() {
     rows.push(sum);
   }
   return { rows: rows, answer: rows.reduce((a, b) => a + b * b, 0) };
+}
+
+/* ---------- cell constraints ----------
+   A constraint is a number you made up: "this square's travel cost must be
+   11, and the state it sits in must have size 5 or 7-9".  The page then
+   judges the painting against it, with the same machinery it uses for the
+   published numbers.  The idea -- and the shape of the little dialog -- comes
+   from the practice page by sharmavedic; the checking is ours, on our own
+   cost model.
+
+   Two things are not known until they are known:
+     * the SIZE of a square: only once the square belongs to a state;
+     * the COST of a square: only once the sheet is full.  Until then the two
+       books bracket it (near <= the true cost <= far), so a constraint can be
+       CONTRADICTED (even the cheapest walk is too dear, or the dearest one
+       too cheap) but not yet satisfied. */
+let constraints = new Map();       // square -> { size: "5, 7-9", cost: "11" }
+let popCell = -1;                  // the square the dialog is about
+
+/* "5, 7-9" -> the set of allowed numbers.  Empty text means "any". */
+function parseNums(text) {
+  const raw = String(text == null ? '' : text).trim();
+  if (!raw) return { set: null, bad: [] };
+  const set = new Set(), bad = [];
+  for (const tok of raw.split(/[\s,;]+/)) {
+    if (!tok) continue;
+    const one = tok.match(/^(\d+)$/);
+    const range = tok.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
+    if (one) { set.add(Number(one[0])); continue; }
+    if (range) {
+      let a = Number(range[1]), b = Number(range[2]);
+      if (a > b) { const t = a; a = b; b = t; }
+      if (b - a > 1000) { bad.push(tok); continue; }
+      for (let i = a; i <= b; i++) set.add(i);
+      continue;
+    }
+    bad.push(tok);
+  }
+  return { set: set, bad: bad };
+}
+
+function formatNums(set) {
+  const a = [...set].sort((x, y) => x - y), out = [];
+  for (let i = 0; i < a.length;) {
+    let j = i;
+    while (j + 1 < a.length && a[j + 1] === a[j] + 1) j++;
+    out.push(i === j ? String(a[i]) : (j === i + 1 ? a[i] + ', ' + a[j] : a[i] + '-' + a[j]));
+    i = j + 1;
+  }
+  return out.join(', ');
+}
+
+function constraintOf(i) { return constraints.get(i) || { size: '', cost: '' }; }
+
+function setConstraint(i, cfg) {
+  const clean = { size: String(cfg.size || ''), cost: String(cfg.cost || '') };
+  if (!clean.size.trim() && !clean.cost.trim()) constraints.delete(i);
+  else constraints.set(i, clean);
+  refresh();
+}
+
+/* The verdict on one constrained square. */
+function constraintVerdict(i, cfg, led) {
+  const S = parseNums(cfg.size).set;       // null = any size
+  const C = parseNums(cfg.cost).set;       // null = any cost
+  const res = { verdict: 'OK', size: null, cost: null, why: [] };
+  if (S) {
+    const st = led.list.find(s => s.cells.includes(i));
+    if (st) {
+      res.size = st.cells.length;
+      if (!S.has(res.size)) {
+        res.verdict = 'BAD';
+        res.why.push(fmt(t('conSizeBad'), res.size, formatNums(S)));
+      }
+    } else if (res.verdict === 'OK') {
+      res.verdict = 'OPEN';
+      res.why.push(t('conNoState'));
+    }
+  }
+  if (C) {
+    const lo = Math.min(...C), hi = Math.max(...C);
+    const L = led.nearKnown.dist[i], U = led.farKnown.dist[i];
+    if (led.complete && L !== Infinity) {
+      res.cost = L;
+      if (!C.has(L)) {
+        res.verdict = 'BAD';
+        res.why.push(fmt(t('conCostBad'), L, formatNums(C)));
+      }
+    } else if (L !== Infinity && L > hi) {
+      res.verdict = 'BAD';
+      res.why.push(fmt(t('conCostTooDear'), L, formatNums(C)));
+    } else if (U !== Infinity && U < lo) {
+      res.verdict = 'BAD';
+      res.why.push(fmt(t('conCostTooCheap'), U, formatNums(C)));
+    } else if (res.verdict === 'OK') {
+      res.verdict = 'OPEN';
+      res.why.push(t('conCostUnknown'));
+    }
+  }
+  return res;
 }
 
 /* ---------- the iteration stack ---------- */
@@ -1368,6 +1576,9 @@ function boardJSON() {
     assumed_capitols: [...assumed].map(([i, k]) => ({
       cell: [Math.floor(i / N), i % N], state_size: k,
     })),
+    cell_constraints: [...constraints].map(([i, v]) => ({
+      cell: [Math.floor(i / N), i % N], sizes: v.size, costs: v.cost,
+    })),
   };
 }
 /* A board, turned into the two arrays the page works with.  Nothing is
@@ -1417,7 +1628,20 @@ function parseBoard(data) {
     if (Array.isArray(a)) { const [r, c, k] = a; assumed.set(r * N + c, k == null ? 1 : k); }
     else { const [r, c] = a.cell; assumed.set(r * N + c, a.state_size || 1); }
   });
-  return { ok: true, labels: labels, assumed: assumed, states: states };
+
+  // cell constraints: your own numbers, carried with the board
+  const cons = new Map();
+  (data.cell_constraints || data.constraints || []).forEach(c => {
+    if (!c) return;
+    const cell = Array.isArray(c) ? c[0] : c.cell;
+    if (!cell) return;
+    const i = cell[0] * N + cell[1];
+    if (i < 0 || i >= N * N) return;
+    const size = Array.isArray(c) ? (c[1] || '') : (c.sizes != null ? c.sizes : (c.size || ''));
+    const cost = Array.isArray(c) ? (c[2] || '') : (c.costs != null ? c.costs : (c.cost || ''));
+    cons.set(i, { size: String(size || ''), cost: String(cost || '') });
+  });
+  return { ok: true, labels: labels, assumed: assumed, states: states, constraints: cons };
 }
 
 function loadJSON(data) {
@@ -1428,6 +1652,7 @@ function loadJSON(data) {
   pushUndo();                                    // snapshot the board we are about to replace
   colors = p.labels;
   assumed = p.assumed;
+  constraints = p.constraints;
   refresh();
   return { ok: true, states: p.states.length };
 }
@@ -1779,6 +2004,73 @@ function drawRoute() {
   }
 }
 
+/* ---------- the constraint dialog ---------- */
+function buildChips() {
+  const sb = $('sizeChips'), cb = $('costChips');
+  sb.innerHTML = ''; cb.innerHTML = '';
+  const chip = (box, n, field) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = String(n);
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      const cur = constraintOf(popCell);
+      const set = parseNums(cur[field]).set || new Set();
+      if (set.has(n)) set.delete(n); else set.add(n);
+      setConstraint(popCell, { size: cur.size, cost: cur.cost, [field]: formatNums(set) });
+      syncPop();
+    });
+    box.appendChild(b);
+  };
+  for (let i = 1; i <= Math.min(25, N * N); i++) chip(sb, i, 'size');
+  for (let i = 0; i <= 40; i++) chip(cb, i, 'cost');
+}
+
+function syncPop() {
+  if (popCell < 0) return;
+  const v = constraintOf(popCell);
+  const sizeIn = $('cellSize'), costIn = $('cellCost');
+  if (document.activeElement !== sizeIn) sizeIn.value = v.size;
+  if (document.activeElement !== costIn) costIn.value = v.cost;
+  const ps = parseNums(v.size), pc = parseNums(v.cost);
+  for (const b of $('sizeChips').children) b.setAttribute('aria-pressed', !!(ps.set && ps.set.has(+b.textContent)));
+  for (const b of $('costChips').children) b.setAttribute('aria-pressed', !!(pc.set && pc.set.has(+b.textContent)));
+  $('sizeErr').textContent = ps.bad.length ? fmt(t('conBadTokens'), ps.bad.join(' ')) : '';
+  $('costErr').textContent = pc.bad.length ? fmt(t('conBadTokens'), pc.bad.join(' ')) : '';
+  const clue = clueAt[popCell];
+  $('cellTitle').textContent = fmt(t('conTitle'), cellName(popCell))
+    + (clue >= 0 ? fmt(t('conTitleClue'), clue) : '');
+  $('useClue').hidden = clue < 0;
+  $('useClue').textContent = fmt(t('conUseClue'), clue);
+  $('cellHelp').textContent = t('conHelp');
+  // what the page knows about this square right now
+  const led = lastLedger;
+  let cur = '';
+  if (led) {
+    const st = led.list.find(s => s.cells.includes(popCell));
+    const r = led.conVerdicts && led.conVerdicts.get(popCell);
+    if (st) cur += fmt(t('conCurSize'), st.cells.length);
+    if (r && r.cost !== null && r.cost !== undefined) cur += fmt(t('conCurCost'), r.cost);
+    else {
+      const u = led.farKnown.dist[popCell];
+      if (u !== Infinity) cur += fmt(t('conCurCost'), u) + t('conCurUpper');
+    }
+  }
+  $('cellCur').textContent = cur;
+}
+
+function openConstraint(i) {
+  popCell = i;
+  buildChips();
+  syncPop();
+  $('cellPop').hidden = false;
+  $('cellSize').focus();
+}
+
+function closeConstraint() {
+  $('cellPop').hidden = true;
+  popCell = -1;
+}
+
 /* ---------- events ---------- */
 /* Two fingers can paint at the same time -- handy on a tablet, where you can
    hold one in each hand and tap the two halves of a symmetric pair.  Each
@@ -1803,9 +2095,9 @@ $('board').addEventListener('pointerdown', e => {
     touchPending.set(e.pointerId, p);
     return;
   }
-  if (pointers.size === 0) pushUndo();
+  if (pointers.size === 0 && tool !== 'constraint') pushUndo();
   pointers.add(e.pointerId);
-  setCell(i);
+  applyTool(i);
 });
 $('board').addEventListener('pointermove', e => {
   const pending = touchPending.get(e.pointerId);
@@ -1813,9 +2105,9 @@ $('board').addEventListener('pointermove', e => {
     if (Math.hypot(e.clientX - pending.x, e.clientY - pending.y) < 10) return;  // still a tap
     clearTimeout(pending.timer);                    // it is a drag after all
     touchPending.delete(e.pointerId);
-    if (pointers.size === 0) pushUndo();
+    if (pointers.size === 0 && tool !== 'constraint') pushUndo();
     pointers.add(e.pointerId);
-    setCell(pending.i);
+    applyTool(pending.i);
     return;
   }
   if (!pointers.has(e.pointerId)) return;
@@ -1830,8 +2122,8 @@ window.addEventListener('pointerup', e => {
   clearTimeout(pending.timer);
   touchPending.delete(e.pointerId);
   if (pending.long) { hoverCell = -1; drawRoute(); return; }
-  if (pointers.size === 0) pushUndo();
-  setCell(pending.i);
+  if (pointers.size === 0 && tool !== 'constraint') pushUndo();
+  applyTool(pending.i);
 });
 window.addEventListener('pointercancel', e => {
   pointers.delete(e.pointerId);
@@ -1875,6 +2167,34 @@ $('tPath').addEventListener('change', e => {
   routeOn = e.target.checked;
   if (!routeOn) hoverCell = -1;
   drawRoute();
+});
+/* the constraint dialog */
+$('cellSize').addEventListener('input', e => {
+  if (popCell < 0) return;
+  setConstraint(popCell, { size: e.target.value, cost: $('cellCost').value });
+  syncPop();
+});
+$('cellCost').addEventListener('input', e => {
+  if (popCell < 0) return;
+  setConstraint(popCell, { size: $('cellSize').value, cost: e.target.value });
+  syncPop();
+});
+$('useClue').addEventListener('click', () => {
+  if (popCell < 0) return;
+  const clue = clueAt[popCell];
+  if (clue < 0) return;
+  setConstraint(popCell, { size: $('cellSize').value, cost: String(clue) });
+  syncPop();
+});
+$('cellReset').addEventListener('click', () => {
+  if (popCell < 0) return;
+  setConstraint(popCell, { size: '', cost: '' });
+  syncPop();
+});
+$('cellDone').addEventListener('click', closeConstraint);
+$('cellPop').addEventListener('click', e => { if (e.target === $('cellPop')) closeConstraint(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && popCell >= 0) closeConstraint();
 });
 $('undoBtn').addEventListener('click', doUndo);
 $('saveJson').addEventListener('click', () => {
@@ -1968,11 +2288,13 @@ for (let i = 0; i < NCOL; i++) {
 /* Every board keeps its own sheet, so switching to a practice board and back
    does not lose what was painted on either of them. */
 function save() {
-  store.set('mt2ledger:' + BOARD.id, { c: colors, a: [...assumed], it: iterations });
+  store.set('mt2ledger:' + BOARD.id, { c: colors, a: [...assumed], it: iterations, con: [...constraints] });
   store.set('mt2ledger:last', BOARD.id);
 }
 (function boot() {
   applyI18n();
+  $('sizeChips').setAttribute('aria-label', t('conSizeLabel'));
+  $('costChips').setAttribute('aria-label', t('conCostLabel'));
   fillBoardPicker();
   const last = boardById(store.get('mt2ledger:last') || LEDGER_BOARD.id);
   loadBoard(last.id);

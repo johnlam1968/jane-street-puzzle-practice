@@ -232,6 +232,17 @@ table.ledger tr.hovrow td { background: color-mix(in srgb, var(--accent) 8%, tra
 .sugg { display: flex; flex-wrap: wrap; gap: 6px; }
 .sugg button { font-size: 0.8rem; padding: 4px 9px; }
 details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+/* the rules: they are the puzzle itself, not a remark about the board, so they
+   get their own box above it.  Open by default -- a reader who lands here has
+   to be able to play without reading any code.  The reader's choice (open or
+   folded away) is remembered. */
+.rules { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+  padding: clamp(9px, 2vw, 15px) clamp(11px, 2.4vw, 18px); }
+.rules > summary { font-size: 0.95rem; font-weight: 600; color: var(--ink); list-style-position: outside; }
+.rules ol { margin: 9px 0 2px; padding-left: 1.4em; display: grid; gap: 6px;
+  font-size: 0.88rem; line-height: 1.45; }
+.rules li b { color: var(--ink); }
+.rules .rule-more { margin: 8px 0 0; font-size: 0.82rem; color: var(--muted); }
 /* the export area: a download can be blocked, so the same content is always
    on the page as text (copyable) and as a picture (saveable by long-press) */
 .iterlist { display: grid; gap: 4px; }
@@ -282,6 +293,21 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
       <input type="file" id="fileIn" accept="application/json,.json" hidden>
     </div>
   </header>
+
+  <!-- the rules of the puzzle, in the page itself: a reader (or an agent) must
+       be able to play from here without opening any code.  The legend further
+       down explains how to READ the board; this box says what the game IS. -->
+  <details class="rules" id="rulesBox" open>
+    <summary data-i18n="rulesTitle">规则</summary>
+    <ol>
+      <li data-i18n="ruleState"><b>州</b>是一块连通的格子，并且它自己带有一个镜像或旋转的对称。</li>
+      <li data-i18n="ruleCapitol"><b>首都</b> —— 如果这个州的<b>每一个</b>对称都恰好固定它的一个格子，那个格子就是首都；只要有任何一个对称固定了零个或不止一个格子，这个州就<b>没有首都</b>。首都从来不涂：它由形状决定。</li>
+      <li data-i18n="ruleCost"><b>一步的代价</b> —— 在同一个州里走一步，代价是这个州的面积；在两个州之间走一步，代价是两个州面积里较小的那个。</li>
+      <li data-i18n="ruleNumber"><b>格子里的数</b>是从它走到任意首都的最小总代价。一个完成的划分必须把每个已发布数<b>走出来</b>，而且它得是最便宜的那条路。</li>
+      <li data-i18n="ruleAnswer"><b>答案</b> —— 一行的行和是所有碰这一行的州的面积之和（一个州碰到几行就算几行）；答案是各行行和的平方之和。</li>
+    </ol>
+    <p class="rule-more" data-i18n="rulesMore">棋盘会随着你的涂法，一遍遍把每个已发布数重新对账。格子右上角的徽章说这个数是已钉死、还待定、在要求一个隐藏首都，还是被推翻了；棋盘下面的说明解释盘面上的每一个记号。</p>
+  </details>
 
   <main>
     <div class="plate">
@@ -518,6 +544,13 @@ const I18N = {
   pageTitle: '练习 · It\'s a Metric, Too',
   metaDesc: 'Jane Street《It\'s a Metric, Too》练习页:把一个州的面积涂到板上,标出你假设的首都,每个已发布数都会按真实的行走代价重新核对一遍。',
   h1: '练习',
+  rulesTitle: '规则',
+  ruleState: '<b>州</b>是一块连通的格子，并且它自己带有一个镜像或旋转的对称。',
+  ruleCapitol: '<b>首都</b> —— 如果这个州的<b>每一个</b>对称都恰好固定它的一个格子，那个格子就是首都；只要有任何一个对称固定了零个或不止一个格子，这个州就<b>没有首都</b>。首都从来不涂：它由形状决定。',
+  ruleCost: '<b>一步的代价</b> —— 在同一个州里走一步，代价是这个州的面积；在两个州之间走一步，代价是两个州面积里较小的那个。',
+  ruleNumber: '<b>格子里的数</b>是从它走到任意首都的最小总代价。一个完成的划分必须把每个已发布数<b>走出来</b>，而且它得是最便宜的那条路。',
+  ruleAnswer: '<b>答案</b> —— 一行的行和是所有碰这一行的州的面积之和（一个州碰到几行就算几行）；答案是各行行和的平方之和。',
+  rulesMore: '棋盘会随着你的涂法，一遍遍把每个已发布数重新对账。格子右上角的徽章说这个数是已钉死、还待定、在要求一个隐藏首都，还是被推翻了；棋盘下面的说明解释盘面上的每一个记号。',
   sub: '把你假设的州涂出来，标出你假设的首都 —— 包括<b>隐藏</b>的那些 —— 每个已发布数都会按真实的行走代价重新核对一遍。',
   backLink: '← 全部谜题',
   backLinkHref: '../index.zh.html',
@@ -588,8 +621,8 @@ const I18N = {
   badgeDemand: '要求：必须有一个还没露面的首都比这更近',
   badgeContradicted: '矛盾：已知首都更便宜，所以这个数不可能是最小值',
   badgeUnproducible: '走不出来：没有任何一条路能正好付掉这个数',
-  noteNoSymmetry: '你涂的这块区域完全没有对称，所以它根本还不是一个州 —— 重新涂成一个有对称的形状（镜像或者旋转）。',
-  noteNoCapitol: '这个 %s 格的州<b>没有首都</b>。首都不是涂出来的：它由形状决定，而这里每个对称固定了 %s 个格子，而不是恰好一个。它仍然是一个合法的州，但不提供任何终点，而且在它里面的每一步都按 %s 计代价。',
+  noteNoSymmetry: '你涂的这块区域 %s 完全没有对称，所以它还不是一个州 —— 重新涂成一个有对称的形状（镜像轴或旋转）。',
+  noteNoCapitol: '这个州（%s，%s 格）<b>没有首都</b>：它的每个对称固定了 %s 个格子，而不是恰好一个。它仍然是一个合法的州，但不提供任何终点，而且在它里面的每一步都按 %s 计代价。',
   noteCapitolOnClue: '你涂的这个州的首都落在了 %s（%s）上，可首都读数是 0。',
   noteZeroElsewhere: '%s 处的那个 0 所在的州，首都却在别处。',
   noteEvenAssumed: '你给 %s 处的首都假设了一个 %s 格的州，可是有首都的州一定是奇数：偶数大小的州有一条沿着一列格子走的镜像轴，它固定了不止一个格子，所以根本没有首都。请用奇数。',
@@ -782,6 +815,21 @@ function capitolSizeImpossible(k) {
   return null;
 }
 function cellName(i) { const r = (i / N) | 0, c = i % N; return 'r' + r + 'c' + c; }
+/* Which squares a note is talking about.  A small state is listed square by
+   square; a bigger one is given as a box and its size -- a note that names its
+   squares is a note you can act on, and a note that does not is a riddle. */
+function cellsLabel(cells) {
+  if (cells.length <= 6) return cells.map(cellName).join(' ');
+  let r0 = N, r1 = -1, c0 = N, c1 = -1;
+  for (const i of cells) {
+    const r = (i / N) | 0, c = i % N;
+    if (r < r0) r0 = r;
+    if (r > r1) r1 = r;
+    if (c < c0) c0 = c;
+    if (c > c1) c1 = c;
+  }
+  return cellName(r0 * N + c0) + '–' + cellName(r1 * N + c1) + ' (' + cells.length + ' squares)';
+}
 
 /* ---------- the two books ---------- */
 function book(sizeOf, sources, optimistic) {
@@ -934,8 +982,8 @@ function ledger() {
   for (const [i, k] of assumed) { sizeOf.set(i, k); sources.add(i); }     // assumed capitols
 
   for (const s of stateInfo) {
-    if (!s.sym) notes.push({ k: 'bad', t: t('noteNoSymmetry') });
-    else if (s.capitol < 0) notes.push({ k: 'warn', t: fmt(t('noteNoCapitol'), s.cells.length, s.fixes.join('/'), s.cells.length) });
+    if (!s.sym) notes.push({ k: 'bad', t: fmt(t('noteNoSymmetry'), cellsLabel(s.cells)) });
+    else if (s.capitol < 0) notes.push({ k: 'warn', t: fmt(t('noteNoCapitol'), cellsLabel(s.cells), s.cells.length, s.fixes.join('/'), s.cells.length) });
     if (s.capitol >= 0 && clueAt[s.capitol] >= 0 && clueAt[s.capitol] !== 0) notes.push({ k: 'bad', t: fmt(t('noteCapitolOnClue'), clueAt[s.capitol], cellName(s.capitol)) });
     for (const c of s.cells) if (clueAt[c] === 0 && s.capitol !== c) notes.push({ k: 'bad', t: fmt(t('noteZeroElsewhere'), cellName(c)) });
   }
@@ -2345,6 +2393,14 @@ $('tools').addEventListener('click', e => {
   if (palChip) { setPaintColor(+palChip.dataset.id); return; }
 });
 $('presetClear').addEventListener('click', () => { pushUndo(); colors = new Array(N * N).fill(-1); assumed = new Map(); refresh(); });
+/* The rules are open the first time -- a reader who lands here has to be able
+   to play without reading any code.  A reader who has read them once should
+   not have to scroll past them every time, so the choice is remembered. */
+{
+  const box = $('rulesBox');
+  if (store.get('mt2rules') === 'closed') box.removeAttribute('open');
+  box.addEventListener('toggle', () => store.set('mt2rules', box.open ? 'open' : 'closed'));
+}
 $('boardSel').addEventListener('change', e => loadBoard(e.target.value));
 $('showSolution').addEventListener('click', showSolution);
 // The row sums and the total.  One press, and from then on they follow the

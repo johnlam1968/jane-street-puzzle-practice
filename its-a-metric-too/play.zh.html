@@ -732,14 +732,13 @@ const I18N = {
   badgeDemand: '要求：必须有一个还没露面的首都比这更近',
   badgeContradicted: '矛盾：已知首都更便宜，所以这个数不可能是最小值',
   badgeUnproducible: '走不出来：没有任何一条路能正好付掉这个数',
-  noteNoSymmetry: '你涂的这块区域 %s 完全没有对称，所以它还不是一个州 —— 重新涂成一个有对称的形状（镜像轴或旋转）。',
   noteCapitolOnClue: '你涂的这个州的首都落在了 %s（%s）上，可首都读数是 0。',
   noteZeroElsewhere: '%s 处的那个 0 所在的州，首都却在别处。',
   noteEvenAssumed: '你给 %s 处的首都假设了一个 %s 格的州，可是有首都的州一定是奇数：偶数大小的州有一条沿着一列格子走的镜像轴，它固定了不止一个格子，所以根本没有首都。请用奇数。',
   noteSatisfactionAxis: '满足轴（跟「是不是最小值」无关）：%s 个数有一条代价完全确定的路（与空格怎么填无关），%s 个数要靠空格调节才凑得出，%s 个数任何路都凑不出（得靠隐藏首都）。',
   noteSatisfactionFull: '铺砌已填满（%s 格全归了州），这时候可达代价集合是精确的。满足性检验：%s 个已发布数里，%s；且%s。%s',
   noteSingleton: '读数为 1 的格子旁边必须有一个 1×1 的州（一步代价 1）。候选位置：%s。',
-  notesNone: '没有什么要标出来的。能对上这些数的假设，和为真的假设，不是同一回事。',
+  notesNone: '这里没有字面上的东西要标出来 —— 墙和徽章可能还在说话。能对上这些数的假设，和为真的假设，不是同一回事。',
   whyForced: '你的假设把距离正好钉成 %s',
   whyContradicted: '你已经知道的某个首都只要 %s 就能走到，比 %s 更便宜，所以这个数不可能是最小值',
   whyUnproducible: '从这格出发没有任何一条路的代价正好是 %s%s，所以这个数根本走不出来',
@@ -925,21 +924,6 @@ function capitolSizeImpossible(k) {
   return null;
 }
 function cellName(i) { const r = (i / N) | 0, c = i % N; return 'r' + r + 'c' + c; }
-/* Which squares a note is talking about.  A small state is listed square by
-   square; a bigger one is given as a box and its size -- a note that names its
-   squares is a note you can act on, and a note that does not is a riddle. */
-function cellsLabel(cells) {
-  if (cells.length <= 6) return cells.map(cellName).join(' ');
-  let r0 = N, r1 = -1, c0 = N, c1 = -1;
-  for (const i of cells) {
-    const r = (i / N) | 0, c = i % N;
-    if (r < r0) r0 = r;
-    if (r > r1) r1 = r;
-    if (c < c0) c0 = c;
-    if (c > c1) c1 = c;
-  }
-  return cellName(r0 * N + c0) + '–' + cellName(r1 * N + c1) + ' (' + cells.length + ' squares)';
-}
 
 /* ---------- the two books ---------- */
 function book(sizeOf, sources, optimistic) {
@@ -1092,11 +1076,12 @@ function ledger() {
   for (const [i, k] of assumed) { sizeOf.set(i, k); sources.add(i); }     // assumed capitols
 
   for (const s of stateInfo) {
-    // A state with a symmetry but no capitol is legal, and it goes nowhere.
-    // The page does NOT say that in a note any more: the amber wall around
-    // the state already says it, and a note that repeats what the wall shows
-    // is noise.
-    if (!s.sym) notes.push({ k: 'bad', t: fmt(t('noteNoSymmetry'), cellsLabel(s.cells)) });
+    // Neither of the two structural complaints is written down any more:
+    //   * a state with a symmetry but no capitol is legal, and it goes
+    //     nowhere -- the AMBER wall around it says so;
+    //   * a region with no symmetry at all is not a state -- the RED wall
+    //     around it says so, and the hint under the board says so.
+    // A note that repeats what the walls already show is noise.
     if (s.capitol >= 0 && clueAt[s.capitol] >= 0 && clueAt[s.capitol] !== 0) notes.push({ k: 'bad', t: fmt(t('noteCapitolOnClue'), clueAt[s.capitol], cellName(s.capitol)) });
     for (const c of s.cells) if (clueAt[c] === 0 && s.capitol !== c) notes.push({ k: 'bad', t: fmt(t('noteZeroElsewhere'), cellName(c)) });
   }

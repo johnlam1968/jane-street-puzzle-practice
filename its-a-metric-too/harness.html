@@ -126,8 +126,6 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 .answerbox b { font-family: var(--f-num); font-size: 1.15rem; letter-spacing: 0.02em; }
 .answerbox .rows { font-family: var(--f-num); color: var(--muted); }
 /* the credit line at the very bottom */
-.credits { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 0.82rem; }
-.credits a { color: inherit; }
 /* the cell-constraint editor: a small dialog over the sheet */
 .overlay { position: fixed; inset: 0; background: rgba(12, 22, 26, 0.45);
   display: grid; place-items: center; z-index: 40; padding: 16px; }
@@ -183,7 +181,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 .status.bad { border-color: var(--bad); color: var(--bad); }
 .status.good { border-color: var(--good); color: var(--good); }
 .status.warn { border-color: var(--warn); color: var(--warn); }
-.panel { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: 14px; display: grid; gap: 12px; }
+.panel { display: grid; gap: 12px; }
 .tally { display: flex; flex-wrap: wrap; gap: 6px; }
 .tally .chip { padding: 5px 10px; font-size: 0.8rem; }
 table.ledger { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
@@ -212,8 +210,6 @@ table.ledger tr.hovrow td { background: color-mix(in srgb, var(--accent) 8%, tra
 .cell .badge.open { color: #5b6b76; }
 .cell .badge.demand { color: #b58900; }
 .cell .badge.error { color: #c0392b; font-weight: 700; }
-.build { margin: 12px 0 2px; font-size: 11px; color: #8a8f98; }
-.build a { color: #6ea8c4; }
 .pay.no { color: var(--bad); }
 .v.NEEDS_HIDDEN_CAPITOL, .v.NEEDS_EXACT_PATH { color: var(--warn); }
 .v.FORCED, .v.TIGHT_GEODESIC, .v.TIGHT_CHEAPEST { color: var(--good); }
@@ -257,6 +253,18 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
   white-space: pre; }
 .rules ul { margin: 4px 0 0; padding-left: 1.15em; }
 .rules li li { margin: 2px 0; }
+/* the goal: a box like the rules, but one line long */
+.rules > h2 { font-size: 0.95rem; font-weight: 600; margin: 0 0 6px; }
+.rules > p { margin: 0; font-size: 0.92rem; }
+/* Every other block of information is a box with a name on it: the board
+   is the work, the boxes around it are the reference. */
+.box { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+  padding: 12px 14px; }
+.box > h2 { margin: 0 0 8px; }
+.box > h2 + .tally { margin-bottom: 8px; }
+/* the links to the pages that used to be inside this one */
+.pagelinks { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.88rem; }
+.pagelinks a { color: var(--accent); }
 /* the export area: a download can be blocked, so the same content is always
    on the page as text (copyable) and as a picture (saveable by long-press) */
 .iterlist { display: grid; gap: 4px; }
@@ -311,6 +319,11 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
   <!-- the rules of the puzzle, in the page itself: a reader (or an agent) must
        be able to play from here without opening any code.  The legend further
        down explains how to READ the board; this box says what the game IS. -->
+  <section class="rules" id="goalBox">
+    <h2 data-i18n="goalTitle">Goal</h2>
+    <p data-i18n="goalText">Goal: follow the rules below to cover the whole board with squares</p>
+  </section>
+
   <details class="rules" id="rulesBox" open>
     <summary data-i18n="rulesTitle">Rules</summary>
     <ol>
@@ -323,66 +336,11 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
     <p class="rule-more" data-i18n="rulesMore">The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.</p>
   </details>
 
-  <!-- An agent plays this game from the browser and from nothing else, so
-       this box is written for that: how to move the pieces, what the board
-       says back, what its words mean, and what to do about it.  It sits in
-       the DOM from the start (a closed <details> is still readable from the
-       DOM), so a machine can read it without opening it, and a reader never
-       has to look at it. -->
-  <details class="rules" id="agentBox">
-    <summary data-i18n="agentTitle">For an agent playing this game — stay on the page, paint one state, read what the board says, fix the smallest complaint, go on</summary>
-    <ol>
-      <li data-i18n="agentGoal"><b>The goal.</b> Tile the whole board — every square belongs to a state — and drive every published number to <code>FORCED</code>. Play it in the browser, and treat the browser as your only tool. The <b>Rules</b> block at the top of the page is the whole specification: everything you need in order to succeed is written there, and the page implements it exactly, so do not work out the cost model behind it, do not re-check its costs by hand, and do not write a solver. Careful, reactive playing beats any solver, and it is the only way to end up with a tiling you actually understand.</li>
-      <li data-i18n="agentHood"><b>Stay on the page.</b> The page is the whole world, and it is the whole specification. This note is a folded box and the Rules are one too: click a title to open it — a folded box shows only its title, so if you read one and it looks empty, open it instead of looking elsewhere. Do not go looking for the repository, the page source, the data files, another implementation of this puzzle, or a stored solution kept somewhere else on the machine — and do not download or unpack one either. A tiling you did not play your way to is not a play, and reading the code behind the referee is the same as reading the answer. If something on the page seems to be missing, the answer is on the page: the Rules at the top, the legend at the bottom, the row for that number in the table on the right, or the note under it.</li>
-      <li><span data-i18n="agentDrive"><b>Driving it.</b> A square answers to <code>pointerdown</code>, not to <code>click</code>; the tools and the palette answer to <code>click</code>. A digit <code>0</code>–<code>9</code> on the keyboard picks that colour, and that is the reliable way to do it — a palette click can be dispatched and still leave the old colour active, so read <code>aria-pressed</code> back after every control change. There are only ten colours, and two states of the same colour that touch would melt into one state (the page says so when it happens), so give a colour to states that do not touch and reuse it elsewhere. The snippet below does all of it; nothing else is needed. One stroke is a <code>pointerdown</code> plus a <code>pointerup</code>, and the undo stack grows once per stroke.</span>
-        <pre class="agent-code"><code>const q = (s) => document.querySelector(s);
-const cell = (i) => q('#board .cell[data-i="' + i + '"]');
-
-// a square answers to pointerdown; the tools and the palette answer to click
-function tap(i) {
-  cell(i).dispatchEvent(new PointerEvent('pointerdown',
-    { bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: 0, clientY: 0 }));
-  window.dispatchEvent(new PointerEvent('pointerup',
-    { bubbles: true, pointerId: 1, pointerType: 'mouse' }));
-}
-function colour(k) {            // 0-9 on the keyboard: the reliable way
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: String(k), bubbles: true }));
-}
-function tool(name) { q('.chip[data-tool="' + name + '"]').click(); }
-function hover(i) {             // wait about a second: the ring for a hidden capitol
-  cell(i).dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
-}
-function board() { return q('#plateName').textContent; }   // which board is loaded
-
-// the same things without clicking: #undoBtn, #presetClear, #fileIn,
-// and the JSON buttons #saveJson, #copyJson, #openJson, #savePng
-
-// read the referee
-const rows = [...document.querySelectorAll('#verdicts tbody tr')].map(tr =&gt; ({
-  i: tr.dataset.i,
-  v: tr.querySelector('span.v').textContent,
-  why: tr.querySelector('.why')?.textContent || '',
-  route: tr.querySelector('.route')?.textContent || ''
-}));
-const tally = [...document.querySelectorAll('#tally .v')].map(e =&gt; e.textContent);
-const status = q('#status').textContent;      // the one-line summary
-const notes = q('#notes').textContent;        // why the page just said that
-const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').value) || '{}');
-// sheet.c = the colour of every square, sheet.a = the capitols you assumed</code></pre>
-      </li>
-      <li data-i18n="agentCareful"><b>Careful.</b> Address a square by its <code>data-i</code>, never by a pixel position: the page scrolls when something is clicked, and a click that lands on the wrong square silently corrupts a state. After every action, read the board back — a click can be dispatched and still leave the old thing active. After switching boards, check the plate name and the published numbers, because the picker and the board can disagree. Every board keeps its own sheet, so painting on one board does not disturb another — and you should not touch a board you were not asked to play.</li>
-      <li data-i18n="agentMistakes"><b>Mistakes are cheap.</b> You are not expected to get it right the first time: <code>Undo</code> takes back one stroke, and Ctrl+Z (Cmd+Z) does the same, so a wrong shape is one click away from being undone; <code>Clear</code> wipes the sheet and starts over. And you need not keep one attempt: the JSON buttons store the board and read it back. <code>Save JSON</code> downloads it as a file, <code>Copy JSON</code> puts the very same text on the clipboard, <code>Open JSON</code> reads a file back into the page, and <code>Save PNG</code> saves a picture of the board. Save a try under a name, try something else, come back to it. If you drive the page yourself, the same things are reachable without clicking — the ids are in the snippet above: hand the file input a file and it loads at once, and the undo and clear buttons do what their names say. The saved sheet IS that JSON: the states, the assumed capitols and your own constraints, in the shape <code>metric-too-ledger/1</code>.</li>
-      <li data-i18n="agentLoop"><b>The loop.</b> Paint one state, then read the board before you touch anything else: the badge in the corner of each square, the colour of the walls, the cost in the lower left of each square, the rows of the table on the right, and the one-line summary. Each of them tells you which of your assumptions the board just refused, and the colour of that cost says which way to move: black and bold means it agrees with the published number, green means the route you assume is too expensive, amber means it is too cheap. Fix the smallest thing the board complains about, read again, and go on. A complaint is the next instruction, not a reason to stop: do not step out of the game to work out why the board is complaining, and do not stand still to build a theory about it. Do not plan the whole tiling in your head first — the board is a cheap place to try things.</li>
-      <li data-i18n="agentSignals"><b>What the board says, and what to do about it.</b><ul><li><b>A red wall</b> — the painted region has no symmetry at all, so it is not a state yet: draw it again as a shape with a mirror or a rotation.</li><li><b>An amber wall</b> — that state has no capitol, so it goes nowhere and every step inside it costs its whole area: give it a capitol, or draw it again so that it has one.</li><li><b>A &#10005; badge</b> — a capitol you know is cheaper than the published number, so that number cannot be the minimum: one of your assumptions is wrong. Undo the last move and try the other shape.</li><li><b>An &#9675; badge</b> — the number can be paid, but it is not pinned down yet: size the free squares, or drop an assumption you do not need.</li><li><b>An &#9650; badge</b> — a capitol that has not been revealed yet has to be nearer: rest the pointer on that square and the squares that could hold it light up with a dashed ring; assume one of them with the capitol tool.</li><li><b>A green cost</b> — the route you assume costs more than the published number: make a state on that route smaller.</li><li><b>An amber cost</b> — the route you assume costs less than the published number: the real route has to be longer, so something on it must grow, or that capitol is too close.</li><li><b>A square that reads 1</b> — it needs a 1×1 state right next to it, and that state is itself a capitol.</li><li><b>A square that reads 0</b> — that square is the capitol of its own state.</li></ul></li>
-      <li data-i18n="agentVerdicts"><b>A verdict is what the page answers for one published number.</b> The table on the right has one row per published number: the square, the number it reads, the range of costs your painting allows, the verdict, the reason, and the route that proves it. The names mean: <code>FORCED</code> — your assumptions pin the number exactly; leave it alone. <code>TIGHT_CHEAPEST</code> — the cheapest route already costs exactly this, so the number is the minimum. <code>TIGHT_GEODESIC</code> — the known route costs exactly this and nothing may be nearer. <code>NEEDS_EXACT_PATH</code> — the number sits inside the range: you need a route that costs exactly this. <code>NEEDS_HIDDEN_CAPITOL</code> — a capitol that has not been revealed yet has to be strictly nearer. <code>CONTRADICTED</code> — a capitol you know is already cheaper, so one of your assumptions is wrong: undo. <code>UNPRODUCIBLE</code> — no route can pay this number at all; a hidden capitol has to do it. <b>A note is not a verdict</b> — the Notes panel under the table explains what the page just found, and it usually names the exact square that is wrong.</li>
-      <li data-i18n="agentTexts"><b>The texts around the board.</b> The line under the tools — the box right below the undo button — is the summary. <i>Paint a state, or open a board file.</i> means nothing is painted yet. <i>No contradiction: every published number is still reachable under these assumptions.</i> means your assumptions still allow every number. <i>N published numbers are contradicted</i> names the squares that are wrong. The green one, <i>The tiling is complete and every published number is produced and is the cheapest one</i>, means you are there. The chips in the tally count the verdicts. The head of the board says how many states you have, how many of them have a capitol, and how many squares are still unknown. The hint beside the row-sum button says what is still missing: <i>the sheet is not tiled yet</i>, <i>a painted region is not a state yet</i>, <i>an assumed capitol does not match the state it sits in</i>, or <i>N published numbers are not settled yet</i>.</li>
-      <li data-i18n="agentLegend"><b>Read the legend at the bottom of the page.</b> It explains every mark on the board: the area in the corner, the capitol, the two cost numbers, the badge, the wall colours, the ring for a hidden capitol, and your own constraints. Read it once, and read it again whenever a mark means something you did not expect. Some of the marks are colour and not text: when the text is not enough, look at the board — take a screenshot and read the walls, the badges and the rings with your eyes.</li>
-      <li data-i18n="agentFinish"><b>When it is done.</b> The one-line summary says the tiling is complete and every published number is settled, and the tally shows nothing left that is open, demanded or contradicted — every number is <code>FORCED</code>. On a practice board the computed answer and the row sums appear under the board; on the 11×11 the page never shows one, because that puzzle is still open. Check your tiling against the published numbers yourself before you believe it.</li>
-      <li data-i18n="agentSave"><b>Reading and saving.</b> The whole sheet sits in <code>localStorage</code> under <code>mt2ledger:&lt;board id&gt;</code>: <code>c</code> is the colour of every square, <code>a</code> the capitols you assumed, <code>con</code> your constraints. Read it instead of scraping the screen. Each board keeps its own sheet, so you can leave and come back to it. The <code>JSON</code> button puts the same sheet on the clipboard as <code>metric-too-ledger/1</code> — the states, the assumed capitols and the constraints — and the JSON reader takes it back. In the console of the page, <code>colors</code>, <code>assumed</code> and <code>hiddenCapMap</code> can be read directly; the last one maps a square that needs a hidden capitol to the squares that could hold it, so you can skip the wait for the ring.</li>
-      <li data-i18n="agentNever"><b>Never.</b> There is no answer key in this page: the shapes of the solution are not in the page source, on purpose, and if you ever find a page that offers one, that is the answer, not a way to play. Do not write a solver, and do not try to work out the cost model — the page already does it, faithfully, and the point of playing is to let the board tell you. And do not reverse-engineer the hidden-capitol candidates either: hover the number and read the ring, or assume a capitol and let the board judge it. And remember that the page only re-checks the published numbers: it cannot tell you that your tiling is the only one that fits.</li>
-    </ol>
-    <p class="rule-more" data-i18n="agentMore"><b>That is the whole game.</b> The board is the referee; it never lies about the costs, so use it and do not re-derive anything.</p>
-  </details>
+  <nav class="pagelinks">
+    <a href="legends.html" data-i18n="linkLegends">Legends</a>
+    <a href="agent-onboarding.html" data-i18n="linkOnboarding">Agent Onboarding</a>
+    <a href="harness.zh.html" data-i18n="linkZh" data-i18n-href="harness.zh.html">Chinese version</a>
+  </nav>
 
   <main>
     <div class="plate">
@@ -452,12 +410,11 @@ const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').valu
         <label data-i18n="pngPreviewLabel">PNG preview — long-press it to save</label>
         <img id="pngOut" alt="the painted board">
       </div>
-      <div class="build" data-i18n="buildLine">build 2026-10-29b · 49 practice boards (4×4, 5×5, 6×6, 7×7 — the official 5×5 example among them) · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · show route on hover, long press on a touch screen · <a href="harness.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">source</a></div>
       <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
     </div>
 
     <div class="panel">
-      <div id="candPanel" hidden>
+      <section class="box" id="candPanel" hidden>
         <h2 data-i18n="panelCandidates">Candidates</h2>
         <div class="hint" id="candMeta"></div>
         <div style="max-height:36vh;overflow:auto">
@@ -466,53 +423,29 @@ const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').valu
             <tbody></tbody>
           </table>
         </div>
-      </div>
-      <div>
+      </section>
+      <section class="box">
         <h2 data-i18n="panelVerdicts">Verdicts</h2>
         <div class="tally" id="tally"></div>
-      </div>
-      <div style="max-height:52vh;overflow:auto" id="verdictBox">
-        <table class="ledger" id="verdicts">
-          <thead><tr><th data-i18n="thSquare">square</th><th data-i18n="thReads">reads</th><th data-i18n="thRange">range</th><th data-i18n="thVerdict">verdict</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div>
+        <div style="max-height:52vh;overflow:auto" id="verdictBox">
+          <table class="ledger" id="verdicts">
+            <thead><tr><th data-i18n="thSquare">square</th><th data-i18n="thReads">reads</th><th data-i18n="thRange">range</th><th data-i18n="thVerdict">verdict</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="box" id="notesBox">
         <h2 data-i18n="panelNotes">Notes</h2>
         <div class="notes" id="notes"></div>
-      </div>
-      <details>
-        <summary data-i18n="hiddenCapTitle">Where could a hidden capitol be?</summary>
-        <div class="hint" id="cands"></div>
-      </details>
+      </section>
     </div>
   </main>
 
-  <!-- the explanation sits at the very bottom, on purpose: the board is the
-       work, the legend is the reference -->
-      <p class="hint" id="cellKey" data-i18n="cellKey"><b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;
-        a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.
-        <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has
-        <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no
-        destination and every step inside it costs the whole area. <b>Walls</b> — the bold lines between
-        squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain
-        border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line
-        marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a
-        mirror or a rotation. <b>Bottom-right</b> — the cheapest
-        distance from that square to a capitol we already know about, if every unknown square were as
-        small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is
-        exactly what a number below that floor demands. <b>Bottom-left</b> — the cost the current
-        assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only
-        squares whose state size is known. Where no such route exists yet, nothing is shown there — the
-        free squares would have to be sized first. Its colour compares that cost with the published
-        number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated
-        cost is higher, <b>amber</b> when it is lower. <b>Top-right</b> — the verdict, as a badge:
-        <b>&#9679;</b> confirmed (the assumptions pin the number exactly),
-        <b>&#9675;</b> open (payable, but not pinned down yet),
-        <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),
-        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).
-        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet. <b>Dashed ring</b> in the middle — the square could host a hidden capitol: rest the pointer on a number that needs one (hold it on a touch screen) and every square that could carry it is ringed.</p>
-      <p class="hint credits" id="credits" data-i18n="credits">The practice boards come from two public pages, and the route-on-hover idea is theirs as well: the puzzle set from <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a> and Jane Street's own 5×5 example from <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>. Neither carries a licence, so no code was copied: this page recomputes every board with its own rule kernel, and the route feature is reimplemented on our own cost model.</p>
+  <!-- the hidden capitols: the last box of the page, and it is always open -->
+  <section class="box" id="hiddenCapBox">
+    <h2 data-i18n="hiddenCapTitle">Where could a hidden capitol be?</h2>
+    <div class="hint" id="cands"></div>
+  </section>
 
 </div>
 
@@ -585,8 +518,8 @@ const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').valu
    page source instead of playing.  The 11x11 has neither the number nor a
    partition here: it is still an open puzzle.
 
-   The practice boards are vendored from two public pages; the credits are at
-   the bottom of this page, and the details are in note 28 of
+   The practice boards are vendored from two public pages; the credits are on
+   the front page, and the details are in note 28 of
    docs/inference-notes-11x11/.  Their data lives in
    tools/lr11/data/practice_boards.json and is copied into this file by
    tools/lr11/page/sync_boards.py, which also checks that the copy is the
@@ -626,27 +559,20 @@ const I18N = {
   metaDesc: 'Play Jane Street\'s “It\'s a Metric, Too”: put a state\'s area on the board, assume a capitol, and see every published number re-checked against the real travel costs.',
   h1: 'Play',
   rulesTitle: 'Rules',
+  goalTitle: 'Goal',
+  goalText: 'Goal: follow the rules below to cover the whole board with squares',
+  linkHarness: 'Play the harness',
+  linkLegends: 'Legends',
+  linkOnboarding: 'Agent Onboarding',
+  linkZh: 'Chinese version',
+  linkZhHref: 'harness.zh.html',
   ruleState: '<b>A state</b> is a connected group of squares that has a mirror or a rotation symmetry of its own.',
   ruleCapitol: '<b>Its capitol</b> — if <b>every</b> symmetry of the state fixes exactly one of its squares, that square is the capitol; if some symmetry fixes none, or more than one, the state has <b>no capitol</b>. Capitols are never painted: they follow from the shape.',
   ruleCost: '<b>The cost of a step</b> — inside one state a step costs the area of that state; between two states it costs the smaller of the two areas.',
   ruleNumber: '<b>The number in a square</b> is the least total cost of any walk from that square to a capitol. A finished tiling has to reproduce every published number <b>and</b> make it the cheapest route there is.',
   ruleAnswer: '<b>The answer</b> — the row sum of a row is the total area of the states that touch that row (a state counts in every row it touches); the answer is the sum of the squares of the row sums.',
   rulesMore: 'The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.',
-  agentTitle: 'For an agent playing this game — stay on the page, paint one state, read what the board says, fix the smallest complaint, go on',
-  agentGoal: '<b>The goal.</b> Tile the whole board — every square belongs to a state — and drive every published number to <code>FORCED</code>. Play it in the browser, and treat the browser as your only tool. The <b>Rules</b> block at the top of the page is the whole specification: everything you need in order to succeed is written there, and the page implements it exactly, so do not work out the cost model behind it, do not re-check its costs by hand, and do not write a solver. Careful, reactive playing beats any solver, and it is the only way to end up with a tiling you actually understand.',
   agentHood: '<b>Stay on the page.</b> The page is the whole world, and it is the whole specification. This note is a folded box and the Rules are one too: click a title to open it — a folded box shows only its title, so if you read one and it looks empty, open it instead of looking elsewhere. Do not go looking for the repository, the page source, the data files, another implementation of this puzzle, or a stored solution kept somewhere else on the machine — and do not download or unpack one either. A tiling you did not play your way to is not a play, and reading the code behind the referee is the same as reading the answer. If something on the page seems to be missing, the answer is on the page: the Rules at the top, the legend at the bottom, the row for that number in the table on the right, or the note under it.',
-  agentDrive: '<b>Driving it.</b> A square answers to <code>pointerdown</code>, not to <code>click</code>; the tools and the palette answer to <code>click</code>. A digit <code>0</code>–<code>9</code> on the keyboard picks that colour, and that is the reliable way to do it — a palette click can be dispatched and still leave the old colour active, so read <code>aria-pressed</code> back after every control change. There are only ten colours, and two states of the same colour that touch would melt into one state (the page says so when it happens), so give a colour to states that do not touch and reuse it elsewhere. The snippet below does all of it; nothing else is needed. One stroke is a <code>pointerdown</code> plus a <code>pointerup</code>, and the undo stack grows once per stroke.',
-  agentCareful: '<b>Careful.</b> Address a square by its <code>data-i</code>, never by a pixel position: the page scrolls when something is clicked, and a click that lands on the wrong square silently corrupts a state. After every action, read the board back — a click can be dispatched and still leave the old thing active. After switching boards, check the plate name and the published numbers, because the picker and the board can disagree. Every board keeps its own sheet, so painting on one board does not disturb another — and you should not touch a board you were not asked to play.',
-  agentMistakes: '<b>Mistakes are cheap.</b> You are not expected to get it right the first time: <code>Undo</code> takes back one stroke, and Ctrl+Z (Cmd+Z) does the same, so a wrong shape is one click away from being undone; <code>Clear</code> wipes the sheet and starts over. And you need not keep one attempt: the JSON buttons store the board and read it back. <code>Save JSON</code> downloads it as a file, <code>Copy JSON</code> puts the very same text on the clipboard, <code>Open JSON</code> reads a file back into the page, and <code>Save PNG</code> saves a picture of the board. Save a try under a name, try something else, come back to it. If you drive the page yourself, the same things are reachable without clicking — the ids are in the snippet above: hand the file input a file and it loads at once, and the undo and clear buttons do what their names say. The saved sheet IS that JSON: the states, the assumed capitols and your own constraints, in the shape <code>metric-too-ledger/1</code>.',
-  agentLoop: '<b>The loop.</b> Paint one state, then read the board before you touch anything else: the badge in the corner of each square, the colour of the walls, the cost in the lower left of each square, the rows of the table on the right, and the one-line summary. Each of them tells you which of your assumptions the board just refused, and the colour of that cost says which way to move: black and bold means it agrees with the published number, green means the route you assume is too expensive, amber means it is too cheap. Fix the smallest thing the board complains about, read again, and go on. A complaint is the next instruction, not a reason to stop: do not step out of the game to work out why the board is complaining, and do not stand still to build a theory about it. Do not plan the whole tiling in your head first — the board is a cheap place to try things.',
-  agentSignals: '<b>What the board says, and what to do about it.</b><ul><li><b>A red wall</b> — the painted region has no symmetry at all, so it is not a state yet: draw it again as a shape with a mirror or a rotation.</li><li><b>An amber wall</b> — that state has no capitol, so it goes nowhere and every step inside it costs its whole area: give it a capitol, or draw it again so that it has one.</li><li><b>A &#10005; badge</b> — a capitol you know is cheaper than the published number, so that number cannot be the minimum: one of your assumptions is wrong. Undo the last move and try the other shape.</li><li><b>An &#9675; badge</b> — the number can be paid, but it is not pinned down yet: size the free squares, or drop an assumption you do not need.</li><li><b>An &#9650; badge</b> — a capitol that has not been revealed yet has to be nearer: rest the pointer on that square and the squares that could hold it light up with a dashed ring; assume one of them with the capitol tool.</li><li><b>A green cost</b> — the route you assume costs more than the published number: make a state on that route smaller.</li><li><b>An amber cost</b> — the route you assume costs less than the published number: the real route has to be longer, so something on it must grow, or that capitol is too close.</li><li><b>A square that reads 1</b> — it needs a 1×1 state right next to it, and that state is itself a capitol.</li><li><b>A square that reads 0</b> — that square is the capitol of its own state.</li></ul>',
-  agentVerdicts: '<b>A verdict is what the page answers for one published number.</b> The table on the right has one row per published number: the square, the number it reads, the range of costs your painting allows, the verdict, the reason, and the route that proves it. The names mean: <code>FORCED</code> — your assumptions pin the number exactly; leave it alone. <code>TIGHT_CHEAPEST</code> — the cheapest route already costs exactly this, so the number is the minimum. <code>TIGHT_GEODESIC</code> — the known route costs exactly this and nothing may be nearer. <code>NEEDS_EXACT_PATH</code> — the number sits inside the range: you need a route that costs exactly this. <code>NEEDS_HIDDEN_CAPITOL</code> — a capitol that has not been revealed yet has to be strictly nearer. <code>CONTRADICTED</code> — a capitol you know is already cheaper, so one of your assumptions is wrong: undo. <code>UNPRODUCIBLE</code> — no route can pay this number at all; a hidden capitol has to do it. <b>A note is not a verdict</b> — the Notes panel under the table explains what the page just found, and it usually names the exact square that is wrong.',
-  agentTexts: '<b>The texts around the board.</b> The line under the tools — the box right below the undo button — is the summary. <i>Paint a state, or open a board file.</i> means nothing is painted yet. <i>No contradiction: every published number is still reachable under these assumptions.</i> means your assumptions still allow every number. <i>N published numbers are contradicted</i> names the squares that are wrong. The green one, <i>The tiling is complete and every published number is produced and is the cheapest one</i>, means you are there. The chips in the tally count the verdicts. The head of the board says how many states you have, how many of them have a capitol, and how many squares are still unknown. The hint beside the row-sum button says what is still missing: <i>the sheet is not tiled yet</i>, <i>a painted region is not a state yet</i>, <i>an assumed capitol does not match the state it sits in</i>, or <i>N published numbers are not settled yet</i>.',
-  agentLegend: '<b>Read the legend at the bottom of the page.</b> It explains every mark on the board: the area in the corner, the capitol, the two cost numbers, the badge, the wall colours, the ring for a hidden capitol, and your own constraints. Read it once, and read it again whenever a mark means something you did not expect. Some of the marks are colour and not text: when the text is not enough, look at the board — take a screenshot and read the walls, the badges and the rings with your eyes.',
-  agentFinish: '<b>When it is done.</b> The one-line summary says the tiling is complete and every published number is settled, and the tally shows nothing left that is open, demanded or contradicted — every number is <code>FORCED</code>. On a practice board the computed answer and the row sums appear under the board; on the 11×11 the page never shows one, because that puzzle is still open. Check your tiling against the published numbers yourself before you believe it.',
-  agentSave: '<b>Reading and saving.</b> The whole sheet sits in <code>localStorage</code> under <code>mt2ledger:&lt;board id&gt;</code>: <code>c</code> is the colour of every square, <code>a</code> the capitols you assumed, <code>con</code> your constraints. Read it instead of scraping the screen. Each board keeps its own sheet, so you can leave and come back to it. The <code>JSON</code> button puts the same sheet on the clipboard as <code>metric-too-ledger/1</code> — the states, the assumed capitols and the constraints — and the JSON reader takes it back. In the console of the page, <code>colors</code>, <code>assumed</code> and <code>hiddenCapMap</code> can be read directly; the last one maps a square that needs a hidden capitol to the squares that could hold it, so you can skip the wait for the ring.',
-  agentNever: '<b>Never.</b> There is no answer key in this page: the shapes of the solution are not in the page source, on purpose, and if you ever find a page that offers one, that is the answer, not a way to play. Do not write a solver, and do not try to work out the cost model — the page already does it, faithfully, and the point of playing is to let the board tell you. And do not reverse-engineer the hidden-capitol candidates either: hover the number and read the ring, or assume a capitol and let the board judge it. And remember that the page only re-checks the published numbers: it cannot tell you that your tiling is the only one that fits.',
-  agentMore: '<b>That is the whole game.</b> The board is the referee; it never lies about the costs, so use it and do not re-derive anything.',
   sub: 'Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.',
   backLink: '← All puzzles',
   backLinkHref: '../index.html',
@@ -678,9 +604,7 @@ const I18N = {
   routeUpper: 'the walk that proves the upper bound; it may cross unknown squares',
   routeNone: 'No route yet: under the current assumptions this square cannot walk to a capitol.',
   jsonPractice: 'Practice board -- %s×%s',
-  credits: 'The practice boards come from two public pages, and the route-on-hover idea is theirs as well: the puzzle set from <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a> and Jane Street\'s own 5×5 example from <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>. Neither carries a licence, so no code was copied: this page recomputes every board with its own rule kernel, and the route feature is reimplemented on our own cost model.',
   axCornerTitle: 'rows (Y) — index down the left',
-  cellKey: '<b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;\n        a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.\n        <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has\n        <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no\n        destination and every step inside it costs the whole area. <b>Walls</b> — the bold lines between\n        squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain\n        border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line\n        marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a\n        mirror or a rotation. <b>Bottom-right</b> — the cheapest\n        distance from that square to a capitol we already know about, if every unknown square were as\n        small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is\n        exactly what a number below that floor demands. <b>Bottom-left</b> — the cost the current\n        assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only\n        squares whose state size is known. Where no such route exists yet, nothing is shown there — the\n        free squares would have to be sized first. Its colour compares that cost with the published\n        number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated\n        cost is higher, <b>amber</b> when it is lower. <b>Top-right</b> — the verdict, as a badge:\n        <b>&#9679;</b> confirmed (the assumptions pin the number exactly),\n        <b>&#9675;</b> open (payable, but not pinned down yet),\n        <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),\n        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).\n        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet. <b>Dashed ring</b> in the middle — the square could host a hidden capitol: rest the pointer on a number that needs one (hold it on a touch screen) and every square that could carry it is ringed.',
   toolPaint: 'Paint state',
   toolCap: 'Assume capitol',
   toolErase: 'Erase',
@@ -698,7 +622,6 @@ const I18N = {
   btnOpenJson: 'Open JSON',
   btnSavePng: 'Save PNG',
   pngPreviewLabel: 'PNG preview — long-press it to save',
-  buildLine: 'build 2026-10-29b · 49 practice boards (4×4, 5×5, 6×6, 7×7 — the official 5×5 example among them) · coordinates (columns = X across the top, rows = Y down the left) · two-axis build (violation axis + satisfaction axis PRODUCED / TUNABLE / UNPAYABLE) · an assumed capitol must be a real state (odd size) · show route on hover, long press on a touch screen · <a href="harness.zh.html">Chinese version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">source</a>',
   panelCandidates: 'Candidates',
   thCandidate: 'candidate',
   thGoalPy: 'goal.py',

@@ -126,8 +126,6 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 .answerbox b { font-family: var(--f-num); font-size: 1.15rem; letter-spacing: 0.02em; }
 .answerbox .rows { font-family: var(--f-num); color: var(--muted); }
 /* the credit line at the very bottom */
-.credits { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 0.82rem; }
-.credits a { color: inherit; }
 /* the cell-constraint editor: a small dialog over the sheet */
 .overlay { position: fixed; inset: 0; background: rgba(12, 22, 26, 0.45);
   display: grid; place-items: center; z-index: 40; padding: 16px; }
@@ -183,7 +181,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 .status.bad { border-color: var(--bad); color: var(--bad); }
 .status.good { border-color: var(--good); color: var(--good); }
 .status.warn { border-color: var(--warn); color: var(--warn); }
-.panel { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: 14px; display: grid; gap: 12px; }
+.panel { display: grid; gap: 12px; }
 .tally { display: flex; flex-wrap: wrap; gap: 6px; }
 .tally .chip { padding: 5px 10px; font-size: 0.8rem; }
 table.ledger { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
@@ -212,8 +210,6 @@ table.ledger tr.hovrow td { background: color-mix(in srgb, var(--accent) 8%, tra
 .cell .badge.open { color: #5b6b76; }
 .cell .badge.demand { color: #b58900; }
 .cell .badge.error { color: #c0392b; font-weight: 700; }
-.build { margin: 12px 0 2px; font-size: 11px; color: #8a8f98; }
-.build a { color: #6ea8c4; }
 .pay.no { color: var(--bad); }
 .v.NEEDS_HIDDEN_CAPITOL, .v.NEEDS_EXACT_PATH { color: var(--warn); }
 .v.FORCED, .v.TIGHT_GEODESIC, .v.TIGHT_CHEAPEST { color: var(--good); }
@@ -257,6 +253,18 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
   white-space: pre; }
 .rules ul { margin: 4px 0 0; padding-left: 1.15em; }
 .rules li li { margin: 2px 0; }
+/* the goal: a box like the rules, but one line long */
+.rules > h2 { font-size: 0.95rem; font-weight: 600; margin: 0 0 6px; }
+.rules > p { margin: 0; font-size: 0.92rem; }
+/* Every other block of information is a box with a name on it: the board
+   is the work, the boxes around it are the reference. */
+.box { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+  padding: 12px 14px; }
+.box > h2 { margin: 0 0 8px; }
+.box > h2 + .tally { margin-bottom: 8px; }
+/* the links to the pages that used to be inside this one */
+.pagelinks { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.88rem; }
+.pagelinks a { color: var(--accent); }
 /* the export area: a download can be blocked, so the same content is always
    on the page as text (copyable) and as a picture (saveable by long-press) */
 .iterlist { display: grid; gap: 4px; }
@@ -311,6 +319,11 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
   <!-- the rules of the puzzle, in the page itself: a reader (or an agent) must
        be able to play from here without opening any code.  The legend further
        down explains how to READ the board; this box says what the game IS. -->
+  <section class="rules" id="goalBox">
+    <h2 data-i18n="goalTitle">目标</h2>
+    <p data-i18n="goalText">目标：照着下面的规则，把整块板子铺满。</p>
+  </section>
+
   <details class="rules" id="rulesBox" open>
     <summary data-i18n="rulesTitle">规则</summary>
     <ol>
@@ -323,66 +336,11 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
     <p class="rule-more" data-i18n="rulesMore">棋盘会随着你的涂法，一遍遍把每个已发布数重新对账。格子右上角的徽章说这个数是已钉死、还待定、在要求一个隐藏首都，还是被推翻了；棋盘下面的说明解释盘面上的每一个记号。</p>
   </details>
 
-  <!-- An agent plays this game from the browser and from nothing else, so
-       this box is written for that: how to move the pieces, what the board
-       says back, what its words mean, and what to do about it.  It sits in
-       the DOM from the start (a closed <details> is still readable from the
-       DOM), so a machine can read it without opening it, and a reader never
-       has to look at it. -->
-  <details class="rules" id="agentBox">
-    <summary data-i18n="agentTitle">给在这一页上玩这个游戏的智能体 —— 就待在页面上：涂一个州、读盘面的话、修最小的那处抱怨、继续</summary>
-    <ol>
-      <li data-i18n="agentGoal"><b>目标。</b>把整块板子铺满 —— 每个格子都归某个州 —— 并且把每一个已发布数都推到 <code>FORCED</code>。在浏览器里玩，并且把浏览器当成你的唯一工具。页面顶部的<b>规则</b>块就是完整的规格说明：你需要的一切都写在那里，而页面严格按它实现 —— 所以不要去推导它背后的代价模型，不要手工复核它算出来的代价，也不要写求解器。反应式地认真玩，比任何求解器都快，而且这是唯一能让你真的弄懂这个划分的办法。</li>
-      <li data-i18n="agentHood"><b>就待在页面上。</b>页面就是整个世界，也是完整的规格说明。这块说明是一个折叠的盒子，顶部的规则也是：点一下标题就展开 —— 折叠着的盒子只露一个标题，所以如果你读它读到是空的，那就展开它，而不是去别处找。不要去翻仓库、页面源码、数据文件、这道题的另一份实现，也不要去机器上的别处找一份存好的解答，更不要下载或解压它。没有靠自己玩出来的划分就不算玩；读裁判背后的代码，跟看答案是同一件事。如果你觉得页面上缺了什么，答案就在页面上：顶部的规则、底部的图例、右边那张表里那个数的那一行，或者它下面的备注。</li>
-      <li><span data-i18n="agentDrive"><b>怎么操控。</b>格子认的是 <code>pointerdown</code>，不认 <code>click</code>；工具和调色板认的是 <code>click</code>。键盘上的数字 <code>0</code>–<code>9</code> 直接选那个颜色，这是最稳的办法 —— 调色板上的点击可能发出去了却仍然停在原来的颜色上，所以每改一次控件就把 <code>aria-pressed</code> 读回来。调色板只有十种颜色，而挨着的两个州如果同色就会融成一个州（页面会提醒你），所以同一种颜色只给互不相邻的州，其余地方再用它。下面那段代码把整套操作都包好了，别的一概不需要。一笔 = 一次 <code>pointerdown</code> 加一次 <code>pointerup</code>，撤销栈每一笔记一步。</span>
-        <pre class="agent-code"><code>const q = (s) => document.querySelector(s);
-const cell = (i) => q('#board .cell[data-i="' + i + '"]');
-
-// a square answers to pointerdown; the tools and the palette answer to click
-function tap(i) {
-  cell(i).dispatchEvent(new PointerEvent('pointerdown',
-    { bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: 0, clientY: 0 }));
-  window.dispatchEvent(new PointerEvent('pointerup',
-    { bubbles: true, pointerId: 1, pointerType: 'mouse' }));
-}
-function colour(k) {            // 0-9 on the keyboard: the reliable way
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: String(k), bubbles: true }));
-}
-function tool(name) { q('.chip[data-tool="' + name + '"]').click(); }
-function hover(i) {             // wait about a second: the ring for a hidden capitol
-  cell(i).dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
-}
-function board() { return q('#plateName').textContent; }   // which board is loaded
-
-// the same things without clicking: #undoBtn, #presetClear, #fileIn,
-// and the JSON buttons #saveJson, #copyJson, #openJson, #savePng
-
-// read the referee
-const rows = [...document.querySelectorAll('#verdicts tbody tr')].map(tr =&gt; ({
-  i: tr.dataset.i,
-  v: tr.querySelector('span.v').textContent,
-  why: tr.querySelector('.why')?.textContent || '',
-  route: tr.querySelector('.route')?.textContent || ''
-}));
-const tally = [...document.querySelectorAll('#tally .v')].map(e =&gt; e.textContent);
-const status = q('#status').textContent;      // the one-line summary
-const notes = q('#notes').textContent;        // why the page just said that
-const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').value) || '{}');
-// sheet.c = the colour of every square, sheet.a = the capitols you assumed</code></pre>
-      </li>
-      <li data-i18n="agentCareful"><b>小心。</b>要用 <code>data-i</code> 去找一个格子，绝不要用像素坐标：页面在某些点击之后会滚动，落错格的点击会悄无声息地毁掉一个州。每做一步都要把盘面读回来 —— 一次点击可能发出去了却仍然停在旧的控件上。换盘之后要核对盘子上的名字和已发布的数字，因为选择器和真正的盘面可能对不上。每块盘子各自存一张纸，所以你在一块盘上涂的不会影响另一块 —— 但也别去动你没有被要求玩的那块盘。</li>
-      <li data-i18n="agentMistakes"><b>犯错不要紧。</b>你不需要一次就做对：<code>撤销</code>收回一笔，<code>Ctrl+Z</code>（<code>Cmd+Z</code>）也是同一个动作，所以画错的形状点一下就没了；<code>清空</code>把整张纸抹掉重来。你也不必只有一次尝试：<code>JSON</code> 那几个按钮负责存盘和读盘。<code>保存 JSON</code> 把它存成文件，<code>复制 JSON</code> 把同一份文本放进剪贴板，<code>打开 JSON</code> 把文件读回页面，<code>保存 PNG</code> 把盘面存成图片。给一次尝试起个名字存下来，再试别的，随时可以回来。如果你自己驱动这个页面，同样的东西不点也能用 —— 那些 id 就写在上面那段代码的注释里：把文件交给那个文件输入框，它立刻就加载；撤销和清空两个按钮做的正是它们名字说的事情。存下来的那张纸就是那份 <code>JSON</code>：州、假想的首都和你自己设的约束，格式是 <code>metric-too-ledger/1</code>。</li>
-      <li data-i18n="agentLoop"><b>循环。</b>先涂一个州，然后在碰别的之前先读盘：每格右上角的徽章、墙的颜色、每格左下角的代价、右边那张表的每一行，以及那一行总结。它们各自在告诉你：你的哪一个假设刚刚被盘面拒绝了；那个代价的颜色就是方向 —— 黑色加粗表示它和已发布数一致，绿色表示你假设的这条路线太贵，琥珀色表示太便宜。只修盘面抱怨的那一处最小的东西，再读一遍，继续。抱怨是下一步的指令，不是停下来的理由：不要为了弄清楚盘面为什么抱怨而离开这个游戏，也不要停下来对盘面建立什么理论。不要一上来就在脑子里把整块划分规划完 —— 盘面是个很便宜的试验台。</li>
-      <li data-i18n="agentSignals"><b>盘面在说什么，以及你该怎么做。</b><ul><li><b>红色的墙</b> —— 这块涂出来的区域一点对称都没有，所以它还不是一个州：按镜像或旋转的形状重涂一次。</li><li><b>琥珀色的墙</b> —— 那个州没有首都，所以它哪儿也不去，而且里面每走一步都按整块面积计代价：给它一个首都，或者重涂成一个有首都的形状。</li><li><b>&#10005; 徽章</b> —— 你知道的某个首都比这个已发布数更近，所以这个数不可能是最小值：你的某个假设错了。撤销上一步，换一个形状试试。</li><li><b>&#9675; 徽章</b> —— 这个数付得起，但还没被钉死：给那些自由格定大小，或者去掉一个你并不需要的假设。</li><li><b>&#9650; 徽章</b> —— 必须有一个还没露面的首都更近：把指针停在这一格上，可能放得下它的格子会亮起虚线圆环；用首都工具假设其中一格。</li><li><b>绿色的代价</b> —— 你假设的这条路线比已发布数更贵：把这条路线上的某个州改小。</li><li><b>琥珀色的代价</b> —— 你假设的这条路线比已发布数更便宜：真正的路线必须更长，所以路线上某个州要变大，或者那个首都离得太近。</li><li><b>读作 1 的格子</b> —— 它旁边必须有一个 1×1 的州，而那个州自己就是一个首都。</li><li><b>读作 0 的格子</b> —— 那一格就是它自己那个州的首都。</li></ul></li>
-      <li data-i18n="agentVerdicts"><b>判定</b>是页面给每一个已发布数的结论。右边那张表每个已发布数一行：格子、它读作多少、你的涂法允许的代价范围、判定名、理由，以及证明它的那条路线。判定名的意思：<code>FORCED</code> —— 假设正好把这个数钉死，别动它。<code>TIGHT_CHEAPEST</code> —— 最便宜的那条路已经正好是这个代价，所以这个数就是最小值。<code>TIGHT_GEODESIC</code> —— 已知的那条路正好是这个代价，而且不允许有更近的。<code>NEEDS_EXACT_PATH</code> —— 这个数落在范围里：你需要一条正好花这么多代价的路线。<code>NEEDS_HIDDEN_CAPITOL</code> —— 必须有一个还没露面的首都严格更近。<code>CONTRADICTED</code> —— 你知道的某个首都已经更便宜，所以你的某个假设错了：撤销。<code>UNPRODUCIBLE</code> —— 没有任何路线能付掉这个数，只能靠一个隐藏首都。<b>备注不是判定</b> —— 表下面的「备注」栏解释页面刚刚发现了什么，而且通常会点名是哪一个格子错了。</li>
-      <li data-i18n="agentTexts"><b>盘面周围的那些文字。</b>工具栏下面那一行 —— 撤销按钮底下的那个方框 —— 是总结。「涂一个州，或者打开一个板子文件」= 还什么都没涂。「没有矛盾：在这些假设下，每个已发布数都还走得出来」= 你的假设还允许每一个数。「N 个已发布数是矛盾的」会点名是哪几个格子错了。绿色那行「划分已经完整，而且每个已发布数都走得出来、并且就是最便宜的那条」= 你到了。计数那排小标签是各种判定的数目。板子头上写着你有几个州、其中几个有首都、还有几格未知。行和按钮旁边的提示说明还差什么：「板子还没涂满」「有一块涂出来的区域还不是一个州」「有个假想首都和它所在的州对不上」「还有 N 个已发布数没被钉死」。</li>
-      <li data-i18n="agentLegend"><b>把页面最底下那段说明读一遍。</b>它解释了盘面上的每一个记号：角落里的面积、首都、两个代价数字、徽章、墙的颜色、隐藏首都的圆环，以及你自己设的约束。读一遍；每当某个记号的意思和你想的不一样时，就再读一遍。其中有些记号是颜色而不是文字：当文字不够用时，就去看盘面 —— 用截图和你的眼睛读那些墙、徽章和圆环。</li>
-      <li data-i18n="agentFinish"><b>什么时候算完。</b>那一行总结说划分已经完整、每个已发布数都已钉死，计数里也没有剩下的待定、要求或矛盾 —— 每个数都是 <code>FORCED</code>。练习盘上，板子下面会给出算出来的答案和行和；11×11 上页面永远不给，因为那道题还没结束。在相信自己的划分之前，先拿已发布数自己核对一遍。</li>
-      <li data-i18n="agentSave"><b>读盘与存档。</b>整块盘子都在 <code>localStorage</code> 的 <code>mt2ledger:&lt;board id&gt;</code> 下面：<code>c</code> 是每格的涂色，<code>a</code> 是你假设的首都，<code>con</code> 是你设的约束。读它，别去抓屏幕。每块盘各自存一张纸，所以你可以走了再回来。<code>JSON</code> 那个按钮把同一份东西以 <code>metric-too-ledger/1</code> 的格式放进剪贴板 —— 州、假想的首都和约束 —— <code>JSON</code> 那个读取按钮再把它读回来。在这一页的控制台里，<code>colors</code>、<code>assumed</code>、<code>hiddenCapMap</code> 可以直接读；最后一个把「需要隐藏首都」的那格映射到「可能放得下」它的那些格，可以省掉等圆环的那一下。</li>
-      <li data-i18n="agentNever"><b>不要做的事。</b>这一页里没有答案键：解答的形状故意不在页面源码里；就算你找到一页带答案键的，那也是答案，不是玩法。不要写求解器，也不要试图去推导代价模型 —— 页面已经忠实地算了，而玩的意义就在于让盘面来告诉你。隐藏首都的候选也不要自己去推：把指针停在那个数上读圆环，或者直接假设一个首都，让盘面来判。还有一点要记住：页面只会拿已发布数重新对账，它没法告诉你你的划分是不是唯一能成立的那个。</li>
-    </ol>
-    <p class="rule-more" data-i18n="agentMore"><b>整个游戏就是这些。</b>盘面就是裁判，它在代价上从不说谎 —— 所以用它，别自己再推一遍。</p>
-  </details>
+  <nav class="pagelinks">
+    <a href="legends.html" data-i18n="linkLegends">图例</a>
+    <a href="agent-onboarding.html" data-i18n="linkOnboarding">智能体入门</a>
+    <a href="harness.html" data-i18n="linkZh" data-i18n-href="harness.html">English version</a>
+  </nav>
 
   <main>
     <div class="plate">
@@ -452,12 +410,11 @@ const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').valu
         <label data-i18n="pngPreviewLabel">PNG 预览 —— 长按可以保存</label>
         <img id="pngOut" alt="the painted board">
       </div>
-      <div class="build" data-i18n="buildLine">build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="harness.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">源码</a></div>
       <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
     </div>
 
     <div class="panel">
-      <div id="candPanel" hidden>
+      <section class="box" id="candPanel" hidden>
         <h2 data-i18n="panelCandidates">候选</h2>
         <div class="hint" id="candMeta"></div>
         <div style="max-height:36vh;overflow:auto">
@@ -466,50 +423,29 @@ const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').valu
             <tbody></tbody>
           </table>
         </div>
-      </div>
-      <div>
+      </section>
+      <section class="box">
         <h2 data-i18n="panelVerdicts">判定</h2>
         <div class="tally" id="tally"></div>
-      </div>
-      <div style="max-height:52vh;overflow:auto" id="verdictBox">
-        <table class="ledger" id="verdicts">
-          <thead><tr><th data-i18n="thSquare">格子</th><th data-i18n="thReads">读数</th><th data-i18n="thRange">区间</th><th data-i18n="thVerdict">判定</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div>
+        <div style="max-height:52vh;overflow:auto" id="verdictBox">
+          <table class="ledger" id="verdicts">
+            <thead><tr><th data-i18n="thSquare">格子</th><th data-i18n="thReads">读数</th><th data-i18n="thRange">区间</th><th data-i18n="thVerdict">判定</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="box" id="notesBox">
         <h2 data-i18n="panelNotes">备注</h2>
         <div class="notes" id="notes"></div>
-      </div>
-      <details>
-        <summary data-i18n="hiddenCapTitle">隐藏首都可能在哪？</summary>
-        <div class="hint" id="cands"></div>
-      </details>
+      </section>
     </div>
   </main>
 
-  <!-- the explanation sits at the very bottom, on purpose: the board is the
-       work, the legend is the reference -->
-      <p class="hint" id="cellKey" data-i18n="cellKey"><b>坐标</b> —— 列（X）横着编号在上方，行（Y）竖着编号在左边；
-        一个格子叫作 <b>rNcM</b>，所以 r2c5 就是第 2 行第 5 列。
-        <b>格子左上角</b> —— 它所在州的面积；<b>✱</b> 表示那个州<b>没有首都</b>
-        （它的对称固定了不止一个格子，或者一个也不固定），所以它不提供终点，
-        而且在它里面的每一步都按整块面积计代价。<b>墙</b> —— 格子之间的粗线就是州的边界，
-        同时还带着对称检查的结果：<b>深色</b>线是普通边界，<b>琥珀色</b>线标出一个没有首都的州
-        （它哪儿也不去），<b>红色</b>线标出一块完全没有对称的区域 —— 那还不是一个州，
-        请用镜像或者旋转重新涂一个。<b>右下角</b> —— 在「每个未知格都尽量小」的假设下，
-        从那格走到我们已经知道的某个首都的最小代价。它是下界，不是答案：隐藏的首都可能更近，
-        而一个低于这个下界的数要求的正是这件事。<b>左下角</b> —— 当前假设真正钉住的代价：
-        只经过那些州大小已知的格子，走到已知或假想首都的最便宜路线。
-        如果暂时还没有这样的路线，那里就不显示任何东西 —— 得先给那些自由格定大小。
-        它的颜色把那个代价和同一格里的已发布数作比较：<b>黑色加粗</b>表示两者一致，
-        <b>绿色</b>表示算出来的代价更高，<b>琥珀色</b>表示更低。<b>右上角</b> —— 判定，做成徽章：
-        <b>&#9679;</b> 确认（假设把这个数正好钉死），
-        <b>&#9675;</b> 待定（付得起，但还没钉死），
-        <b>&#9650;</b> 要求（必须有一个还没露面的首都更近），
-        <b>&#10005;</b> 矛盾（已知首都更便宜，所以这个数是错的）。
-        底部的 <b>C</b> —— 你给这一格定的约束：绿色表示成立，红色表示被打破，琥珀色表示还定不下来。<b>中间的虚线圆环</b> —— 这一格可以放一个隐藏首都：把指针停在一个需要隐藏首都的数上（触屏上长按），能放它的格子就会一个一个圈出来。</p>
-      <p class="hint credits" id="credits" data-i18n="credits">练习盘和"悬停显示路线"的想法都来自两个公开页面：题目来自 <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a>，Jane Street 官方的 5×5 例子来自 <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>。两者都没有许可证，所以没有抄任何代码：每一块盘都用本页自己的规则内核重算，路线功能也是在我们自己的代价模型上重写的。</p>
+  <!-- the hidden capitols: the last box of the page, and it is always open -->
+  <section class="box" id="hiddenCapBox">
+    <h2 data-i18n="hiddenCapTitle">隐藏首都可能在哪？</h2>
+    <div class="hint" id="cands"></div>
+  </section>
 
 </div>
 
@@ -582,8 +518,8 @@ const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').valu
    page source instead of playing.  The 11x11 has neither the number nor a
    partition here: it is still an open puzzle.
 
-   The practice boards are vendored from two public pages; the credits are at
-   the bottom of this page, and the details are in note 28 of
+   The practice boards are vendored from two public pages; the credits are on
+   the front page, and the details are in note 28 of
    docs/inference-notes-11x11/.  Their data lives in
    tools/lr11/data/practice_boards.json and is copied into this file by
    tools/lr11/page/sync_boards.py, which also checks that the copy is the
@@ -623,27 +559,20 @@ const I18N = {
   metaDesc: 'Jane Street《It\'s a Metric, Too》练习页:把一个州的面积涂到板上,标出你假设的首都,每个已发布数都会按真实的行走代价重新核对一遍。',
   h1: '练习',
   rulesTitle: '规则',
+  goalTitle: '目标',
+  goalText: '目标：照着下面的规则，把整块板子铺满。',
+  linkHarness: '去玩',
+  linkLegends: '图例',
+  linkOnboarding: '智能体入门',
+  linkZh: 'English version',
+  linkZhHref: 'harness.html',
   ruleState: '<b>州</b>是一块连通的格子，并且它自己带有一个镜像或旋转的对称。',
   ruleCapitol: '<b>首都</b> —— 如果这个州的<b>每一个</b>对称都恰好固定它的一个格子，那个格子就是首都；只要有任何一个对称固定了零个或不止一个格子，这个州就<b>没有首都</b>。首都从来不涂：它由形状决定。',
   ruleCost: '<b>一步的代价</b> —— 在同一个州里走一步，代价是这个州的面积；在两个州之间走一步，代价是两个州面积里较小的那个。',
   ruleNumber: '<b>格子里的数</b>是从它走到任意首都的最小总代价。一个完成的划分必须把每个已发布数<b>走出来</b>，而且它得是最便宜的那条路。',
   ruleAnswer: '<b>答案</b> —— 一行的行和是所有碰这一行的州的面积之和（一个州碰到几行就算几行）；答案是各行行和的平方之和。',
   rulesMore: '棋盘会随着你的涂法，一遍遍把每个已发布数重新对账。格子右上角的徽章说这个数是已钉死、还待定、在要求一个隐藏首都，还是被推翻了；棋盘下面的说明解释盘面上的每一个记号。',
-  agentTitle: '给在这一页上玩这个游戏的智能体 —— 就待在页面上：涂一个州、读盘面的话、修最小的那处抱怨、继续',
-  agentGoal: '<b>目标。</b>把整块板子铺满 —— 每个格子都归某个州 —— 并且把每一个已发布数都推到 <code>FORCED</code>。在浏览器里玩，并且把浏览器当成你的唯一工具。页面顶部的<b>规则</b>块就是完整的规格说明：你需要的一切都写在那里，而页面严格按它实现 —— 所以不要去推导它背后的代价模型，不要手工复核它算出来的代价，也不要写求解器。反应式地认真玩，比任何求解器都快，而且这是唯一能让你真的弄懂这个划分的办法。',
   agentHood: '<b>就待在页面上。</b>页面就是整个世界，也是完整的规格说明。这块说明是一个折叠的盒子，顶部的规则也是：点一下标题就展开 —— 折叠着的盒子只露一个标题，所以如果你读它读到是空的，那就展开它，而不是去别处找。不要去翻仓库、页面源码、数据文件、这道题的另一份实现，也不要去机器上的别处找一份存好的解答，更不要下载或解压它。没有靠自己玩出来的划分就不算玩；读裁判背后的代码，跟看答案是同一件事。如果你觉得页面上缺了什么，答案就在页面上：顶部的规则、底部的图例、右边那张表里那个数的那一行，或者它下面的备注。',
-  agentDrive: '<b>怎么操控。</b>格子认的是 <code>pointerdown</code>，不认 <code>click</code>；工具和调色板认的是 <code>click</code>。键盘上的数字 <code>0</code>–<code>9</code> 直接选那个颜色，这是最稳的办法 —— 调色板上的点击可能发出去了却仍然停在原来的颜色上，所以每改一次控件就把 <code>aria-pressed</code> 读回来。调色板只有十种颜色，而挨着的两个州如果同色就会融成一个州（页面会提醒你），所以同一种颜色只给互不相邻的州，其余地方再用它。下面那段代码把整套操作都包好了，别的一概不需要。一笔 = 一次 <code>pointerdown</code> 加一次 <code>pointerup</code>，撤销栈每一笔记一步。',
-  agentCareful: '<b>小心。</b>要用 <code>data-i</code> 去找一个格子，绝不要用像素坐标：页面在某些点击之后会滚动，落错格的点击会悄无声息地毁掉一个州。每做一步都要把盘面读回来 —— 一次点击可能发出去了却仍然停在旧的控件上。换盘之后要核对盘子上的名字和已发布的数字，因为选择器和真正的盘面可能对不上。每块盘子各自存一张纸，所以你在一块盘上涂的不会影响另一块 —— 但也别去动你没有被要求玩的那块盘。',
-  agentMistakes: '<b>犯错不要紧。</b>你不需要一次就做对：<code>撤销</code>收回一笔，<code>Ctrl+Z</code>（<code>Cmd+Z</code>）也是同一个动作，所以画错的形状点一下就没了；<code>清空</code>把整张纸抹掉重来。你也不必只有一次尝试：<code>JSON</code> 那几个按钮负责存盘和读盘。<code>保存 JSON</code> 把它存成文件，<code>复制 JSON</code> 把同一份文本放进剪贴板，<code>打开 JSON</code> 把文件读回页面，<code>保存 PNG</code> 把盘面存成图片。给一次尝试起个名字存下来，再试别的，随时可以回来。如果你自己驱动这个页面，同样的东西不点也能用 —— 那些 id 就写在上面那段代码的注释里：把文件交给那个文件输入框，它立刻就加载；撤销和清空两个按钮做的正是它们名字说的事情。存下来的那张纸就是那份 <code>JSON</code>：州、假想的首都和你自己设的约束，格式是 <code>metric-too-ledger/1</code>。',
-  agentLoop: '<b>循环。</b>先涂一个州，然后在碰别的之前先读盘：每格右上角的徽章、墙的颜色、每格左下角的代价、右边那张表的每一行，以及那一行总结。它们各自在告诉你：你的哪一个假设刚刚被盘面拒绝了；那个代价的颜色就是方向 —— 黑色加粗表示它和已发布数一致，绿色表示你假设的这条路线太贵，琥珀色表示太便宜。只修盘面抱怨的那一处最小的东西，再读一遍，继续。抱怨是下一步的指令，不是停下来的理由：不要为了弄清楚盘面为什么抱怨而离开这个游戏，也不要停下来对盘面建立什么理论。不要一上来就在脑子里把整块划分规划完 —— 盘面是个很便宜的试验台。',
-  agentSignals: '<b>盘面在说什么，以及你该怎么做。</b><ul><li><b>红色的墙</b> —— 这块涂出来的区域一点对称都没有，所以它还不是一个州：按镜像或旋转的形状重涂一次。</li><li><b>琥珀色的墙</b> —— 那个州没有首都，所以它哪儿也不去，而且里面每走一步都按整块面积计代价：给它一个首都，或者重涂成一个有首都的形状。</li><li><b>&#10005; 徽章</b> —— 你知道的某个首都比这个已发布数更近，所以这个数不可能是最小值：你的某个假设错了。撤销上一步，换一个形状试试。</li><li><b>&#9675; 徽章</b> —— 这个数付得起，但还没被钉死：给那些自由格定大小，或者去掉一个你并不需要的假设。</li><li><b>&#9650; 徽章</b> —— 必须有一个还没露面的首都更近：把指针停在这一格上，可能放得下它的格子会亮起虚线圆环；用首都工具假设其中一格。</li><li><b>绿色的代价</b> —— 你假设的这条路线比已发布数更贵：把这条路线上的某个州改小。</li><li><b>琥珀色的代价</b> —— 你假设的这条路线比已发布数更便宜：真正的路线必须更长，所以路线上某个州要变大，或者那个首都离得太近。</li><li><b>读作 1 的格子</b> —— 它旁边必须有一个 1×1 的州，而那个州自己就是一个首都。</li><li><b>读作 0 的格子</b> —— 那一格就是它自己那个州的首都。</li></ul>',
-  agentVerdicts: '<b>判定</b>是页面给每一个已发布数的结论。右边那张表每个已发布数一行：格子、它读作多少、你的涂法允许的代价范围、判定名、理由，以及证明它的那条路线。判定名的意思：<code>FORCED</code> —— 假设正好把这个数钉死，别动它。<code>TIGHT_CHEAPEST</code> —— 最便宜的那条路已经正好是这个代价，所以这个数就是最小值。<code>TIGHT_GEODESIC</code> —— 已知的那条路正好是这个代价，而且不允许有更近的。<code>NEEDS_EXACT_PATH</code> —— 这个数落在范围里：你需要一条正好花这么多代价的路线。<code>NEEDS_HIDDEN_CAPITOL</code> —— 必须有一个还没露面的首都严格更近。<code>CONTRADICTED</code> —— 你知道的某个首都已经更便宜，所以你的某个假设错了：撤销。<code>UNPRODUCIBLE</code> —— 没有任何路线能付掉这个数，只能靠一个隐藏首都。<b>备注不是判定</b> —— 表下面的「备注」栏解释页面刚刚发现了什么，而且通常会点名是哪一个格子错了。',
-  agentTexts: '<b>盘面周围的那些文字。</b>工具栏下面那一行 —— 撤销按钮底下的那个方框 —— 是总结。「涂一个州，或者打开一个板子文件」= 还什么都没涂。「没有矛盾：在这些假设下，每个已发布数都还走得出来」= 你的假设还允许每一个数。「N 个已发布数是矛盾的」会点名是哪几个格子错了。绿色那行「划分已经完整，而且每个已发布数都走得出来、并且就是最便宜的那条」= 你到了。计数那排小标签是各种判定的数目。板子头上写着你有几个州、其中几个有首都、还有几格未知。行和按钮旁边的提示说明还差什么：「板子还没涂满」「有一块涂出来的区域还不是一个州」「有个假想首都和它所在的州对不上」「还有 N 个已发布数没被钉死」。',
-  agentLegend: '<b>把页面最底下那段说明读一遍。</b>它解释了盘面上的每一个记号：角落里的面积、首都、两个代价数字、徽章、墙的颜色、隐藏首都的圆环，以及你自己设的约束。读一遍；每当某个记号的意思和你想的不一样时，就再读一遍。其中有些记号是颜色而不是文字：当文字不够用时，就去看盘面 —— 用截图和你的眼睛读那些墙、徽章和圆环。',
-  agentFinish: '<b>什么时候算完。</b>那一行总结说划分已经完整、每个已发布数都已钉死，计数里也没有剩下的待定、要求或矛盾 —— 每个数都是 <code>FORCED</code>。练习盘上，板子下面会给出算出来的答案和行和；11×11 上页面永远不给，因为那道题还没结束。在相信自己的划分之前，先拿已发布数自己核对一遍。',
-  agentSave: '<b>读盘与存档。</b>整块盘子都在 <code>localStorage</code> 的 <code>mt2ledger:&lt;board id&gt;</code> 下面：<code>c</code> 是每格的涂色，<code>a</code> 是你假设的首都，<code>con</code> 是你设的约束。读它，别去抓屏幕。每块盘各自存一张纸，所以你可以走了再回来。<code>JSON</code> 那个按钮把同一份东西以 <code>metric-too-ledger/1</code> 的格式放进剪贴板 —— 州、假想的首都和约束 —— <code>JSON</code> 那个读取按钮再把它读回来。在这一页的控制台里，<code>colors</code>、<code>assumed</code>、<code>hiddenCapMap</code> 可以直接读；最后一个把「需要隐藏首都」的那格映射到「可能放得下」它的那些格，可以省掉等圆环的那一下。',
-  agentNever: '<b>不要做的事。</b>这一页里没有答案键：解答的形状故意不在页面源码里；就算你找到一页带答案键的，那也是答案，不是玩法。不要写求解器，也不要试图去推导代价模型 —— 页面已经忠实地算了，而玩的意义就在于让盘面来告诉你。隐藏首都的候选也不要自己去推：把指针停在那个数上读圆环，或者直接假设一个首都，让盘面来判。还有一点要记住：页面只会拿已发布数重新对账，它没法告诉你你的划分是不是唯一能成立的那个。',
-  agentMore: '<b>整个游戏就是这些。</b>盘面就是裁判，它在代价上从不说谎 —— 所以用它，别自己再推一遍。',
   sub: '把你假设的州涂出来，标出你假设的首都 —— 包括<b>隐藏</b>的那些 —— 每个已发布数都会按真实的行走代价重新核对一遍。',
   backLink: '← 全部谜题',
   backLinkHref: '../index.zh.html',
@@ -675,9 +604,7 @@ const I18N = {
   routeUpper: '能证明上界的那条路，它可能穿过未知格',
   routeNone: '还没有路线：按现在的假设，这个格子走不到任何首都。',
   jsonPractice: '练习盘 —— %s×%s',
-  credits: '练习盘和"悬停显示路线"的想法都来自两个公开页面：题目来自 <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a>，Jane Street 官方的 5×5 例子来自 <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>。两者都没有许可证，所以没有抄任何代码：每一块盘都用本页自己的规则内核重算，路线功能也是在我们自己的代价模型上重写的。',
   axCornerTitle: '行（Y）—— 索引在左边',
-  cellKey: '<b>坐标</b> —— 列（X）横着编号在上方，行（Y）竖着编号在左边；\n        一个格子叫作 <b>rNcM</b>，所以 r2c5 就是第 2 行第 5 列。\n        <b>格子左上角</b> —— 它所在州的面积；<b>✱</b> 表示那个州<b>没有首都</b>\n        （它的对称固定了不止一个格子，或者一个也不固定），所以它不提供终点，\n        而且在它里面的每一步都按整块面积计代价。<b>墙</b> —— 格子之间的粗线就是州的边界，\n        同时还带着对称检查的结果：<b>深色</b>线是普通边界，<b>琥珀色</b>线标出一个没有首都的州\n        （它哪儿也不去），<b>红色</b>线标出一块完全没有对称的区域 —— 那还不是一个州，\n        请用镜像或者旋转重新涂一个。<b>右下角</b> —— 在「每个未知格都尽量小」的假设下，\n        从那格走到我们已经知道的某个首都的最小代价。它是下界，不是答案：隐藏的首都可能更近，\n        而一个低于这个下界的数要求的正是这件事。<b>左下角</b> —— 当前假设真正钉住的代价：\n        只经过那些州大小已知的格子，走到已知或假想首都的最便宜路线。\n        如果暂时还没有这样的路线，那里就不显示任何东西 —— 得先给那些自由格定大小。\n        它的颜色把那个代价和同一格里的已发布数作比较：<b>黑色加粗</b>表示两者一致，\n        <b>绿色</b>表示算出来的代价更高，<b>琥珀色</b>表示更低。<b>右上角</b> —— 判定，做成徽章：\n        <b>&#9679;</b> 确认（假设把这个数正好钉死），\n        <b>&#9675;</b> 待定（付得起，但还没钉死），\n        <b>&#9650;</b> 要求（必须有一个还没露面的首都更近），\n        <b>&#10005;</b> 矛盾（已知首都更便宜，所以这个数是错的）。\n        底部的 <b>C</b> —— 你给这一格定的约束：绿色表示成立，红色表示被打破，琥珀色表示还定不下来。<b>中间的虚线圆环</b> —— 这一格可以放一个隐藏首都：把指针停在一个需要隐藏首都的数上（触屏上长按），能放它的格子就会一个一个圈出来。',
   toolPaint: '涂州',
   toolCap: '假设首都',
   toolErase: '擦除',
@@ -695,7 +622,6 @@ const I18N = {
   btnOpenJson: '打开 JSON',
   btnSavePng: '保存 PNG',
   pngPreviewLabel: 'PNG 预览 —— 长按可以保存',
-  buildLine: 'build 2026-10-29b · 49 块练习盘（4×4、5×5、6×6、7×7 —— 含官方 5×5 例子）· 坐标轴（列 = X 在上，行 = Y 在左）· 两轴版（违反轴 + 满足轴 PRODUCED / TUNABLE / UNPAYABLE）· 假想首都必须是真州（大小须为奇数）· 悬停显示路线，触屏长按 · <a href="harness.html">English version</a> · <a href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/tools/lr11/page/harness.html" target="_blank" rel="noopener">源码</a>',
   panelCandidates: '候选',
   thCandidate: '候选',
   thGoalPy: 'goal.py',

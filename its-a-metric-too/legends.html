@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title data-i18n="pageTitle">Legends · It's a Metric, Too</title>
+<meta name="description" content="Every mark on the board, one paragraph each: the area, the capitol, the walls, the two cost numbers, the badge, the ring for a hidden capitol." data-i18n-content="Every mark on the board, one paragraph each: the area, the capitol, the walls, the two cost numbers, the badge, the ring for a hidden capitol.">
+<meta name="theme-color" content="#e9eeec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111a1e" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e6b70'/%3E%3Cpath d='M6 6h9v9H6zM17 6h9v9h-9zM6 17h9v9H6z' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='21.5' cy='21.5' r='3.5' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Ledger sheet: the board is a worksheet, the right column is the audit trail. */
+:root {
+  --ground: #e9eeec; --sheet: #f7f9f8; --ink: #1b2a31; --muted: #5b6b70; --line: #c3cdcc;
+  --accent: #0e6b70; --accent-ink: #ffffff; --bad: #b3261e; --good: #2f6b2a; --warn: #8a5a00;
+  --blank: #fbfcfb;
+  --t0: #eaa98f; --t1: #ecc96a; --t2: #9fc884; --t3: #7fbfc4; --t4: #9aa6de;
+  --t5: #c897d0; --t6: #e797ae; --t7: #c8b183; --t8: #79a9dc; --t9: #c4dfa0;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+html {{ -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }}
+body {{ margin: 0; background: var(--ground); color: var(--ink); font-family: var(--f-body);
+  font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(22px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(48px, env(safe-area-inset-bottom, 0px)); }}
+.wrap {{ max-width: 880px; margin: 0 auto; display: grid; gap: 16px; }}
+header {{ display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 20px; }}
+h1 {{ font-family: var(--f-display); font-weight: 700; font-size: clamp(1.5rem, 4vw, 2.1rem);
+  line-height: 1.1; margin: 0; }}
+.sub {{ margin: 6px 0 0; color: var(--muted); max-width: 60ch; }}
+a {{ color: var(--accent); }}
+.back {{ font-size: 0.85rem; color: var(--muted); text-decoration: none; display: inline-block; }}
+.back:hover {{ color: var(--accent); }}
+.pagelinks {{ display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.85rem; }}
+.box {{ background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+  padding: clamp(11px, 2.2vw, 18px); }}
+.box p {{ margin: 0 0 10px; font-size: 0.92rem; }}
+.box p:last-child {{ margin-bottom: 0; }}
+.rules { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+  padding: clamp(9px, 2vw, 15px) clamp(11px, 2.4vw, 18px); }
+.rules > summary { font-size: 0.95rem; font-weight: 600; color: var(--ink); list-style-position: outside; }
+.rules ol { margin: 9px 0 2px; padding-left: 1.4em; display: grid; gap: 6px;
+  font-size: 0.88rem; line-height: 1.45; }
+.rules li b { color: var(--ink); }
+.rules .rule-more { margin: 8px 0 0; font-size: 0.82rem; color: var(--muted); }
+/* the agent box quotes selectors and attribute names: they have to read as
+   code, not as prose, or an agent cannot tell them from the sentences. */
+.rules code { font-family: var(--f-num); font-size: 0.9em; background: var(--blank);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.rules code + code { margin-left: 1px; }
+/* the driving snippet: it is the same in both languages, so it lives in the
+   markup and not in the translation table. */
+.rules pre.agent-code { margin: 7px 0 2px; padding: 8px 10px; overflow-x: auto;
+  background: var(--blank); border: 1px solid var(--line); border-radius: 4px;
+  font-family: var(--f-num); font-size: 0.74rem; line-height: 1.45; }
+.rules pre.agent-code code { border: 0; padding: 0; background: none; font-size: 1em;
+  white-space: pre; }
+.rules ul { margin: 4px 0 0; padding-left: 1.15em; }
+.rules li li { margin: 2px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html" data-i18n="backLink" data-i18n-href="../index.html">← All puzzles</a>
+  <header>
+    <div>
+      <h1 data-i18n="legendsTitle">Legends</h1>
+      <p class="sub" data-i18n="legendsIntro">Every mark on the board, one paragraph each.</p>
+    </div>
+    <nav class="pagelinks">
+      <a href="harness.html" data-i18n="linkHarness">Play the harness</a>
+      <a href="agent-onboarding.html" data-i18n="linkOnboarding">Agent Onboarding</a>
+      <a href="legends.zh.html" data-i18n="linkZh" data-i18n-href="legends.zh.html">Chinese version</a>
+    </nav>
+  </header>
+
+  <div class="box" id="legendsBox">
+    <p data-i18n="legendCoords"><b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left; a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.</p>
+    <p data-i18n="legendArea"><b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no destination and every step inside it costs the whole area.</p>
+    <p data-i18n="legendWalls"><b>Walls</b> — the bold lines between squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a mirror or a rotation.</p>
+    <p data-i18n="legendBottomRight"><b>Bottom-right</b> — the cheapest distance from that square to a capitol we already know about, if every unknown square were as small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is exactly what a number below that floor demands.</p>
+    <p data-i18n="legendBottomLeft"><b>Bottom-left</b> — the cost the current assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only squares whose state size is known. Where no such route exists yet, nothing is shown there — the free squares would have to be sized first. Its colour compares that cost with the published number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated cost is higher, <b>amber</b> when it is lower.</p>
+    <p data-i18n="legendTopRight"><b>Top-right</b> — the verdict, as a badge: <b>&#9679;</b> confirmed (the assumptions pin the number exactly), <b>&#9675;</b> open (payable, but not pinned down yet), <b>&#9650;</b> demand (an unrevealed capitol has to be nearer), <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).</p>
+    <p data-i18n="legendConstraint"><b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet.</p>
+    <p data-i18n="legendRing"><b>Dashed ring</b> in the middle — the square could host a hidden capitol: rest the pointer on a number that needs one (hold it on a touch screen) and every square that could carry it is ringed.</p>
+  </div>
+</div>
+<script>
+const I18N = {
+  pageTitle: 'Legends · It\'s a Metric, Too',
+  metaDesc: 'Every mark on the board, one paragraph each: the area, the capitol, the walls, the two cost numbers, the badge, the ring for a hidden capitol.',
+  h1: 'Play',
+  rulesTitle: 'Rules',
+  goalTitle: 'Goal',
+  goalText: 'Goal: follow the rules below to cover the whole board with squares',
+  linkHarness: 'Play the harness',
+  linkLegends: 'Legends',
+  linkOnboarding: 'Agent Onboarding',
+  linkZh: 'Chinese version',
+  linkZhHref: 'legends.zh.html',
+  ruleState: '<b>A state</b> is a connected group of squares that has a mirror or a rotation symmetry of its own.',
+  ruleCapitol: '<b>Its capitol</b> — if <b>every</b> symmetry of the state fixes exactly one of its squares, that square is the capitol; if some symmetry fixes none, or more than one, the state has <b>no capitol</b>. Capitols are never painted: they follow from the shape.',
+  ruleCost: '<b>The cost of a step</b> — inside one state a step costs the area of that state; between two states it costs the smaller of the two areas.',
+  ruleNumber: '<b>The number in a square</b> is the least total cost of any walk from that square to a capitol. A finished tiling has to reproduce every published number <b>and</b> make it the cheapest route there is.',
+  ruleAnswer: '<b>The answer</b> — the row sum of a row is the total area of the states that touch that row (a state counts in every row it touches); the answer is the sum of the squares of the row sums.',
+  rulesMore: 'The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.',
+  agentHood: '<b>Stay on the page.</b> The page is the whole world, and it is the whole specification. This note is a folded box and the Rules are one too: click a title to open it — a folded box shows only its title, so if you read one and it looks empty, open it instead of looking elsewhere. Do not go looking for the repository, the page source, the data files, another implementation of this puzzle, or a stored solution kept somewhere else on the machine — and do not download or unpack one either. A tiling you did not play your way to is not a play, and reading the code behind the referee is the same as reading the answer. If something on the page seems to be missing, the answer is on the page: the Rules at the top, the legend at the bottom, the row for that number in the table on the right, or the note under it.',
+  sub: 'Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.',
+  backLink: '← All puzzles',
+  backLinkHref: '../index.html',
+  noscript: '<b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the Files app), you are looking at a picture of the page, not the page itself -- iOS previews do not run scripts, so the board stays empty and the buttons do nothing. Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>; on a computer, double-click it, or serve the folder with <code>python3 -m http.server</code> and open the address it prints.',
+  plateHead: '<b>Original</b> · 11×11',
+  labelBoard: 'Board',
+  boardGroupLedger: 'The puzzle',
+  boardLedger: 'Original · 11×11',
+  boardOfficial: 'official example',
+  boardNote: 'A practice board: the partition is not in this page — find it yourself.',
+  labelExpected: 'this board comes out with %s',
+  btnRowSums: 'Row sums and answer',
+  sumReady: 'the sheet is tiled and every published number is settled',
+  sumWhyTiling: 'the sheet is not tiled yet',
+  sumWhyState: 'a painted region is not a state yet',
+  sumWhyAssumption: 'an assumed capitol does not match the state it sits in',
+  sumWhyVerdicts: '%s published numbers are not settled yet',
+  sumAxisTitle: 'row sum %s · its square %s',
+  sumFootLabel: 'answer',
+  sumFootCaption: 'computed from what you painted',
+  toggleRoute: 'Show route on hover (hold on a touch screen)',
+  labelAnswer: 'Computed answer',
+  labelRowSums: 'row sums %s',
+  routeText: '%s · %s = %s',
+  routeNear: 'cheapest walk: %s · %s = %s',
+  routeFar: 'upper bound: %s · %s = %s',
+  routeExact: 'the board is full, so this is the true cheapest walk',
+  routeOptimistic: 'optimistic: unknown squares are charged as little as possible',
+  routeUpper: 'the walk that proves the upper bound; it may cross unknown squares',
+  routeNone: 'No route yet: under the current assumptions this square cannot walk to a capitol.',
+  jsonPractice: 'Practice board -- %s×%s',
+  axCornerTitle: 'rows (Y) — index down the left',
+  toolPaint: 'Paint state',
+  toolCap: 'Assume capitol',
+  toolErase: 'Erase',
+  capSizeLabel: 'assumed capitol\'s state size',
+  presetClear: 'Clear',
+  undoBtn: 'Undo',
+  statusIdle: 'Paint a state, or open a board file.',
+  labelIterations: 'iterations',
+  labelIterName: 'name this try',
+  btnSaveIter: 'Save iteration',
+  btnExportIter: 'Export all',
+  labelSaveShare: 'save / share',
+  btnSaveJson: 'Save JSON',
+  btnCopyJson: 'Copy JSON',
+  btnOpenJson: 'Open JSON',
+  btnSavePng: 'Save PNG',
+  pngPreviewLabel: 'PNG preview — long-press it to save',
+  panelCandidates: 'Candidates',
+  thCandidate: 'candidate',
+  thGoalPy: 'goal.py',
+  thThisPage: 'this page',
+  panelVerdicts: 'Verdicts',
+  thSquare: 'square',
+  thReads: 'reads',
+  thRange: 'range',
+  thVerdict: 'verdict',
+  panelNotes: 'Notes',
+  hiddenCapTitle: 'Where could a hidden capitol be?',
+  badgeForced: 'confirmed: the assumptions pin this number exactly',
+  badgeTightGeo: 'open: a known capitol pays exactly this, but a hidden one may be nearer',
+  badgeTightCheap: 'open: this is the floor, no capitol can be nearer',
+  badgeNeedsPath: 'open: some capitol has to be reachable at exactly this cost',
+  badgeDemand: 'demand: an unrevealed capitol has to be nearer than this',
+  badgeContradicted: 'contradicted: a known capitol is cheaper, so this cannot be the minimum',
+  badgeUnproducible: 'unproducible: no route can pay exactly this',
+  noteNoSymmetry: 'The region %s has no symmetry at all, so it is not a state yet — repaint it as a shape that has one (a mirror axis or a rotation).',
+  noteNoCapitol: 'The state %s (size %s) has NO capitol: every symmetry fixes %s squares instead of exactly one. It is still a legal state, but it contributes no destination, and every step inside it costs %s.',
+  noteCapitolOnClue: 'The capitol of a painted state sits on the %s at %s, but a capitol reads 0.',
+  noteZeroElsewhere: 'The 0 at %s is inside a state whose capitol is elsewhere.',
+  noteEvenAssumed: 'You assumed a state of size %s for the capitol at %s, but a state with a capitol is always odd: an even-sized state has a mirror axis running along a column of squares, which fixes more than one of them, so it has no capitol at all. Use an odd size.',
+  noteSatisfactionAxis: 'Satisfaction axis (independent of “is it the minimum?”): %s numbers have a route whose cost is fully determined (however the free squares are filled), %s numbers need the free squares to be tuned, and %s numbers cannot be paid by any route at all (they need a hidden capitol).',
+  noteSatisfactionFull: 'The tiling is complete (all %s squares belong to a state), so the set of reachable costs is exact. Satisfaction test: of the %s published numbers, %s; and %s.%s',
+  noteSingleton: 'A square that reads 1 needs a 1×1 state right next to it (a step of cost 1). Candidates: %s.',
+  notesNone: 'Nothing to flag. Assumptions that fit the numbers are not the same as assumptions that are true.',
+  whyForced: 'your assumptions pin the distance to exactly %s',
+  whyContradicted: 'a capitol you already know about is reachable for %s, which is cheaper than %s, so the number cannot be the minimum',
+  whyUnproducible: 'no walk out of this square can cost exactly %s%s, so this number cannot be produced at all',
+  whyUnprodCosts: ' (the reachable costs are %s)',
+  whyUnprodNone: ' (not even one known capitol is within reach)',
+  whyTightGeo: 'a known capitol is reachable for at most %s, and the number says the minimum is %s, so no hidden capitol may be nearer',
+  whyDemand: 'the nearest capitol you know about is at least %s away, but the number says %s, so a hidden capitol has to be strictly nearer than that%s',
+  whyDemandExtra: '; no walk to a known capitol costs exactly %s either',
+  whyTightCheap: '%s is the floor: no capitol can be nearer than %s, and one has to sit at exactly %s',
+  whyNeedsPath: 'the number sits inside the range, so a capitol has to be reachable at exactly %s',
+  paySimpleNote: '(this route loops, so there is a cheaper way: the number is not the minimum)',
+  payOkHead: '<div class="pay ok">payable, and <b>independent of the free squares</b>:',
+  payMid: '<div class="pay mid">payable, but <b>the free squares have to make up the difference</b>: the route through known squares cannot make up %s, the free squares must add %s of cost (reachable costs %s)</div>',
+  payNo: '<div class="pay no">not payable: no route costs exactly %s%s ⇒ only a hidden capitol can pay it</div>',
+  payNoKnown: ' (known capitols reach %s)',
+  payNoNone: ' (not even one known capitol is within reach)',
+  stateCount: '%s states · %s with a capitol · %s squares unknown',
+  noStatesYet: 'no states yet',
+  statusContradicted: '<b>%s published numbers are contradicted.</b> %s',
+  statusComplete: 'The tiling is complete and <b>every published number is produced and is the cheapest one</b>: %s/%s check out.',
+  statusOk: 'No contradiction: every published number is still reachable under these assumptions.',
+  hiddenCap: '<b>%s reads %s</b>: a hidden capitol within %s steps, i.e. %s.',
+  hiddenCapNone: '<p>No square currently demands a hidden capitol.</p>',
+  iterContradicted: '%s contradicted',
+  iterOk: 'no contradiction',
+  iterForced: '%s forced · %s need a hidden capitol',
+  btnRestore: 'Restore',
+  btnDrop: 'Drop',
+  iterRestored: 'Restored <b>%s</b>.',
+  jsonPublished: 'Jane Street, It\'s a Metric, Too (October 2026) -- the 33 official numbers',
+  jsonWhat: 'the board only: the states you are assuming and the capitols you are assuming. The verdicts and notes are NOT here on purpose -- they are derived from this board and the published numbers, so a rule tool recomputes them instead of trusting a stored conclusion.',
+  errDisconnected: 'The state at %s is not one connected shape, so it cannot carry a colour of its own.',
+  errColourConflict: 'Colour conflict: the states at %s and %s both ask for colour %s and they touch, so they would melt into a single state. Give one of them a different colour.',
+  axisColumn: 'column %s',
+  axisRow: 'row %s',
+  paletteTitle: 'state colour %s',
+  candMeta: '<b>%s</b> candidate states proposed for <b>%s</b> (it reads %s), sizes %s. <b>Each one is judged again here</b> — the word on the left is goal.py\'s, the word on the right is this page\'s, and they come from different code.',
+  candTruncated: ' <b>This round stopped at the candidate limit: it did NOT exhaust the possibilities.</b>',
+  btnLoad: 'load',
+  candLoaded: 'Loaded candidate: %s',
+  candStatus: 'Loaded %s candidates for %s — %s',
+  candDisagree: '<b>%s disagree</b> with goal.py.',
+  candAgree: 'this page agrees with goal.py on all of them.',
+  pngTitle: 'It\'s a Metric, Too - play',
+  pngCounts: '%s states, %s with a capitol, %s assumed capitols',
+  pngLegend1: 'top-left = the area of the state   (* = that state has no capitol)',
+  pngLegend2: 'bottom-right = the cheapest distance to a capitol we already know about',
+  pngFail: 'The picture could not be made in this browser.',
+  pngReadyToast: 'Picture ready: %s. It is also shown below - long-press it to save on a phone.',
+  pngReadyStatus: 'Picture ready: <b>%s</b>. It is shown below the board as well; on a phone, long-press it to save.',
+  jsonReadyToast: 'JSON ready: %s. Copy JSON puts the very same text on your clipboard.',
+  jsonReadyStatus: 'JSON ready: <b>%s</b> - %s states and %s assumed capitols. <b>Copy JSON</b> puts the same text on your clipboard, and a rule tool can read it with <code>python3 lr11/assume.py %s</code>.',
+  jsonCopiedToast: 'JSON copied to the clipboard - paste it to a friend, or to a rule tool.',
+  jsonCopiedStatus: 'JSON copied to the clipboard.',
+  jsonCopyFailed: 'The browser would not let the page copy. The JSON is now in a box, selected - press Cmd/Ctrl+C.',
+  jsonLoaded: 'Loaded %s.',
+  fileUnreadable: 'Could not read that file: %s',
+  iterSaved: 'Saved iteration "%s".',
+  iterNone: 'No iterations saved yet.',
+  iterExported: 'Exported %s iteration(s).',
+  noteSatAllProduced: 'every one of them can be produced by some walk',
+  noteSatSomeUnproduced: ' %s of them cannot',
+  noteSatAllCheapest: 'every one of them is exactly the minimum',
+  noteSatSomeNotCheapest: ' %s of them are not the minimum',
+  noteSatWrong: 'the ones that do not match:',
+  noteSatWrongOne: 'reads',
+  noteSatEnd: '.',
+  toolConstraint: 'Constraint',
+  conSizeLabel: 'Allowed state sizes',
+  conCostLabel: 'Allowed travel costs',
+  conUseClue: 'Use clue (%s)',
+  conReset: 'Reset this cell',
+  conDone: 'Done',
+  conTitle: 'Square %s',
+  conTitleClue: ' · clue %s',
+  conHelp: 'A constraint is a number you made up: the page checks your painting against it, the same way it checks the published numbers.',
+  conBadTokens: 'Ignored: %s. Use numbers and ranges like 5, 7-9.',
+  conSizeBad: 'the state there has size %s, which is not in %s',
+  conCostBad: 'the travel cost there is %s, which is not in %s',
+  conCostTooDear: 'even the cheapest walk costs %s, more than %s allows',
+  conCostTooCheap: 'the dearest walk that can be proven costs %s, less than %s allows',
+  conCostUnknown: 'the travel cost is not known until the sheet is full',
+  conNoState: 'the square has no state yet, so its size is not known',
+  conOk: 'the constraint holds',
+  conTag: 'your constraint',
+  conCurSize: 'state size here: %s · ',
+  conCurCost: 'travel cost here: %s',
+  conCurUpper: ' (an upper bound for now)',
+  noteConBad: 'Your constraint at %s is broken: %s',
+  noteConOpen: 'Your constraint at %s cannot be checked yet: %s',
+  statusConBad: '%s of your own constraints are broken: %s',
+  legendsTitle: 'Legends',
+  legendsIntro: 'Every mark on the board, one paragraph each.',
+  legendCoords: '<b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left; a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.',
+  legendArea: '<b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no destination and every step inside it costs the whole area.',
+  legendWalls: '<b>Walls</b> — the bold lines between squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a mirror or a rotation.',
+  legendBottomRight: '<b>Bottom-right</b> — the cheapest distance from that square to a capitol we already know about, if every unknown square were as small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is exactly what a number below that floor demands.',
+  legendBottomLeft: '<b>Bottom-left</b> — the cost the current assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only squares whose state size is known. Where no such route exists yet, nothing is shown there — the free squares would have to be sized first. Its colour compares that cost with the published number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated cost is higher, <b>amber</b> when it is lower.',
+  legendTopRight: '<b>Top-right</b> — the verdict, as a badge: <b>&#9679;</b> confirmed (the assumptions pin the number exactly), <b>&#9675;</b> open (payable, but not pinned down yet), <b>&#9650;</b> demand (an unrevealed capitol has to be nearer), <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).',
+  legendConstraint: '<b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet.',
+  legendRing: '<b>Dashed ring</b> in the middle — the square could host a hidden capitol: rest the pointer on a number that needs one (hold it on a touch screen) and every square that could carry it is ringed.',
+};
+</script>
+</body>
+</html>

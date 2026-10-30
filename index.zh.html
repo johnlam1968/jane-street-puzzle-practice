@@ -82,8 +82,12 @@ a { color: var(--accent); }
   .thumb { width: 72px; height: 72px; }
   .links { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: baseline; }
 }
-footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
-footer p { margin: 0 0 6px; }
+.list.plain .card { grid-template-columns: minmax(0, 1fr) auto; }
+/* the fine print: it is fine print */
+footer { color: var(--muted); font-size: 0.72rem; line-height: 1.5;
+  border-top: 1px solid var(--line); padding-top: 14px; }
+footer p { margin: 0 0 5px; }
+footer a { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -113,9 +117,34 @@ footer p { margin: 0 0 6px; }
     </ol>
   </section>
 
+  <section aria-label="参考">
+    <p class="eyebrow">参考</p>
+    <ul class="list plain">
+      <li class="card">
+          <div>
+            <h2><a href="its-a-metric-too/agent-onboarding.zh.html">智能体入门</a></h2>
+            <p>给准备在这一页上玩这个游戏的智能体：盘面上每个记号是什么意思、怎样操作这一页，以及盘面抱怨的时候该做什么。</p>
+          </div>
+          <div class="links">
+            <a class="go" href="its-a-metric-too/agent-onboarding.zh.html" tabindex="-1" aria-hidden="true">读 &#8594;</a>
+          </div>
+      </li>
+      <li class="card">
+          <div>
+            <h2><a href="its-a-metric-too/legends.zh.html">图例</a></h2>
+            <p>盘面上的每一个记号，一段一段讲清楚。</p>
+          </div>
+          <div class="links">
+            <a class="go" href="its-a-metric-too/legends.zh.html" tabindex="-1" aria-hidden="true">读 &#8594;</a>
+          </div>
+      </li>
+    </ul>
+  </section>
+
   <footer>
     <p>与 Jane Street 无关。真正的谜题、规则和排行榜在 <a href="https://www.janestreet.com/puzzles/" target="_blank" rel="noopener">janestreet.com/puzzles</a>。</p>
     <p>手机、平板和电脑都能用。你的进度保存在浏览器里。</p>
+    <p>练习盘和「悬停显示路线」的想法都来自两个公开页面：题目来自 <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a>，Jane Street 官方的 5&times;5 例子来自 <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>。两者都没有许可证，所以没有抄任何代码：这些页面用自己的规则内核重算每一块盘，路线功能也是在我们自己的代价模型上重写的。</p>
   </footer>
 </main>
 </body>

@@ -82,8 +82,12 @@ a { color: var(--accent); }
   .thumb { width: 72px; height: 72px; }
   .links { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: baseline; }
 }
-footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
-footer p { margin: 0 0 6px; }
+.list.plain .card { grid-template-columns: minmax(0, 1fr) auto; }
+/* the fine print: it is fine print */
+footer { color: var(--muted); font-size: 0.72rem; line-height: 1.5;
+  border-top: 1px solid var(--line); padding-top: 14px; }
+footer p { margin: 0 0 5px; }
+footer a { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -113,9 +117,34 @@ footer p { margin: 0 0 6px; }
     </ol>
   </section>
 
+  <section aria-label="Reference">
+    <p class="eyebrow">Reference</p>
+    <ul class="list plain">
+      <li class="card">
+          <div>
+            <h2><a href="its-a-metric-too/agent-onboarding.html">Agent Onboarding</a></h2>
+            <p>For an agent that is going to play this game: what every mark on the board means, how to drive the page, and what to do when the board complains.</p>
+          </div>
+          <div class="links">
+            <a class="go" href="its-a-metric-too/agent-onboarding.html" tabindex="-1" aria-hidden="true">Read &#8594;</a>
+          </div>
+      </li>
+      <li class="card">
+          <div>
+            <h2><a href="its-a-metric-too/legends.html">Legends</a></h2>
+            <p>Every mark on the board, one paragraph each.</p>
+          </div>
+          <div class="links">
+            <a class="go" href="its-a-metric-too/legends.html" tabindex="-1" aria-hidden="true">Read &#8594;</a>
+          </div>
+      </li>
+    </ul>
+  </section>
+
   <footer>
     <p>Not affiliated with Jane Street. The real puzzles, rules and leaderboard live at <a href="https://www.janestreet.com/puzzles/" target="_blank" rel="noopener">janestreet.com/puzzles</a>.</p>
     <p>Works on phones, tablets and desktops. Your progress is saved in your browser.</p>
+    <p>The practice boards come from two public pages, and the route-on-hover idea is theirs as well: the puzzle set from <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a> and Jane Street's own 5&times;5 example from <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>. Neither carries a licence, so no code was copied: these pages recompute every board with their own rule kernel, and the route feature is reimplemented on our own cost model.</p>
   </footer>
 </main>
 </body>

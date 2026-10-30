@@ -243,6 +243,20 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
   font-size: 0.88rem; line-height: 1.45; }
 .rules li b { color: var(--ink); }
 .rules .rule-more { margin: 8px 0 0; font-size: 0.82rem; color: var(--muted); }
+/* the agent box quotes selectors and attribute names: they have to read as
+   code, not as prose, or an agent cannot tell them from the sentences. */
+.rules code { font-family: var(--f-num); font-size: 0.9em; background: var(--blank);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.rules code + code { margin-left: 1px; }
+/* the driving snippet: it is the same in both languages, so it lives in the
+   markup and not in the translation table. */
+.rules pre.agent-code { margin: 7px 0 2px; padding: 8px 10px; overflow-x: auto;
+  background: var(--blank); border: 1px solid var(--line); border-radius: 4px;
+  font-family: var(--f-num); font-size: 0.74rem; line-height: 1.45; }
+.rules pre.agent-code code { border: 0; padding: 0; background: none; font-size: 1em;
+  white-space: pre; }
+.rules ul { margin: 4px 0 0; padding-left: 1.15em; }
+.rules li li { margin: 2px 0; }
 /* the export area: a download can be blocked, so the same content is always
    on the page as text (copyable) and as a picture (saveable by long-press) */
 .iterlist { display: grid; gap: 4px; }
@@ -309,16 +323,75 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
     <p class="rule-more" data-i18n="rulesMore">The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.</p>
   </details>
 
+  <!-- An agent plays this game from the browser and from nothing else, so
+       this box is written for that: how to move the pieces, what the board
+       says back, what its words mean, and what to do about it.  It sits in
+       the DOM from the start (a closed <details> is still readable from the
+       DOM), so a machine can read it without opening it, and a reader never
+       has to look at it. -->
+  <details class="rules" id="agentBox">
+    <summary data-i18n="agentTitle">For an agent playing this game</summary>
+    <ol>
+      <li data-i18n="agentGoal"><b>The goal.</b> Tile the whole board — every square belongs to a state — and drive every published number to <code>FORCED</code>. Play it in the browser, and treat the browser as your only tool. The <b>Rules</b> block at the top of the page is the whole specification: everything you need in order to succeed is written there, and the page implements it exactly, so do not work out the cost model behind it, do not re-check its costs by hand, and do not write a solver. Careful, reactive playing beats any solver, and it is the only way to end up with a tiling you actually understand.</li>
+      <li><span data-i18n="agentDrive"><b>Driving it.</b> A square answers to <code>pointerdown</code>, not to <code>click</code>; the tools and the palette answer to <code>click</code>. A digit <code>0</code>–<code>9</code> on the keyboard picks that colour, and that is the reliable way to do it — a palette click can be dispatched and still leave the old colour active, so read <code>aria-pressed</code> back after every control change. The snippet below does all of it; nothing else is needed. One stroke is a <code>pointerdown</code> plus a <code>pointerup</code>, and the undo stack grows once per stroke.</span>
+        <pre class="agent-code"><code>const q = (s) => document.querySelector(s);
+const cell = (i) => q('#board .cell[data-i="' + i + '"]');
+
+// a square answers to pointerdown; the tools and the palette answer to click
+function tap(i) {
+  cell(i).dispatchEvent(new PointerEvent('pointerdown',
+    { bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: 0, clientY: 0 }));
+  window.dispatchEvent(new PointerEvent('pointerup',
+    { bubbles: true, pointerId: 1, pointerType: 'mouse' }));
+}
+function colour(k) {            // 0-9 on the keyboard: the reliable way
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: String(k), bubbles: true }));
+}
+function tool(name) { q('.chip[data-tool="' + name + '"]').click(); }
+function hover(i) {             // wait about a second: the ring for a hidden capitol
+  cell(i).dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
+}
+function board() { return q('#plateName').textContent; }   // which board is loaded
+
+// the same things without clicking: #undoBtn, #presetClear, #fileIn,
+// and the JSON buttons #saveJson, #copyJson, #openJson, #savePng
+
+// read the referee
+const rows = [...document.querySelectorAll('#verdicts tbody tr')].map(tr =&gt; ({
+  i: tr.dataset.i,
+  v: tr.querySelector('span.v').textContent,
+  why: tr.querySelector('.why')?.textContent || '',
+  route: tr.querySelector('.route')?.textContent || ''
+}));
+const tally = [...document.querySelectorAll('#tally .v')].map(e =&gt; e.textContent);
+const status = q('#status').textContent;      // the one-line summary
+const notes = q('#notes').textContent;        // why the page just said that
+const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').value) || '{}');
+// sheet.c = the colour of every square, sheet.a = the capitols you assumed</code></pre>
+      </li>
+      <li data-i18n="agentCareful"><b>Careful.</b> Address a square by its <code>data-i</code>, never by a pixel position: the page scrolls when something is clicked, and a click that lands on the wrong square silently corrupts a state. After every action, read the board back — a click can be dispatched and still leave the old thing active. After switching boards, check the plate name and the published numbers, because the picker and the board can disagree. Every board keeps its own sheet, so painting on one board does not disturb another — and you should not touch a board you were not asked to play.</li>
+      <li data-i18n="agentMistakes"><b>Mistakes are cheap.</b> You are not expected to get it right the first time: <code>Undo</code> takes back one stroke, and Ctrl+Z (Cmd+Z) does the same, so a wrong shape is one click away from being undone; <code>Clear</code> wipes the sheet and starts over. And you need not keep one attempt: the JSON buttons store the board and read it back. <code>Save JSON</code> downloads it as a file, <code>Copy JSON</code> puts the very same text on the clipboard, <code>Open JSON</code> reads a file back into the page, and <code>Save PNG</code> saves a picture of the board. Save a try under a name, try something else, come back to it. If you drive the page yourself, the same things are reachable without clicking — the ids are in the snippet above: hand the file input a file and it loads at once, and the undo and clear buttons do what their names say. The saved sheet IS that JSON: the states, the assumed capitols and your own constraints, in the shape <code>metric-too-ledger/1</code>.</li>
+      <li data-i18n="agentLoop"><b>The loop.</b> Paint one state, then read the board before you touch anything else: the badge in the corner of each square, the colour of the walls, the cost in the lower left of each square, the rows of the table on the right, and the one-line summary. Each of them tells you which of your assumptions the board just refused. Fix the smallest thing the board complains about, read again, and go on. Do not plan the whole tiling in your head first — the board is a cheap place to try things.</li>
+      <li data-i18n="agentSignals"><b>What the board says, and what to do about it.</b><ul><li><b>A red wall</b> — the painted region has no symmetry at all, so it is not a state yet: draw it again as a shape with a mirror or a rotation.</li><li><b>An amber wall</b> — that state has no capitol, so it goes nowhere and every step inside it costs its whole area: give it a capitol, or draw it again so that it has one.</li><li><b>A &#10005; badge</b> — a capitol you know is cheaper than the published number, so that number cannot be the minimum: one of your assumptions is wrong. Undo the last move and try the other shape.</li><li><b>An &#9675; badge</b> — the number can be paid, but it is not pinned down yet: size the free squares, or drop an assumption you do not need.</li><li><b>An &#9650; badge</b> — a capitol that has not been revealed yet has to be nearer: rest the pointer on that square and the squares that could hold it light up with a dashed ring; assume one of them with the capitol tool.</li><li><b>A green cost</b> — the route you assume costs more than the published number: make a state on that route smaller.</li><li><b>An amber cost</b> — the route you assume costs less than the published number: the real route has to be longer, so something on it must grow, or that capitol is too close.</li><li><b>A square that reads 1</b> — it needs a 1×1 state right next to it, and that state is itself a capitol.</li><li><b>A square that reads 0</b> — that square is the capitol of its own state.</li></ul></li>
+      <li data-i18n="agentVerdicts"><b>A verdict is what the page answers for one published number.</b> The table on the right has one row per published number: the square, the number it reads, the range of costs your painting allows, the verdict, the reason, and the route that proves it. The names mean: <code>FORCED</code> — your assumptions pin the number exactly; leave it alone. <code>TIGHT_CHEAPEST</code> — the cheapest route already costs exactly this, so the number is the minimum. <code>TIGHT_GEODESIC</code> — the known route costs exactly this and nothing may be nearer. <code>NEEDS_EXACT_PATH</code> — the number sits inside the range: you need a route that costs exactly this. <code>NEEDS_HIDDEN_CAPITOL</code> — a capitol that has not been revealed yet has to be strictly nearer. <code>CONTRADICTED</code> — a capitol you know is already cheaper, so one of your assumptions is wrong: undo. <code>UNPRODUCIBLE</code> — no route can pay this number at all; a hidden capitol has to do it. <b>A note is not a verdict</b> — the Notes panel under the table explains what the page just found, and it usually names the exact square that is wrong.</li>
+      <li data-i18n="agentTexts"><b>The texts around the board.</b> The line under the tools — the box right below the undo button — is the summary. <i>Paint a state, or open a board file.</i> means nothing is painted yet. <i>No contradiction: every published number is still reachable under these assumptions.</i> means your assumptions still allow every number. <i>N published numbers are contradicted</i> names the squares that are wrong. The green one, <i>The tiling is complete and every published number is produced and is the cheapest one</i>, means you are there. The chips in the tally count the verdicts. The head of the board says how many states you have, how many of them have a capitol, and how many squares are still unknown. The hint beside the row-sum button says what is still missing: <i>the sheet is not tiled yet</i>, <i>a painted region is not a state yet</i>, <i>an assumed capitol does not match the state it sits in</i>, or <i>N published numbers are not settled yet</i>.</li>
+      <li data-i18n="agentLegend"><b>Read the legend at the bottom of the page.</b> It explains every mark on the board: the area in the corner, the capitol, the two cost numbers, the badge, the wall colours, the ring for a hidden capitol, and your own constraints. Read it once, and read it again whenever a mark means something you did not expect. Some of the marks are colour and not text: when the text is not enough, look at the board — take a screenshot and read the walls, the badges and the rings with your eyes.</li>
+      <li data-i18n="agentFinish"><b>When it is done.</b> The one-line summary says the tiling is complete and every published number is settled, and the tally shows nothing left that is open, demanded or contradicted — every number is <code>FORCED</code>. On a practice board the computed answer and the row sums appear under the board; on the 11×11 the page never shows one, because that puzzle is still open. Check your tiling against the published numbers yourself before you believe it.</li>
+      <li data-i18n="agentSave"><b>Reading and saving.</b> The whole sheet sits in <code>localStorage</code> under <code>mt2ledger:&lt;board id&gt;</code>: <code>c</code> is the colour of every square, <code>a</code> the capitols you assumed, <code>con</code> your constraints. Read it instead of scraping the screen. Each board keeps its own sheet, so you can leave and come back to it. The <code>JSON</code> button puts the same sheet on the clipboard as <code>metric-too-ledger/1</code> — the states, the assumed capitols and the constraints — and the JSON reader takes it back. In the console of the page, <code>colors</code>, <code>assumed</code> and <code>hiddenCapMap</code> can be read directly; the last one maps a square that needs a hidden capitol to the squares that could hold it, so you can skip the wait for the ring.</li>
+      <li data-i18n="agentNever"><b>Never.</b> There is no answer key in this page: the shapes of the solution are not in the page source, on purpose, and if you ever find a page that offers one, that is the answer, not a way to play. Do not write a solver, and do not try to work out the cost model — the page already does it, faithfully, and the point of playing is to let the board tell you. And do not reverse-engineer the hidden-capitol candidates either: hover the number and read the ring, or assume a capitol and let the board judge it. And remember that the page only re-checks the published numbers: it cannot tell you that your tiling is the only one that fits.</li>
+    </ol>
+    <p class="rule-more" data-i18n="agentMore"><b>That is the whole game.</b> The board is the referee; it never lies about the costs, so use it and do not re-derive anything.</p>
+  </details>
+
   <main>
     <div class="plate">
       <div class="plate-head"><span id="plateName"></span><span id="stateCount" data-i18n="noStatesYet">no states yet</span></div>
       <div class="boardbar">
         <label class="hint" for="boardSel" data-i18n="labelBoard">Board</label>
         <select class="btn" id="boardSel"></select>
-        <button class="btn" id="showSolution" data-i18n="btnShowSolution" hidden>Show solution</button>
         <button class="btn" id="sumBtn" data-i18n="btnRowSums">Row sums and answer</button>
         <span class="hint" id="sumHint"></span>
-        <span class="hint" id="boardNote" data-i18n="boardNote">A practice board: it comes with a solution, so you can check yourself against one.</span>
+        <span class="hint" id="boardNote" data-i18n="boardNote">A practice board: the partition is not in this page — find it yourself.</span>
       </div>
       <div class="boardbox">
         <div class="axes" style="--n:11" id="axes">
@@ -356,6 +429,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
       <div class="answerbox" id="answerBox" hidden>
         <span data-i18n="labelAnswer">Computed answer</span><b id="answerNum"></b>
         <span class="rows" id="rowSums"></span>
+        <span class="rows" id="expAnswer"></span>
       </div>
 
       <div class="io">
@@ -503,9 +577,12 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 /* ---------- the boards ----------
    The sheet can hold more than one puzzle.  The first is the one this whole
    notebook was built for: Jane Street's 11x11, with its 33 published numbers.
-   The rest are practice boards -- smaller puzzles that come with a solution,
-   so a reader can check a solution against one.  The 11x11 has NO solution
-   here on purpose: it is still an open puzzle.
+   The rest are practice boards -- smaller puzzles that come with the number
+   they come out with, so a reader can check a finished tiling against it.
+   None of them carries its partition: the shapes of the solution stay out
+   of the page on purpose, so that nobody can read the answer key off the
+   page source instead of playing.  The 11x11 has neither the number nor a
+   partition here: it is still an open puzzle.
 
    The practice boards are vendored from two public pages; the credits are at
    the bottom of this page, and the details are in note 28 of
@@ -519,7 +596,7 @@ const LEDGER_CLUES = [[0,1,8],[0,2,4],[0,5,11],[0,9,5],[1,7,11],[2,2,7],[2,5,1],
 const NCOL = 10;
 const TONES = ['--t0','--t1','--t2','--t3','--t4','--t5','--t6','--t7','--t8','--t9'];
 
-const LEDGER_BOARD = { id: 'jane-11x11', n: 11, clues: LEDGER_CLUES, solution: null };
+const LEDGER_BOARD = { id: 'jane-11x11', n: 11, clues: LEDGER_CLUES, answer: null };
 
 let N = LEDGER_BOARD.n;
 let CLUES = LEDGER_BOARD.clues;
@@ -532,7 +609,7 @@ function setClues(list) {
 setClues(CLUES);
 
 /* PRACTICE BOARDS:BEGIN -- generated by tools/lr11/page/sync_boards.py, do not edit */
-const PRACTICE_BOARDS = [{"id":"up-0","n":6,"clue":[-1,7,4,-1,-1,13,-1,-1,1,0,1,-1,-1,-1,-1,-1,4,12,-1,9,-1,-1,7,-1,-1,-1,-1,7,-1,14,2,-1,6,8,10,14],"owner":[0,0,0,0,1,1,2,2,2,3,1,1,4,5,5,6,1,1,4,5,5,6,1,1,4,4,4,6,7,7,8,8,9,9,7,7]},{"id":"up-1","n":6,"clue":[25,21,-1,17,-1,12,22,-1,15,13,9,9,19,15,-1,9,7,6,21,17,-1,7,5,3,23,-1,12,6,-1,0,-1,13,9,-1,-1,-1],"owner":[0,1,2,3,3,4,0,1,2,3,3,4,0,1,2,5,6,4,0,1,5,5,6,7,0,5,5,5,7,7,0,8,8,8,8,9]},{"id":"up-2","n":7,"clue":[11,-1,3,1,-1,9,15,-1,7,-1,0,1,-1,-1,19,-1,8,1,3,10,-1,17,-1,5,-1,1,3,-1,-1,-1,-1,-1,-1,1,-1,26,20,-1,8,-1,8,-1,-1,19,17,15,8,15,23],"owner":[0,1,2,2,3,3,3,0,1,4,5,3,3,3,0,1,4,4,4,4,4,0,1,4,6,6,7,7,0,1,8,8,9,7,7,0,1,8,8,8,7,7,0,10,10,8,8,7,7]},{"id":"up-3","n":6,"clue":[37,-1,25,-1,-1,-1,-1,-1,-1,-1,19,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,7,6,-1,-1,-1,5,6,1,-1],"owner":[0,0,0,0,0,0,1,1,2,3,4,4,1,1,2,3,4,4,1,1,2,3,4,4,1,1,2,2,2,2,5,5,5,5,5,6]},{"id":"up-4","n":7,"clue":[0,-1,-1,1,7,9,13,1,-1,-1,0,-1,-1,-1,4,5,3,1,6,7,-1,7,7,5,-1,-1,-1,11,10,-1,-1,11,-1,17,19,-1,24,-1,16,21,-1,27,28,-1,25,21,26,32,35],"owner":[0,1,1,1,1,2,2,3,1,1,4,5,2,2,3,1,6,7,5,8,8,3,1,6,7,5,9,9,10,10,10,7,5,9,9,10,10,10,7,5,9,9,10,10,10,7,5,9,9]},{"id":"official-5x5","n":5,"official":true,"clue":[12,-1,-1,-1,17,8,-1,6,3,-1,-1,-1,-1,-1,-1,-1,7,6,-1,10,25,-1,-1,-1,0],"owner":[0,1,1,3,3,0,1,1,2,3,0,0,2,2,3,3,0,0,0,3,3,3,3,3,3]},{"id":"up-5","n":5,"clue":[-1,9,-1,-1,-1,-1,-1,-1,1,4,-1,-1,-1,-1,-1,-1,-1,5,1,9,17,-1,-1,-1,-1],"owner":[0,0,1,1,1,2,3,3,3,4,2,5,5,6,4,2,5,5,4,4,2,4,4,4,4]},{"id":"up-6","n":5,"clue":[7,-1,-1,-1,21,-1,-1,-1,-1,-1,-1,-1,11,-1,26,1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,0,0,0,0,1,2,2,3,3,1,4,4,3,3,4,4,4,3,3,5,4,4,3,3]},{"id":"up-7","n":5,"clue":[-1,3,-1,5,-1,3,-1,-1,-1,3,-1,-1,-1,-1,5,11,-1,9,-1,-1,-1,15,-1,-1,9],"owner":[0,0,0,0,1,2,2,3,4,1,5,4,4,4,4,5,5,4,4,6,5,5,5,4,6]},{"id":"up-8","n":6,"clue":[-1,7,-1,-1,0,3,-1,9,7,-1,3,-1,13,14,9,-1,-1,11,-1,11,10,-1,10,-1,-1,-1,-1,0,-1,-1,-1,11,-1,-1,6,11],"owner":[0,1,2,3,3,4,0,1,2,5,3,4,6,1,5,5,5,4,6,1,5,5,5,4,6,1,5,7,5,4,6,8,8,8,8,8]},{"id":"up-9","n":5,"clue":[-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,14,11,-1,-1,-1,21,-1,12,-1,-1,-1,-1,-1,20],"owner":[0,0,0,1,2,2,2,2,2,2,3,3,3,3,2,4,3,3,5,5,4,3,3,5,5]},{"id":"up-10","n":5,"clue":[7,-1,14,-1,-1,-1,-1,-1,-1,-1,3,-1,-1,1,-1,-1,-1,10,-1,-1,-1,12,-1,-1,-1],"owner":[0,1,2,2,2,0,1,2,2,2,3,1,1,1,4,3,5,5,5,5,3,5,5,5,5]},{"id":"up-11","n":5,"clue":[-1,-1,14,18,-1,-1,14,-1,-1,18,-1,-1,-1,12,-1,0,-1,-1,-1,-1,-1,6,-1,-1,-1],"owner":[0,0,1,1,2,3,3,1,1,2,3,3,3,4,2,5,3,3,4,2,6,6,6,6,6]},{"id":"up-12","n":5,"clue":[-1,-1,-1,-1,0,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,30,27,26,-1,-1],"owner":[0,1,2,2,2,0,1,3,3,2,0,1,3,3,2,4,4,4,4,4,5,5,5,5,5]},{"id":"up-13","n":5,"clue":[-1,16,-1,-1,-1,-1,18,-1,-1,-1,20,14,-1,-1,10,-1,-1,-1,-1,-1,-1,9,-1,0,-1],"owner":[0,0,1,1,2,0,0,3,3,2,0,0,3,3,2,4,4,4,5,2,4,4,4,5,5]},{"id":"up-14","n":5,"clue":[-1,-1,-1,-1,8,4,-1,0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,12,17,-1],"owner":[0,1,2,3,3,0,2,2,3,3,0,4,5,5,5,0,4,5,5,5,6,6,6,6,6]},{"id":"up-15","n":5,"clue":[21,-1,-1,-1,13,-1,9,-1,-1,-1,-1,-1,1,-1,9,-1,-1,-1,-1,7,-1,5,-1,-1,-1],"owner":[0,0,0,0,1,0,0,0,0,1,2,2,2,2,3,4,4,5,3,3,4,4,3,3,3]},{"id":"up-16","n":5,"clue":[-1,-1,-1,15,-1,17,-1,-1,11,-1,13,11,9,-1,4,11,-1,-1,-1,-1,-1,-1,5,-1,0],"owner":[0,0,0,0,0,1,1,2,3,3,1,1,2,3,3,4,4,5,5,5,6,6,6,6,7]},{"id":"up-17","n":5,"clue":[-1,-1,-1,-1,-1,-1,9,1,-1,-1,25,17,-1,-1,-1,27,-1,-1,17,21,-1,-1,-1,-1,25],"owner":[0,0,1,2,2,0,0,0,2,2,0,0,0,2,2,3,3,3,4,4,3,3,3,4,4]},{"id":"up-18","n":6,"clue":[2,-1,-1,-1,0,1,-1,-1,5,-1,1,-1,-1,-1,7,5,3,9,0,3,-1,-1,-1,15,3,-1,-1,-1,-1,-1,-1,-1,-1,14,22,27],"owner":[0,1,1,1,2,3,0,1,4,5,5,3,6,1,4,7,7,3,6,6,8,7,7,3,8,8,8,7,7,3,9,9,8,7,7,3]},{"id":"up-19","n":6,"clue":[-1,11,8,15,-1,17,11,-1,-1,8,-1,-1,-1,-1,0,-1,3,-1,-1,-1,-1,-1,5,7,-1,-1,5,-1,-1,6,-1,7,-1,-1,-1,3],"owner":[0,1,2,2,2,3,0,1,2,2,2,3,0,1,4,2,5,3,0,1,6,6,5,3,0,1,6,6,7,3,0,8,8,7,7,3]},{"id":"up-20","n":5,"clue":[-1,-1,-1,-1,-1,18,-1,-1,-1,1,-1,-1,4,-1,-1,17,9,6,-1,1,19,-1,-1,-1,-1],"owner":[0,0,0,0,0,1,1,2,2,2,1,1,3,4,5,1,1,3,4,6,1,1,3,4,6]},{"id":"up-21","n":5,"clue":[5,-1,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,5,-1,0,3,11],"owner":[0,1,1,1,1,0,2,3,4,4,2,2,2,4,4,5,2,6,4,4,5,6,6,4,4]},{"id":"up-22","n":5,"clue":[-1,-1,-1,16,17,11,-1,-1,-1,13,-1,-1,3,5,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,3],"owner":[0,0,0,0,0,1,2,2,2,3,1,2,2,2,3,1,4,4,5,3,6,6,7,5,3]},{"id":"up-23","n":4,"clue":[-1,21,-1,-1,-1,-1,-1,-1,-1,-1,13,-1,-1,-1,-1,-1],"owner":[0,0,1,1,0,0,0,2,0,0,2,2,3,2,2,2]},{"id":"up-24","n":4,"clue":[-1,-1,-1,7,4,-1,3,6,-1,0,-1,-1,-1,-1,3,-1],"owner":[0,0,1,1,2,2,2,3,4,5,6,3,4,4,6,3]},{"id":"up-25","n":5,"clue":[-1,-1,4,-1,-1,11,-1,1,-1,-1,-1,-1,-1,-1,-1,-1,15,-1,5,-1,-1,19,-1,9,11],"owner":[0,1,1,1,2,0,3,3,4,2,0,3,3,5,5,0,3,3,5,5,6,6,6,6,6]},{"id":"up-26","n":4,"clue":[5,-1,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,15,11],"owner":[0,0,1,2,3,1,1,1,3,4,4,4,3,4,4,4]},{"id":"up-27","n":4,"clue":[1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,13,10,-1,9,-1],"owner":[0,1,2,2,0,3,2,2,0,3,2,2,0,3,4,4]},{"id":"up-28","n":4,"clue":[-1,1,-1,-1,-1,0,-1,5,-1,-1,-1,-1,7,-1,13,-1],"owner":[0,1,1,2,0,3,4,2,0,4,4,2,4,4,4,2]},{"id":"up-29","n":4,"clue":[11,-1,-1,-1,-1,8,-1,-1,-1,-1,-1,-1,-1,12,-1,-1],"owner":[0,0,1,2,0,0,1,3,0,0,1,3,4,4,1,3]},{"id":"up-30","n":4,"clue":[-1,-1,-1,-1,6,-1,-1,-1,-1,-1,-1,10,-1,7,-1,12],"owner":[0,1,1,2,0,1,3,2,0,4,3,2,0,4,3,2]},{"id":"up-31","n":4,"clue":[-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,7,17,-1,-1,-1],"owner":[0,0,1,2,3,3,3,2,3,3,3,2,2,2,2,2]},{"id":"up-32","n":4,"clue":[7,-1,-1,-1,-1,-1,-1,-1,-1,5,3,-1,-1,8,-1,8],"owner":[0,0,1,2,0,0,3,2,0,0,3,2,4,4,4,2]},{"id":"up-33","n":4,"clue":[-1,12,-1,-1,4,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,0,0,1,0,0,0,1,2,2,2,3,4,5,5,3]},{"id":"up-34","n":4,"clue":[-1,1,-1,-1,-1,-1,-1,-1,4,-1,-1,7,-1,-1,9,11],"owner":[0,0,1,2,0,3,1,2,4,4,4,2,4,4,4,2]},{"id":"up-35","n":4,"clue":[-1,-1,-1,-1,-1,-1,3,5,-1,-1,-1,3,9,-1,-1,1],"owner":[0,0,1,1,0,0,2,3,0,0,2,3,0,0,4,3]},{"id":"up-36","n":4,"clue":[-1,6,-1,-1,-1,-1,-1,-1,-1,-1,10,-1,3,-1,-1,-1],"owner":[0,0,1,1,2,0,0,1,0,0,3,3,4,4,3,3]},{"id":"up-37","n":4,"clue":[0,-1,4,-1,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,-1],"owner":[0,0,0,0,0,1,2,3,0,1,2,4,0,1,2,4]},{"id":"up-38","n":4,"clue":[-1,-1,-1,-1,3,-1,-1,-1,-1,-1,-1,15,-1,-1,10,-1],"owner":[0,1,2,2,0,3,2,2,4,3,2,2,4,3,2,2]},{"id":"up-39","n":4,"clue":[-1,-1,-1,-1,-1,-1,5,-1,-1,9,-1,-1,-1,-1,11,14],"owner":[0,1,1,2,3,3,4,2,3,3,4,2,3,3,4,2]},{"id":"up-40","n":4,"clue":[-1,-1,13,-1,8,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,1,1,2,0,1,1,2,0,1,1,2,3,3,4,2]},{"id":"up-41","n":4,"clue":[-1,-1,-1,-1,-1,3,-1,-1,11,-1,-1,-1,13,-1,-1,8],"owner":[0,0,1,2,0,0,3,2,0,0,3,2,4,4,4,4]},{"id":"up-42","n":4,"clue":[9,3,-1,-1,7,-1,-1,-1,-1,-1,-1,3,-1,5,-1,-1],"owner":[0,0,1,1,0,0,2,3,0,0,4,3,5,5,4,3]},{"id":"up-43","n":4,"clue":[-1,-1,14,-1,-1,-1,-1,-1,7,-1,-1,-1,9,-1,-1,-1],"owner":[0,0,0,0,0,0,0,0,1,1,2,2,3,3,3,2]},{"id":"up-44","n":5,"clue":[30,-1,-1,-1,-1,-1,-1,-1,-1,-1,14,10,-1,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1],"owner":[0,0,0,1,1,0,0,0,2,2,0,0,2,2,2,3,3,4,2,2,3,3,4,4,5]},{"id":"up-45","n":5,"clue":[-1,-1,9,-1,19,-1,5,-1,18,-1,-1,-1,-1,-1,-1,0,1,-1,-1,23,-1,-1,-1,-1,-1],"owner":[0,1,1,2,2,0,3,3,2,2,3,3,3,2,2,4,3,3,2,2,5,5,5,5,5]},{"id":"up-46","n":5,"clue":[-1,5,3,-1,3,-1,-1,-1,-1,-1,-1,3,-1,-1,-1,14,-1,-1,3,-1,16,11,-1,-1,-1],"owner":[0,0,1,2,2,0,0,1,3,4,0,0,5,5,4,0,0,5,6,6,7,7,7,7,7]},{"id":"up-47","n":5,"clue":[-1,-1,4,7,-1,-1,-1,-1,-1,8,-1,-1,0,1,-1,-1,3,-1,-1,-1,11,-1,7,13,-1],"owner":[0,0,0,1,1,2,2,2,1,1,3,3,4,5,5,6,6,6,5,5,6,6,6,5,5]}];
+const PRACTICE_BOARDS = [{"id":"up-0","n":6,"clue":[-1,7,4,-1,-1,13,-1,-1,1,0,1,-1,-1,-1,-1,-1,4,12,-1,9,-1,-1,7,-1,-1,-1,-1,7,-1,14,2,-1,6,8,10,14],"answer":4680},{"id":"up-1","n":6,"clue":[25,21,-1,17,-1,12,22,-1,15,13,9,9,19,15,-1,9,7,6,21,17,-1,7,5,3,23,-1,12,6,-1,0,-1,13,9,-1,-1,-1],"answer":3886},{"id":"up-2","n":7,"clue":[11,-1,3,1,-1,9,15,-1,7,-1,0,1,-1,-1,19,-1,8,1,3,10,-1,17,-1,5,-1,1,3,-1,-1,-1,-1,-1,-1,1,-1,26,20,-1,8,-1,8,-1,-1,19,17,15,8,15,23],"answer":12767},{"id":"up-3","n":6,"clue":[37,-1,25,-1,-1,-1,-1,-1,-1,-1,19,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,7,6,-1,-1,-1,5,6,1,-1],"answer":8240},{"id":"up-4","n":7,"clue":[0,-1,-1,1,7,9,13,1,-1,-1,0,-1,-1,-1,4,5,3,1,6,7,-1,7,7,5,-1,-1,-1,11,10,-1,-1,11,-1,17,19,-1,24,-1,16,21,-1,27,28,-1,25,21,26,32,35],"answer":13969},{"id":"official-5x5","n":5,"clue":[12,-1,-1,-1,17,8,-1,6,3,-1,-1,-1,-1,-1,-1,-1,7,6,-1,10,25,-1,-1,-1,0],"answer":8045},{"id":"up-5","n":5,"clue":[-1,9,-1,-1,-1,-1,-1,-1,1,4,-1,-1,-1,-1,-1,-1,-1,5,1,9,17,-1,-1,-1,-1],"answer":3131},{"id":"up-6","n":5,"clue":[7,-1,-1,-1,21,-1,-1,-1,-1,-1,-1,-1,11,-1,26,1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"answer":4463},{"id":"up-7","n":5,"clue":[-1,3,-1,5,-1,3,-1,-1,-1,3,-1,-1,-1,-1,5,11,-1,9,-1,-1,-1,15,-1,-1,9],"answer":3677},{"id":"up-8","n":6,"clue":[-1,7,-1,-1,0,3,-1,9,7,-1,3,-1,13,14,9,-1,-1,11,-1,11,10,-1,10,-1,-1,-1,-1,0,-1,-1,-1,11,-1,-1,6,11],"answer":6368},{"id":"up-9","n":5,"clue":[-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,14,11,-1,-1,-1,21,-1,12,-1,-1,-1,-1,-1,20],"answer":4387},{"id":"up-10","n":5,"clue":[7,-1,14,-1,-1,-1,-1,-1,-1,-1,3,-1,-1,1,-1,-1,-1,10,-1,-1,-1,12,-1,-1,-1],"answer":4061},{"id":"up-11","n":5,"clue":[-1,-1,14,18,-1,-1,14,-1,-1,18,-1,-1,-1,12,-1,0,-1,-1,-1,-1,-1,6,-1,-1,-1],"answer":2727},{"id":"up-12","n":5,"clue":[-1,-1,-1,-1,0,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,30,27,26,-1,-1],"answer":2413},{"id":"up-13","n":5,"clue":[-1,16,-1,-1,-1,-1,18,-1,-1,-1,20,14,-1,-1,10,-1,-1,-1,-1,-1,-1,9,-1,0,-1],"answer":2753},{"id":"up-14","n":5,"clue":[-1,-1,-1,-1,8,4,-1,0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,12,17,-1],"answer":2357},{"id":"up-15","n":5,"clue":[21,-1,-1,-1,13,-1,9,-1,-1,-1,-1,-1,1,-1,9,-1,-1,-1,-1,7,-1,5,-1,-1,-1],"answer":3913},{"id":"up-16","n":5,"clue":[-1,-1,-1,15,-1,17,-1,-1,11,-1,13,11,9,-1,4,11,-1,-1,-1,-1,-1,-1,5,-1,0],"answer":1731},{"id":"up-17","n":5,"clue":[-1,-1,-1,-1,-1,-1,9,1,-1,-1,25,17,-1,-1,-1,27,-1,-1,17,21,-1,-1,-1,-1,25],"answer":4785},{"id":"up-18","n":6,"clue":[2,-1,-1,-1,0,1,-1,-1,5,-1,1,-1,-1,-1,7,5,3,9,0,3,-1,-1,-1,15,3,-1,-1,-1,-1,-1,-1,-1,-1,14,22,27],"answer":5380},{"id":"up-19","n":6,"clue":[-1,11,8,15,-1,17,11,-1,-1,8,-1,-1,-1,-1,0,-1,3,-1,-1,-1,-1,-1,5,7,-1,-1,5,-1,-1,6,-1,7,-1,-1,-1,3],"answer":5614},{"id":"up-20","n":5,"clue":[-1,-1,-1,-1,-1,18,-1,-1,-1,1,-1,-1,4,-1,-1,17,9,6,-1,1,19,-1,-1,-1,-1],"answer":2931},{"id":"up-21","n":5,"clue":[5,-1,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,5,-1,0,3,11],"answer":3113},{"id":"up-22","n":5,"clue":[-1,-1,-1,16,17,11,-1,-1,-1,13,-1,-1,3,5,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,3],"answer":2165},{"id":"up-23","n":4,"clue":[-1,21,-1,-1,-1,-1,-1,-1,-1,-1,13,-1,-1,-1,-1,-1],"answer":2090},{"id":"up-24","n":4,"clue":[-1,-1,-1,7,4,-1,3,6,-1,0,-1,-1,-1,-1,3,-1],"answer":410},{"id":"up-25","n":5,"clue":[-1,-1,4,-1,-1,11,-1,1,-1,-1,-1,-1,-1,-1,-1,-1,15,-1,5,-1,-1,19,-1,9,11],"answer":2363},{"id":"up-26","n":4,"clue":[5,-1,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,15,11],"answer":1188},{"id":"up-27","n":4,"clue":[1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,13,10,-1,9,-1],"answer":1132},{"id":"up-28","n":4,"clue":[-1,1,-1,-1,-1,0,-1,5,-1,-1,-1,-1,7,-1,13,-1],"answer":1162},{"id":"up-29","n":4,"clue":[11,-1,-1,-1,-1,8,-1,-1,-1,-1,-1,-1,-1,12,-1,-1],"answer":1132},{"id":"up-30","n":4,"clue":[-1,-1,-1,-1,6,-1,-1,-1,-1,-1,-1,10,-1,7,-1,12],"answer":730},{"id":"up-31","n":4,"clue":[-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,7,17,-1,-1,-1],"answer":2178},{"id":"up-32","n":4,"clue":[7,-1,-1,-1,-1,-1,-1,-1,-1,5,3,-1,-1,8,-1,8],"answer":1106},{"id":"up-33","n":4,"clue":[-1,12,-1,-1,4,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,-1],"answer":970},{"id":"up-34","n":4,"clue":[-1,1,-1,-1,-1,-1,-1,-1,4,-1,-1,7,-1,-1,9,11],"answer":1212},{"id":"up-35","n":4,"clue":[-1,-1,-1,-1,-1,-1,3,5,-1,-1,-1,3,9,-1,-1,1],"answer":1682},{"id":"up-36","n":4,"clue":[-1,6,-1,-1,-1,-1,-1,-1,-1,-1,10,-1,3,-1,-1,-1],"answer":1124},{"id":"up-37","n":4,"clue":[0,-1,4,-1,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,-1],"answer":1430},{"id":"up-38","n":4,"clue":[-1,-1,-1,-1,3,-1,-1,-1,-1,-1,-1,15,-1,-1,10,-1],"answer":1684},{"id":"up-39","n":4,"clue":[-1,-1,-1,-1,-1,-1,5,-1,-1,9,-1,-1,-1,-1,11,14],"answer":1164},{"id":"up-40","n":4,"clue":[-1,-1,13,-1,8,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"answer":1164},{"id":"up-41","n":4,"clue":[-1,-1,-1,-1,-1,3,-1,-1,11,-1,-1,-1,13,-1,-1,8],"answer":1090},{"id":"up-42","n":4,"clue":[9,3,-1,-1,7,-1,-1,-1,-1,-1,-1,3,-1,5,-1,-1],"answer":882},{"id":"up-43","n":4,"clue":[-1,-1,14,-1,-1,-1,-1,-1,7,-1,-1,-1,9,-1,-1,-1],"answer":2292},{"id":"up-44","n":5,"clue":[30,-1,-1,-1,-1,-1,-1,-1,-1,-1,14,10,-1,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1],"answer":4447},{"id":"up-45","n":5,"clue":[-1,-1,9,-1,19,-1,5,-1,18,-1,-1,-1,-1,-1,-1,0,1,-1,-1,23,-1,-1,-1,-1,-1],"answer":4463},{"id":"up-46","n":5,"clue":[-1,5,3,-1,3,-1,-1,-1,-1,-1,-1,3,-1,-1,-1,14,-1,-1,3,-1,16,11,-1,-1,-1],"answer":2655},{"id":"up-47","n":5,"clue":[-1,-1,4,7,-1,-1,-1,-1,-1,8,-1,-1,0,1,-1,-1,3,-1,-1,-1,11,-1,7,13,-1],"answer":2667}];
 /* PRACTICE BOARDS:END */
 
 /* ---------- the two languages ----------
@@ -554,6 +631,20 @@ const I18N = {
   ruleNumber: '<b>The number in a square</b> is the least total cost of any walk from that square to a capitol. A finished tiling has to reproduce every published number <b>and</b> make it the cheapest route there is.',
   ruleAnswer: '<b>The answer</b> — the row sum of a row is the total area of the states that touch that row (a state counts in every row it touches); the answer is the sum of the squares of the row sums.',
   rulesMore: 'The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.',
+  agentTitle: 'For an agent playing this game',
+  agentGoal: '<b>The goal.</b> Tile the whole board — every square belongs to a state — and drive every published number to <code>FORCED</code>. Play it in the browser, and treat the browser as your only tool. The <b>Rules</b> block at the top of the page is the whole specification: everything you need in order to succeed is written there, and the page implements it exactly, so do not work out the cost model behind it, do not re-check its costs by hand, and do not write a solver. Careful, reactive playing beats any solver, and it is the only way to end up with a tiling you actually understand.',
+  agentDrive: '<b>Driving it.</b> A square answers to <code>pointerdown</code>, not to <code>click</code>; the tools and the palette answer to <code>click</code>. A digit <code>0</code>–<code>9</code> on the keyboard picks that colour, and that is the reliable way to do it — a palette click can be dispatched and still leave the old colour active, so read <code>aria-pressed</code> back after every control change. The snippet below does all of it; nothing else is needed. One stroke is a <code>pointerdown</code> plus a <code>pointerup</code>, and the undo stack grows once per stroke.',
+  agentCareful: '<b>Careful.</b> Address a square by its <code>data-i</code>, never by a pixel position: the page scrolls when something is clicked, and a click that lands on the wrong square silently corrupts a state. After every action, read the board back — a click can be dispatched and still leave the old thing active. After switching boards, check the plate name and the published numbers, because the picker and the board can disagree. Every board keeps its own sheet, so painting on one board does not disturb another — and you should not touch a board you were not asked to play.',
+  agentMistakes: '<b>Mistakes are cheap.</b> You are not expected to get it right the first time: <code>Undo</code> takes back one stroke, and Ctrl+Z (Cmd+Z) does the same, so a wrong shape is one click away from being undone; <code>Clear</code> wipes the sheet and starts over. And you need not keep one attempt: the JSON buttons store the board and read it back. <code>Save JSON</code> downloads it as a file, <code>Copy JSON</code> puts the very same text on the clipboard, <code>Open JSON</code> reads a file back into the page, and <code>Save PNG</code> saves a picture of the board. Save a try under a name, try something else, come back to it. If you drive the page yourself, the same things are reachable without clicking — the ids are in the snippet above: hand the file input a file and it loads at once, and the undo and clear buttons do what their names say. The saved sheet IS that JSON: the states, the assumed capitols and your own constraints, in the shape <code>metric-too-ledger/1</code>.',
+  agentLoop: '<b>The loop.</b> Paint one state, then read the board before you touch anything else: the badge in the corner of each square, the colour of the walls, the cost in the lower left of each square, the rows of the table on the right, and the one-line summary. Each of them tells you which of your assumptions the board just refused. Fix the smallest thing the board complains about, read again, and go on. Do not plan the whole tiling in your head first — the board is a cheap place to try things.',
+  agentSignals: '<b>What the board says, and what to do about it.</b><ul><li><b>A red wall</b> — the painted region has no symmetry at all, so it is not a state yet: draw it again as a shape with a mirror or a rotation.</li><li><b>An amber wall</b> — that state has no capitol, so it goes nowhere and every step inside it costs its whole area: give it a capitol, or draw it again so that it has one.</li><li><b>A &#10005; badge</b> — a capitol you know is cheaper than the published number, so that number cannot be the minimum: one of your assumptions is wrong. Undo the last move and try the other shape.</li><li><b>An &#9675; badge</b> — the number can be paid, but it is not pinned down yet: size the free squares, or drop an assumption you do not need.</li><li><b>An &#9650; badge</b> — a capitol that has not been revealed yet has to be nearer: rest the pointer on that square and the squares that could hold it light up with a dashed ring; assume one of them with the capitol tool.</li><li><b>A green cost</b> — the route you assume costs more than the published number: make a state on that route smaller.</li><li><b>An amber cost</b> — the route you assume costs less than the published number: the real route has to be longer, so something on it must grow, or that capitol is too close.</li><li><b>A square that reads 1</b> — it needs a 1×1 state right next to it, and that state is itself a capitol.</li><li><b>A square that reads 0</b> — that square is the capitol of its own state.</li></ul>',
+  agentVerdicts: '<b>A verdict is what the page answers for one published number.</b> The table on the right has one row per published number: the square, the number it reads, the range of costs your painting allows, the verdict, the reason, and the route that proves it. The names mean: <code>FORCED</code> — your assumptions pin the number exactly; leave it alone. <code>TIGHT_CHEAPEST</code> — the cheapest route already costs exactly this, so the number is the minimum. <code>TIGHT_GEODESIC</code> — the known route costs exactly this and nothing may be nearer. <code>NEEDS_EXACT_PATH</code> — the number sits inside the range: you need a route that costs exactly this. <code>NEEDS_HIDDEN_CAPITOL</code> — a capitol that has not been revealed yet has to be strictly nearer. <code>CONTRADICTED</code> — a capitol you know is already cheaper, so one of your assumptions is wrong: undo. <code>UNPRODUCIBLE</code> — no route can pay this number at all; a hidden capitol has to do it. <b>A note is not a verdict</b> — the Notes panel under the table explains what the page just found, and it usually names the exact square that is wrong.',
+  agentTexts: '<b>The texts around the board.</b> The line under the tools — the box right below the undo button — is the summary. <i>Paint a state, or open a board file.</i> means nothing is painted yet. <i>No contradiction: every published number is still reachable under these assumptions.</i> means your assumptions still allow every number. <i>N published numbers are contradicted</i> names the squares that are wrong. The green one, <i>The tiling is complete and every published number is produced and is the cheapest one</i>, means you are there. The chips in the tally count the verdicts. The head of the board says how many states you have, how many of them have a capitol, and how many squares are still unknown. The hint beside the row-sum button says what is still missing: <i>the sheet is not tiled yet</i>, <i>a painted region is not a state yet</i>, <i>an assumed capitol does not match the state it sits in</i>, or <i>N published numbers are not settled yet</i>.',
+  agentLegend: '<b>Read the legend at the bottom of the page.</b> It explains every mark on the board: the area in the corner, the capitol, the two cost numbers, the badge, the wall colours, the ring for a hidden capitol, and your own constraints. Read it once, and read it again whenever a mark means something you did not expect. Some of the marks are colour and not text: when the text is not enough, look at the board — take a screenshot and read the walls, the badges and the rings with your eyes.',
+  agentFinish: '<b>When it is done.</b> The one-line summary says the tiling is complete and every published number is settled, and the tally shows nothing left that is open, demanded or contradicted — every number is <code>FORCED</code>. On a practice board the computed answer and the row sums appear under the board; on the 11×11 the page never shows one, because that puzzle is still open. Check your tiling against the published numbers yourself before you believe it.',
+  agentSave: '<b>Reading and saving.</b> The whole sheet sits in <code>localStorage</code> under <code>mt2ledger:&lt;board id&gt;</code>: <code>c</code> is the colour of every square, <code>a</code> the capitols you assumed, <code>con</code> your constraints. Read it instead of scraping the screen. Each board keeps its own sheet, so you can leave and come back to it. The <code>JSON</code> button puts the same sheet on the clipboard as <code>metric-too-ledger/1</code> — the states, the assumed capitols and the constraints — and the JSON reader takes it back. In the console of the page, <code>colors</code>, <code>assumed</code> and <code>hiddenCapMap</code> can be read directly; the last one maps a square that needs a hidden capitol to the squares that could hold it, so you can skip the wait for the ring.',
+  agentNever: '<b>Never.</b> There is no answer key in this page: the shapes of the solution are not in the page source, on purpose, and if you ever find a page that offers one, that is the answer, not a way to play. Do not write a solver, and do not try to work out the cost model — the page already does it, faithfully, and the point of playing is to let the board tell you. And do not reverse-engineer the hidden-capitol candidates either: hover the number and read the ring, or assume a capitol and let the board judge it. And remember that the page only re-checks the published numbers: it cannot tell you that your tiling is the only one that fits.',
+  agentMore: '<b>That is the whole game.</b> The board is the referee; it never lies about the costs, so use it and do not re-derive anything.',
   sub: 'Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.',
   backLink: '← All puzzles',
   backLinkHref: '../index.html',
@@ -563,8 +654,8 @@ const I18N = {
   boardGroupLedger: 'The puzzle',
   boardLedger: 'Original · 11×11',
   boardOfficial: 'official example',
-  boardNote: 'A practice board: it comes with a solution, so you can check yourself against one.',
-  btnShowSolution: 'Show solution',
+  boardNote: 'A practice board: the partition is not in this page — find it yourself.',
+  labelExpected: 'this board comes out with %s',
   btnRowSums: 'Row sums and answer',
   sumReady: 'the sheet is tiled and every published number is settled',
   sumWhyTiling: 'the sheet is not tiled yet',
@@ -1361,6 +1452,10 @@ function refresh() {
     $('answerNum').textContent = String(ans.answer);
     $('rowSums').textContent = fmt(t('labelRowSums'), ans.rows.join(' / '));
   }
+  // and the number the board comes out with, if it is known: a check at the
+  // end, not a hint at the start
+  const exp = $('expAnswer');
+  if (exp) exp.textContent = (BOARD.answer != null) ? fmt(t('labelExpected'), BOARD.answer) : '';
 
   drawSums();
   drawHover();
@@ -1382,7 +1477,7 @@ function clueTriples(n, flat) {
   return out;
 }
 const BOARDS = [LEDGER_BOARD].concat(PRACTICE_BOARDS.map(b => ({
-  id: b.id, n: b.n, clues: clueTriples(b.n, b.clue), solution: b.owner,
+  id: b.id, n: b.n, clues: clueTriples(b.n, b.clue), answer: b.answer,
   official: !!b.official,
 })));
 const boardById = id => BOARDS.find(b => b.id === id) || BOARDS[0];
@@ -1440,7 +1535,6 @@ function loadBoard(id) {
   $('board').style.setProperty('--n', N);
   $('routeSvg').setAttribute('viewBox', '0 0 ' + N + ' ' + N);
   $('capSize').max = String(N * N);
-  $('showSolution').hidden = !b.solution;
   $('boardNote').hidden = b.id === LEDGER_BOARD.id;
   $('plateName').textContent = boardLabel(b);
   $('boardSel').value = b.id;
@@ -1450,19 +1544,13 @@ function loadBoard(id) {
   save();
 }
 
-/* The solution of a practice board, painted on.  The 11x11 has none: it is
-   still an open puzzle, and this page does not carry its answer. */
-function showSolution() {
-  if (!BOARD.solution) return;
-  pushUndo();
-  colors = new Array(N * N).fill(-1);
-  for (let k = 0; k < BOARD.solution.length; k++) {
-    const o = BOARD.solution[k];
-    if (o === null || o === undefined) continue;
-    colors[k] = o;
-  }
-  refresh();
-}
+/* There is no answer key here.  A practice board used to carry its own
+   partition, so that a reader could paint it with one button; that is gone
+   on purpose: the shapes of the solution must not sit in the page source,
+   where an agent could read them instead of playing.  What the page still
+   knows is the NUMBER the board comes out with, and that is a check at the
+   end, not a way to play.  The 11x11 has neither: it is still an open
+   puzzle, and this page does not carry its answer. */
 
 /* The answer, computed from what is painted right now -- never read out of a
    file.  A row's sum is the total area of the states that touch that row: a
@@ -2405,7 +2493,6 @@ $('presetClear').addEventListener('click', () => { pushUndo(); colors = new Arra
   box.addEventListener('toggle', () => store.set('mt2rules', box.open ? 'open' : 'closed'));
 }
 $('boardSel').addEventListener('change', e => loadBoard(e.target.value));
-$('showSolution').addEventListener('click', showSolution);
 // The row sums and the total.  One press, and from then on they follow the
 // painting; they go away again if the sheet stops qualifying.
 $('sumBtn').addEventListener('click', () => { showSums = true; drawSums(); });

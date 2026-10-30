@@ -243,6 +243,20 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
   font-size: 0.88rem; line-height: 1.45; }
 .rules li b { color: var(--ink); }
 .rules .rule-more { margin: 8px 0 0; font-size: 0.82rem; color: var(--muted); }
+/* the agent box quotes selectors and attribute names: they have to read as
+   code, not as prose, or an agent cannot tell them from the sentences. */
+.rules code { font-family: var(--f-num); font-size: 0.9em; background: var(--blank);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.rules code + code { margin-left: 1px; }
+/* the driving snippet: it is the same in both languages, so it lives in the
+   markup and not in the translation table. */
+.rules pre.agent-code { margin: 7px 0 2px; padding: 8px 10px; overflow-x: auto;
+  background: var(--blank); border: 1px solid var(--line); border-radius: 4px;
+  font-family: var(--f-num); font-size: 0.74rem; line-height: 1.45; }
+.rules pre.agent-code code { border: 0; padding: 0; background: none; font-size: 1em;
+  white-space: pre; }
+.rules ul { margin: 4px 0 0; padding-left: 1.15em; }
+.rules li li { margin: 2px 0; }
 /* the export area: a download can be blocked, so the same content is always
    on the page as text (copyable) and as a picture (saveable by long-press) */
 .iterlist { display: grid; gap: 4px; }
@@ -309,16 +323,75 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
     <p class="rule-more" data-i18n="rulesMore">棋盘会随着你的涂法，一遍遍把每个已发布数重新对账。格子右上角的徽章说这个数是已钉死、还待定、在要求一个隐藏首都，还是被推翻了；棋盘下面的说明解释盘面上的每一个记号。</p>
   </details>
 
+  <!-- An agent plays this game from the browser and from nothing else, so
+       this box is written for that: how to move the pieces, what the board
+       says back, what its words mean, and what to do about it.  It sits in
+       the DOM from the start (a closed <details> is still readable from the
+       DOM), so a machine can read it without opening it, and a reader never
+       has to look at it. -->
+  <details class="rules" id="agentBox">
+    <summary data-i18n="agentTitle">给在这一页上玩这个游戏的智能体</summary>
+    <ol>
+      <li data-i18n="agentGoal"><b>目标。</b>把整块板子铺满 —— 每个格子都归某个州 —— 并且把每一个已发布数都推到 <code>FORCED</code>。在浏览器里玩，并且把浏览器当成你的唯一工具。页面顶部的<b>规则</b>块就是完整的规格说明：你需要的一切都写在那里，而页面严格按它实现 —— 所以不要去推导它背后的代价模型，不要手工复核它算出来的代价，也不要写求解器。反应式地认真玩，比任何求解器都快，而且这是唯一能让你真的弄懂这个划分的办法。</li>
+      <li><span data-i18n="agentDrive"><b>怎么操控。</b>格子认的是 <code>pointerdown</code>，不认 <code>click</code>；工具和调色板认的是 <code>click</code>。键盘上的数字 <code>0</code>–<code>9</code> 直接选那个颜色，这是最稳的办法 —— 调色板上的点击可能发出去了却仍然停在原来的颜色上，所以每改一次控件就把 <code>aria-pressed</code> 读回来。下面那段代码把整套操作都包好了，别的一概不需要。一笔 = 一次 <code>pointerdown</code> 加一次 <code>pointerup</code>，撤销栈每一笔记一步。</span>
+        <pre class="agent-code"><code>const q = (s) => document.querySelector(s);
+const cell = (i) => q('#board .cell[data-i="' + i + '"]');
+
+// a square answers to pointerdown; the tools and the palette answer to click
+function tap(i) {
+  cell(i).dispatchEvent(new PointerEvent('pointerdown',
+    { bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: 0, clientY: 0 }));
+  window.dispatchEvent(new PointerEvent('pointerup',
+    { bubbles: true, pointerId: 1, pointerType: 'mouse' }));
+}
+function colour(k) {            // 0-9 on the keyboard: the reliable way
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: String(k), bubbles: true }));
+}
+function tool(name) { q('.chip[data-tool="' + name + '"]').click(); }
+function hover(i) {             // wait about a second: the ring for a hidden capitol
+  cell(i).dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
+}
+function board() { return q('#plateName').textContent; }   // which board is loaded
+
+// the same things without clicking: #undoBtn, #presetClear, #fileIn,
+// and the JSON buttons #saveJson, #copyJson, #openJson, #savePng
+
+// read the referee
+const rows = [...document.querySelectorAll('#verdicts tbody tr')].map(tr =&gt; ({
+  i: tr.dataset.i,
+  v: tr.querySelector('span.v').textContent,
+  why: tr.querySelector('.why')?.textContent || '',
+  route: tr.querySelector('.route')?.textContent || ''
+}));
+const tally = [...document.querySelectorAll('#tally .v')].map(e =&gt; e.textContent);
+const status = q('#status').textContent;      // the one-line summary
+const notes = q('#notes').textContent;        // why the page just said that
+const sheet = JSON.parse(localStorage.getItem('mt2ledger:' + q('#boardSel').value) || '{}');
+// sheet.c = the colour of every square, sheet.a = the capitols you assumed</code></pre>
+      </li>
+      <li data-i18n="agentCareful"><b>小心。</b>要用 <code>data-i</code> 去找一个格子，绝不要用像素坐标：页面在某些点击之后会滚动，落错格的点击会悄无声息地毁掉一个州。每做一步都要把盘面读回来 —— 一次点击可能发出去了却仍然停在旧的控件上。换盘之后要核对盘子上的名字和已发布的数字，因为选择器和真正的盘面可能对不上。每块盘子各自存一张纸，所以你在一块盘上涂的不会影响另一块 —— 但也别去动你没有被要求玩的那块盘。</li>
+      <li data-i18n="agentMistakes"><b>犯错不要紧。</b>你不需要一次就做对：<code>撤销</code>收回一笔，<code>Ctrl+Z</code>（<code>Cmd+Z</code>）也是同一个动作，所以画错的形状点一下就没了；<code>清空</code>把整张纸抹掉重来。你也不必只有一次尝试：<code>JSON</code> 那几个按钮负责存盘和读盘。<code>保存 JSON</code> 把它存成文件，<code>复制 JSON</code> 把同一份文本放进剪贴板，<code>打开 JSON</code> 把文件读回页面，<code>保存 PNG</code> 把盘面存成图片。给一次尝试起个名字存下来，再试别的，随时可以回来。如果你自己驱动这个页面，同样的东西不点也能用 —— 那些 id 就写在上面那段代码的注释里：把文件交给那个文件输入框，它立刻就加载；撤销和清空两个按钮做的正是它们名字说的事情。存下来的那张纸就是那份 <code>JSON</code>：州、假想的首都和你自己设的约束，格式是 <code>metric-too-ledger/1</code>。</li>
+      <li data-i18n="agentLoop"><b>循环。</b>先涂一个州，然后在碰别的之前先读盘：每格右上角的徽章、墙的颜色、每格左下角的代价、右边那张表的每一行，以及那一行总结。它们各自在告诉你：你的哪一个假设刚刚被盘面拒绝了。只修盘面抱怨的那一处最小的东西，再读一遍，继续。不要一上来就在脑子里把整块划分规划完 —— 盘面是个很便宜的试验台。</li>
+      <li data-i18n="agentSignals"><b>盘面在说什么，以及你该怎么做。</b><ul><li><b>红色的墙</b> —— 这块涂出来的区域一点对称都没有，所以它还不是一个州：按镜像或旋转的形状重涂一次。</li><li><b>琥珀色的墙</b> —— 那个州没有首都，所以它哪儿也不去，而且里面每走一步都按整块面积计代价：给它一个首都，或者重涂成一个有首都的形状。</li><li><b>&#10005; 徽章</b> —— 你知道的某个首都比这个已发布数更近，所以这个数不可能是最小值：你的某个假设错了。撤销上一步，换一个形状试试。</li><li><b>&#9675; 徽章</b> —— 这个数付得起，但还没被钉死：给那些自由格定大小，或者去掉一个你并不需要的假设。</li><li><b>&#9650; 徽章</b> —— 必须有一个还没露面的首都更近：把指针停在这一格上，可能放得下它的格子会亮起虚线圆环；用首都工具假设其中一格。</li><li><b>绿色的代价</b> —— 你假设的这条路线比已发布数更贵：把这条路线上的某个州改小。</li><li><b>琥珀色的代价</b> —— 你假设的这条路线比已发布数更便宜：真正的路线必须更长，所以路线上某个州要变大，或者那个首都离得太近。</li><li><b>读作 1 的格子</b> —— 它旁边必须有一个 1×1 的州，而那个州自己就是一个首都。</li><li><b>读作 0 的格子</b> —— 那一格就是它自己那个州的首都。</li></ul></li>
+      <li data-i18n="agentVerdicts"><b>判定</b>是页面给每一个已发布数的结论。右边那张表每个已发布数一行：格子、它读作多少、你的涂法允许的代价范围、判定名、理由，以及证明它的那条路线。判定名的意思：<code>FORCED</code> —— 假设正好把这个数钉死，别动它。<code>TIGHT_CHEAPEST</code> —— 最便宜的那条路已经正好是这个代价，所以这个数就是最小值。<code>TIGHT_GEODESIC</code> —— 已知的那条路正好是这个代价，而且不允许有更近的。<code>NEEDS_EXACT_PATH</code> —— 这个数落在范围里：你需要一条正好花这么多代价的路线。<code>NEEDS_HIDDEN_CAPITOL</code> —— 必须有一个还没露面的首都严格更近。<code>CONTRADICTED</code> —— 你知道的某个首都已经更便宜，所以你的某个假设错了：撤销。<code>UNPRODUCIBLE</code> —— 没有任何路线能付掉这个数，只能靠一个隐藏首都。<b>备注不是判定</b> —— 表下面的「备注」栏解释页面刚刚发现了什么，而且通常会点名是哪一个格子错了。</li>
+      <li data-i18n="agentTexts"><b>盘面周围的那些文字。</b>工具栏下面那一行 —— 撤销按钮底下的那个方框 —— 是总结。「涂一个州，或者打开一个板子文件」= 还什么都没涂。「没有矛盾：在这些假设下，每个已发布数都还走得出来」= 你的假设还允许每一个数。「N 个已发布数是矛盾的」会点名是哪几个格子错了。绿色那行「划分已经完整，而且每个已发布数都走得出来、并且就是最便宜的那条」= 你到了。计数那排小标签是各种判定的数目。板子头上写着你有几个州、其中几个有首都、还有几格未知。行和按钮旁边的提示说明还差什么：「板子还没涂满」「有一块涂出来的区域还不是一个州」「有个假想首都和它所在的州对不上」「还有 N 个已发布数没被钉死」。</li>
+      <li data-i18n="agentLegend"><b>把页面最底下那段说明读一遍。</b>它解释了盘面上的每一个记号：角落里的面积、首都、两个代价数字、徽章、墙的颜色、隐藏首都的圆环，以及你自己设的约束。读一遍；每当某个记号的意思和你想的不一样时，就再读一遍。其中有些记号是颜色而不是文字：当文字不够用时，就去看盘面 —— 用截图和你的眼睛读那些墙、徽章和圆环。</li>
+      <li data-i18n="agentFinish"><b>什么时候算完。</b>那一行总结说划分已经完整、每个已发布数都已钉死，计数里也没有剩下的待定、要求或矛盾 —— 每个数都是 <code>FORCED</code>。练习盘上，板子下面会给出算出来的答案和行和；11×11 上页面永远不给，因为那道题还没结束。在相信自己的划分之前，先拿已发布数自己核对一遍。</li>
+      <li data-i18n="agentSave"><b>读盘与存档。</b>整块盘子都在 <code>localStorage</code> 的 <code>mt2ledger:&lt;board id&gt;</code> 下面：<code>c</code> 是每格的涂色，<code>a</code> 是你假设的首都，<code>con</code> 是你设的约束。读它，别去抓屏幕。每块盘各自存一张纸，所以你可以走了再回来。<code>JSON</code> 那个按钮把同一份东西以 <code>metric-too-ledger/1</code> 的格式放进剪贴板 —— 州、假想的首都和约束 —— <code>JSON</code> 那个读取按钮再把它读回来。在这一页的控制台里，<code>colors</code>、<code>assumed</code>、<code>hiddenCapMap</code> 可以直接读；最后一个把「需要隐藏首都」的那格映射到「可能放得下」它的那些格，可以省掉等圆环的那一下。</li>
+      <li data-i18n="agentNever"><b>不要做的事。</b>这一页里没有答案键：解答的形状故意不在页面源码里；就算你找到一页带答案键的，那也是答案，不是玩法。不要写求解器，也不要试图去推导代价模型 —— 页面已经忠实地算了，而玩的意义就在于让盘面来告诉你。隐藏首都的候选也不要自己去推：把指针停在那个数上读圆环，或者直接假设一个首都，让盘面来判。还有一点要记住：页面只会拿已发布数重新对账，它没法告诉你你的划分是不是唯一能成立的那个。</li>
+    </ol>
+    <p class="rule-more" data-i18n="agentMore"><b>整个游戏就是这些。</b>盘面就是裁判，它在代价上从不说谎 —— 所以用它，别自己再推一遍。</p>
+  </details>
+
   <main>
     <div class="plate">
       <div class="plate-head"><span id="plateName"></span><span id="stateCount" data-i18n="noStatesYet">还没有州</span></div>
       <div class="boardbar">
         <label class="hint" for="boardSel" data-i18n="labelBoard">棋盘</label>
         <select class="btn" id="boardSel"></select>
-        <button class="btn" id="showSolution" data-i18n="btnShowSolution" hidden>显示解</button>
         <button class="btn" id="sumBtn" data-i18n="btnRowSums">行和与答案</button>
         <span class="hint" id="sumHint"></span>
-        <span class="hint" id="boardNote" data-i18n="boardNote">练习盘：自带解，可以拿来对账。</span>
+        <span class="hint" id="boardNote" data-i18n="boardNote">练习盘：划分不在这一页里 —— 自己找出来。</span>
       </div>
       <div class="boardbox">
         <div class="axes" style="--n:11" id="axes">
@@ -356,6 +429,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
       <div class="answerbox" id="answerBox" hidden>
         <span data-i18n="labelAnswer">算出来的答案</span><b id="answerNum"></b>
         <span class="rows" id="rowSums"></span>
+        <span class="rows" id="expAnswer"></span>
       </div>
 
       <div class="io">
@@ -500,9 +574,12 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 /* ---------- the boards ----------
    The sheet can hold more than one puzzle.  The first is the one this whole
    notebook was built for: Jane Street's 11x11, with its 33 published numbers.
-   The rest are practice boards -- smaller puzzles that come with a solution,
-   so a reader can check a solution against one.  The 11x11 has NO solution
-   here on purpose: it is still an open puzzle.
+   The rest are practice boards -- smaller puzzles that come with the number
+   they come out with, so a reader can check a finished tiling against it.
+   None of them carries its partition: the shapes of the solution stay out
+   of the page on purpose, so that nobody can read the answer key off the
+   page source instead of playing.  The 11x11 has neither the number nor a
+   partition here: it is still an open puzzle.
 
    The practice boards are vendored from two public pages; the credits are at
    the bottom of this page, and the details are in note 28 of
@@ -516,7 +593,7 @@ const LEDGER_CLUES = [[0,1,8],[0,2,4],[0,5,11],[0,9,5],[1,7,11],[2,2,7],[2,5,1],
 const NCOL = 10;
 const TONES = ['--t0','--t1','--t2','--t3','--t4','--t5','--t6','--t7','--t8','--t9'];
 
-const LEDGER_BOARD = { id: 'jane-11x11', n: 11, clues: LEDGER_CLUES, solution: null };
+const LEDGER_BOARD = { id: 'jane-11x11', n: 11, clues: LEDGER_CLUES, answer: null };
 
 let N = LEDGER_BOARD.n;
 let CLUES = LEDGER_BOARD.clues;
@@ -529,7 +606,7 @@ function setClues(list) {
 setClues(CLUES);
 
 /* PRACTICE BOARDS:BEGIN -- generated by tools/lr11/page/sync_boards.py, do not edit */
-const PRACTICE_BOARDS = [{"id":"up-0","n":6,"clue":[-1,7,4,-1,-1,13,-1,-1,1,0,1,-1,-1,-1,-1,-1,4,12,-1,9,-1,-1,7,-1,-1,-1,-1,7,-1,14,2,-1,6,8,10,14],"owner":[0,0,0,0,1,1,2,2,2,3,1,1,4,5,5,6,1,1,4,5,5,6,1,1,4,4,4,6,7,7,8,8,9,9,7,7]},{"id":"up-1","n":6,"clue":[25,21,-1,17,-1,12,22,-1,15,13,9,9,19,15,-1,9,7,6,21,17,-1,7,5,3,23,-1,12,6,-1,0,-1,13,9,-1,-1,-1],"owner":[0,1,2,3,3,4,0,1,2,3,3,4,0,1,2,5,6,4,0,1,5,5,6,7,0,5,5,5,7,7,0,8,8,8,8,9]},{"id":"up-2","n":7,"clue":[11,-1,3,1,-1,9,15,-1,7,-1,0,1,-1,-1,19,-1,8,1,3,10,-1,17,-1,5,-1,1,3,-1,-1,-1,-1,-1,-1,1,-1,26,20,-1,8,-1,8,-1,-1,19,17,15,8,15,23],"owner":[0,1,2,2,3,3,3,0,1,4,5,3,3,3,0,1,4,4,4,4,4,0,1,4,6,6,7,7,0,1,8,8,9,7,7,0,1,8,8,8,7,7,0,10,10,8,8,7,7]},{"id":"up-3","n":6,"clue":[37,-1,25,-1,-1,-1,-1,-1,-1,-1,19,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,7,6,-1,-1,-1,5,6,1,-1],"owner":[0,0,0,0,0,0,1,1,2,3,4,4,1,1,2,3,4,4,1,1,2,3,4,4,1,1,2,2,2,2,5,5,5,5,5,6]},{"id":"up-4","n":7,"clue":[0,-1,-1,1,7,9,13,1,-1,-1,0,-1,-1,-1,4,5,3,1,6,7,-1,7,7,5,-1,-1,-1,11,10,-1,-1,11,-1,17,19,-1,24,-1,16,21,-1,27,28,-1,25,21,26,32,35],"owner":[0,1,1,1,1,2,2,3,1,1,4,5,2,2,3,1,6,7,5,8,8,3,1,6,7,5,9,9,10,10,10,7,5,9,9,10,10,10,7,5,9,9,10,10,10,7,5,9,9]},{"id":"official-5x5","n":5,"official":true,"clue":[12,-1,-1,-1,17,8,-1,6,3,-1,-1,-1,-1,-1,-1,-1,7,6,-1,10,25,-1,-1,-1,0],"owner":[0,1,1,3,3,0,1,1,2,3,0,0,2,2,3,3,0,0,0,3,3,3,3,3,3]},{"id":"up-5","n":5,"clue":[-1,9,-1,-1,-1,-1,-1,-1,1,4,-1,-1,-1,-1,-1,-1,-1,5,1,9,17,-1,-1,-1,-1],"owner":[0,0,1,1,1,2,3,3,3,4,2,5,5,6,4,2,5,5,4,4,2,4,4,4,4]},{"id":"up-6","n":5,"clue":[7,-1,-1,-1,21,-1,-1,-1,-1,-1,-1,-1,11,-1,26,1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,0,0,0,0,1,2,2,3,3,1,4,4,3,3,4,4,4,3,3,5,4,4,3,3]},{"id":"up-7","n":5,"clue":[-1,3,-1,5,-1,3,-1,-1,-1,3,-1,-1,-1,-1,5,11,-1,9,-1,-1,-1,15,-1,-1,9],"owner":[0,0,0,0,1,2,2,3,4,1,5,4,4,4,4,5,5,4,4,6,5,5,5,4,6]},{"id":"up-8","n":6,"clue":[-1,7,-1,-1,0,3,-1,9,7,-1,3,-1,13,14,9,-1,-1,11,-1,11,10,-1,10,-1,-1,-1,-1,0,-1,-1,-1,11,-1,-1,6,11],"owner":[0,1,2,3,3,4,0,1,2,5,3,4,6,1,5,5,5,4,6,1,5,5,5,4,6,1,5,7,5,4,6,8,8,8,8,8]},{"id":"up-9","n":5,"clue":[-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,14,11,-1,-1,-1,21,-1,12,-1,-1,-1,-1,-1,20],"owner":[0,0,0,1,2,2,2,2,2,2,3,3,3,3,2,4,3,3,5,5,4,3,3,5,5]},{"id":"up-10","n":5,"clue":[7,-1,14,-1,-1,-1,-1,-1,-1,-1,3,-1,-1,1,-1,-1,-1,10,-1,-1,-1,12,-1,-1,-1],"owner":[0,1,2,2,2,0,1,2,2,2,3,1,1,1,4,3,5,5,5,5,3,5,5,5,5]},{"id":"up-11","n":5,"clue":[-1,-1,14,18,-1,-1,14,-1,-1,18,-1,-1,-1,12,-1,0,-1,-1,-1,-1,-1,6,-1,-1,-1],"owner":[0,0,1,1,2,3,3,1,1,2,3,3,3,4,2,5,3,3,4,2,6,6,6,6,6]},{"id":"up-12","n":5,"clue":[-1,-1,-1,-1,0,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,30,27,26,-1,-1],"owner":[0,1,2,2,2,0,1,3,3,2,0,1,3,3,2,4,4,4,4,4,5,5,5,5,5]},{"id":"up-13","n":5,"clue":[-1,16,-1,-1,-1,-1,18,-1,-1,-1,20,14,-1,-1,10,-1,-1,-1,-1,-1,-1,9,-1,0,-1],"owner":[0,0,1,1,2,0,0,3,3,2,0,0,3,3,2,4,4,4,5,2,4,4,4,5,5]},{"id":"up-14","n":5,"clue":[-1,-1,-1,-1,8,4,-1,0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,12,17,-1],"owner":[0,1,2,3,3,0,2,2,3,3,0,4,5,5,5,0,4,5,5,5,6,6,6,6,6]},{"id":"up-15","n":5,"clue":[21,-1,-1,-1,13,-1,9,-1,-1,-1,-1,-1,1,-1,9,-1,-1,-1,-1,7,-1,5,-1,-1,-1],"owner":[0,0,0,0,1,0,0,0,0,1,2,2,2,2,3,4,4,5,3,3,4,4,3,3,3]},{"id":"up-16","n":5,"clue":[-1,-1,-1,15,-1,17,-1,-1,11,-1,13,11,9,-1,4,11,-1,-1,-1,-1,-1,-1,5,-1,0],"owner":[0,0,0,0,0,1,1,2,3,3,1,1,2,3,3,4,4,5,5,5,6,6,6,6,7]},{"id":"up-17","n":5,"clue":[-1,-1,-1,-1,-1,-1,9,1,-1,-1,25,17,-1,-1,-1,27,-1,-1,17,21,-1,-1,-1,-1,25],"owner":[0,0,1,2,2,0,0,0,2,2,0,0,0,2,2,3,3,3,4,4,3,3,3,4,4]},{"id":"up-18","n":6,"clue":[2,-1,-1,-1,0,1,-1,-1,5,-1,1,-1,-1,-1,7,5,3,9,0,3,-1,-1,-1,15,3,-1,-1,-1,-1,-1,-1,-1,-1,14,22,27],"owner":[0,1,1,1,2,3,0,1,4,5,5,3,6,1,4,7,7,3,6,6,8,7,7,3,8,8,8,7,7,3,9,9,8,7,7,3]},{"id":"up-19","n":6,"clue":[-1,11,8,15,-1,17,11,-1,-1,8,-1,-1,-1,-1,0,-1,3,-1,-1,-1,-1,-1,5,7,-1,-1,5,-1,-1,6,-1,7,-1,-1,-1,3],"owner":[0,1,2,2,2,3,0,1,2,2,2,3,0,1,4,2,5,3,0,1,6,6,5,3,0,1,6,6,7,3,0,8,8,7,7,3]},{"id":"up-20","n":5,"clue":[-1,-1,-1,-1,-1,18,-1,-1,-1,1,-1,-1,4,-1,-1,17,9,6,-1,1,19,-1,-1,-1,-1],"owner":[0,0,0,0,0,1,1,2,2,2,1,1,3,4,5,1,1,3,4,6,1,1,3,4,6]},{"id":"up-21","n":5,"clue":[5,-1,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,5,-1,0,3,11],"owner":[0,1,1,1,1,0,2,3,4,4,2,2,2,4,4,5,2,6,4,4,5,6,6,4,4]},{"id":"up-22","n":5,"clue":[-1,-1,-1,16,17,11,-1,-1,-1,13,-1,-1,3,5,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,3],"owner":[0,0,0,0,0,1,2,2,2,3,1,2,2,2,3,1,4,4,5,3,6,6,7,5,3]},{"id":"up-23","n":4,"clue":[-1,21,-1,-1,-1,-1,-1,-1,-1,-1,13,-1,-1,-1,-1,-1],"owner":[0,0,1,1,0,0,0,2,0,0,2,2,3,2,2,2]},{"id":"up-24","n":4,"clue":[-1,-1,-1,7,4,-1,3,6,-1,0,-1,-1,-1,-1,3,-1],"owner":[0,0,1,1,2,2,2,3,4,5,6,3,4,4,6,3]},{"id":"up-25","n":5,"clue":[-1,-1,4,-1,-1,11,-1,1,-1,-1,-1,-1,-1,-1,-1,-1,15,-1,5,-1,-1,19,-1,9,11],"owner":[0,1,1,1,2,0,3,3,4,2,0,3,3,5,5,0,3,3,5,5,6,6,6,6,6]},{"id":"up-26","n":4,"clue":[5,-1,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,15,11],"owner":[0,0,1,2,3,1,1,1,3,4,4,4,3,4,4,4]},{"id":"up-27","n":4,"clue":[1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,13,10,-1,9,-1],"owner":[0,1,2,2,0,3,2,2,0,3,2,2,0,3,4,4]},{"id":"up-28","n":4,"clue":[-1,1,-1,-1,-1,0,-1,5,-1,-1,-1,-1,7,-1,13,-1],"owner":[0,1,1,2,0,3,4,2,0,4,4,2,4,4,4,2]},{"id":"up-29","n":4,"clue":[11,-1,-1,-1,-1,8,-1,-1,-1,-1,-1,-1,-1,12,-1,-1],"owner":[0,0,1,2,0,0,1,3,0,0,1,3,4,4,1,3]},{"id":"up-30","n":4,"clue":[-1,-1,-1,-1,6,-1,-1,-1,-1,-1,-1,10,-1,7,-1,12],"owner":[0,1,1,2,0,1,3,2,0,4,3,2,0,4,3,2]},{"id":"up-31","n":4,"clue":[-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,7,17,-1,-1,-1],"owner":[0,0,1,2,3,3,3,2,3,3,3,2,2,2,2,2]},{"id":"up-32","n":4,"clue":[7,-1,-1,-1,-1,-1,-1,-1,-1,5,3,-1,-1,8,-1,8],"owner":[0,0,1,2,0,0,3,2,0,0,3,2,4,4,4,2]},{"id":"up-33","n":4,"clue":[-1,12,-1,-1,4,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,0,0,1,0,0,0,1,2,2,2,3,4,5,5,3]},{"id":"up-34","n":4,"clue":[-1,1,-1,-1,-1,-1,-1,-1,4,-1,-1,7,-1,-1,9,11],"owner":[0,0,1,2,0,3,1,2,4,4,4,2,4,4,4,2]},{"id":"up-35","n":4,"clue":[-1,-1,-1,-1,-1,-1,3,5,-1,-1,-1,3,9,-1,-1,1],"owner":[0,0,1,1,0,0,2,3,0,0,2,3,0,0,4,3]},{"id":"up-36","n":4,"clue":[-1,6,-1,-1,-1,-1,-1,-1,-1,-1,10,-1,3,-1,-1,-1],"owner":[0,0,1,1,2,0,0,1,0,0,3,3,4,4,3,3]},{"id":"up-37","n":4,"clue":[0,-1,4,-1,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,-1],"owner":[0,0,0,0,0,1,2,3,0,1,2,4,0,1,2,4]},{"id":"up-38","n":4,"clue":[-1,-1,-1,-1,3,-1,-1,-1,-1,-1,-1,15,-1,-1,10,-1],"owner":[0,1,2,2,0,3,2,2,4,3,2,2,4,3,2,2]},{"id":"up-39","n":4,"clue":[-1,-1,-1,-1,-1,-1,5,-1,-1,9,-1,-1,-1,-1,11,14],"owner":[0,1,1,2,3,3,4,2,3,3,4,2,3,3,4,2]},{"id":"up-40","n":4,"clue":[-1,-1,13,-1,8,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"owner":[0,1,1,2,0,1,1,2,0,1,1,2,3,3,4,2]},{"id":"up-41","n":4,"clue":[-1,-1,-1,-1,-1,3,-1,-1,11,-1,-1,-1,13,-1,-1,8],"owner":[0,0,1,2,0,0,3,2,0,0,3,2,4,4,4,4]},{"id":"up-42","n":4,"clue":[9,3,-1,-1,7,-1,-1,-1,-1,-1,-1,3,-1,5,-1,-1],"owner":[0,0,1,1,0,0,2,3,0,0,4,3,5,5,4,3]},{"id":"up-43","n":4,"clue":[-1,-1,14,-1,-1,-1,-1,-1,7,-1,-1,-1,9,-1,-1,-1],"owner":[0,0,0,0,0,0,0,0,1,1,2,2,3,3,3,2]},{"id":"up-44","n":5,"clue":[30,-1,-1,-1,-1,-1,-1,-1,-1,-1,14,10,-1,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1],"owner":[0,0,0,1,1,0,0,0,2,2,0,0,2,2,2,3,3,4,2,2,3,3,4,4,5]},{"id":"up-45","n":5,"clue":[-1,-1,9,-1,19,-1,5,-1,18,-1,-1,-1,-1,-1,-1,0,1,-1,-1,23,-1,-1,-1,-1,-1],"owner":[0,1,1,2,2,0,3,3,2,2,3,3,3,2,2,4,3,3,2,2,5,5,5,5,5]},{"id":"up-46","n":5,"clue":[-1,5,3,-1,3,-1,-1,-1,-1,-1,-1,3,-1,-1,-1,14,-1,-1,3,-1,16,11,-1,-1,-1],"owner":[0,0,1,2,2,0,0,1,3,4,0,0,5,5,4,0,0,5,6,6,7,7,7,7,7]},{"id":"up-47","n":5,"clue":[-1,-1,4,7,-1,-1,-1,-1,-1,8,-1,-1,0,1,-1,-1,3,-1,-1,-1,11,-1,7,13,-1],"owner":[0,0,0,1,1,2,2,2,1,1,3,3,4,5,5,6,6,6,5,5,6,6,6,5,5]}];
+const PRACTICE_BOARDS = [{"id":"up-0","n":6,"clue":[-1,7,4,-1,-1,13,-1,-1,1,0,1,-1,-1,-1,-1,-1,4,12,-1,9,-1,-1,7,-1,-1,-1,-1,7,-1,14,2,-1,6,8,10,14],"answer":4680},{"id":"up-1","n":6,"clue":[25,21,-1,17,-1,12,22,-1,15,13,9,9,19,15,-1,9,7,6,21,17,-1,7,5,3,23,-1,12,6,-1,0,-1,13,9,-1,-1,-1],"answer":3886},{"id":"up-2","n":7,"clue":[11,-1,3,1,-1,9,15,-1,7,-1,0,1,-1,-1,19,-1,8,1,3,10,-1,17,-1,5,-1,1,3,-1,-1,-1,-1,-1,-1,1,-1,26,20,-1,8,-1,8,-1,-1,19,17,15,8,15,23],"answer":12767},{"id":"up-3","n":6,"clue":[37,-1,25,-1,-1,-1,-1,-1,-1,-1,19,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,7,6,-1,-1,-1,5,6,1,-1],"answer":8240},{"id":"up-4","n":7,"clue":[0,-1,-1,1,7,9,13,1,-1,-1,0,-1,-1,-1,4,5,3,1,6,7,-1,7,7,5,-1,-1,-1,11,10,-1,-1,11,-1,17,19,-1,24,-1,16,21,-1,27,28,-1,25,21,26,32,35],"answer":13969},{"id":"official-5x5","n":5,"clue":[12,-1,-1,-1,17,8,-1,6,3,-1,-1,-1,-1,-1,-1,-1,7,6,-1,10,25,-1,-1,-1,0],"answer":8045},{"id":"up-5","n":5,"clue":[-1,9,-1,-1,-1,-1,-1,-1,1,4,-1,-1,-1,-1,-1,-1,-1,5,1,9,17,-1,-1,-1,-1],"answer":3131},{"id":"up-6","n":5,"clue":[7,-1,-1,-1,21,-1,-1,-1,-1,-1,-1,-1,11,-1,26,1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"answer":4463},{"id":"up-7","n":5,"clue":[-1,3,-1,5,-1,3,-1,-1,-1,3,-1,-1,-1,-1,5,11,-1,9,-1,-1,-1,15,-1,-1,9],"answer":3677},{"id":"up-8","n":6,"clue":[-1,7,-1,-1,0,3,-1,9,7,-1,3,-1,13,14,9,-1,-1,11,-1,11,10,-1,10,-1,-1,-1,-1,0,-1,-1,-1,11,-1,-1,6,11],"answer":6368},{"id":"up-9","n":5,"clue":[-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,14,11,-1,-1,-1,21,-1,12,-1,-1,-1,-1,-1,20],"answer":4387},{"id":"up-10","n":5,"clue":[7,-1,14,-1,-1,-1,-1,-1,-1,-1,3,-1,-1,1,-1,-1,-1,10,-1,-1,-1,12,-1,-1,-1],"answer":4061},{"id":"up-11","n":5,"clue":[-1,-1,14,18,-1,-1,14,-1,-1,18,-1,-1,-1,12,-1,0,-1,-1,-1,-1,-1,6,-1,-1,-1],"answer":2727},{"id":"up-12","n":5,"clue":[-1,-1,-1,-1,0,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,30,27,26,-1,-1],"answer":2413},{"id":"up-13","n":5,"clue":[-1,16,-1,-1,-1,-1,18,-1,-1,-1,20,14,-1,-1,10,-1,-1,-1,-1,-1,-1,9,-1,0,-1],"answer":2753},{"id":"up-14","n":5,"clue":[-1,-1,-1,-1,8,4,-1,0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,12,17,-1],"answer":2357},{"id":"up-15","n":5,"clue":[21,-1,-1,-1,13,-1,9,-1,-1,-1,-1,-1,1,-1,9,-1,-1,-1,-1,7,-1,5,-1,-1,-1],"answer":3913},{"id":"up-16","n":5,"clue":[-1,-1,-1,15,-1,17,-1,-1,11,-1,13,11,9,-1,4,11,-1,-1,-1,-1,-1,-1,5,-1,0],"answer":1731},{"id":"up-17","n":5,"clue":[-1,-1,-1,-1,-1,-1,9,1,-1,-1,25,17,-1,-1,-1,27,-1,-1,17,21,-1,-1,-1,-1,25],"answer":4785},{"id":"up-18","n":6,"clue":[2,-1,-1,-1,0,1,-1,-1,5,-1,1,-1,-1,-1,7,5,3,9,0,3,-1,-1,-1,15,3,-1,-1,-1,-1,-1,-1,-1,-1,14,22,27],"answer":5380},{"id":"up-19","n":6,"clue":[-1,11,8,15,-1,17,11,-1,-1,8,-1,-1,-1,-1,0,-1,3,-1,-1,-1,-1,-1,5,7,-1,-1,5,-1,-1,6,-1,7,-1,-1,-1,3],"answer":5614},{"id":"up-20","n":5,"clue":[-1,-1,-1,-1,-1,18,-1,-1,-1,1,-1,-1,4,-1,-1,17,9,6,-1,1,19,-1,-1,-1,-1],"answer":2931},{"id":"up-21","n":5,"clue":[5,-1,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,5,-1,0,3,11],"answer":3113},{"id":"up-22","n":5,"clue":[-1,-1,-1,16,17,11,-1,-1,-1,13,-1,-1,3,5,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,3],"answer":2165},{"id":"up-23","n":4,"clue":[-1,21,-1,-1,-1,-1,-1,-1,-1,-1,13,-1,-1,-1,-1,-1],"answer":2090},{"id":"up-24","n":4,"clue":[-1,-1,-1,7,4,-1,3,6,-1,0,-1,-1,-1,-1,3,-1],"answer":410},{"id":"up-25","n":5,"clue":[-1,-1,4,-1,-1,11,-1,1,-1,-1,-1,-1,-1,-1,-1,-1,15,-1,5,-1,-1,19,-1,9,11],"answer":2363},{"id":"up-26","n":4,"clue":[5,-1,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,15,11],"answer":1188},{"id":"up-27","n":4,"clue":[1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,13,10,-1,9,-1],"answer":1132},{"id":"up-28","n":4,"clue":[-1,1,-1,-1,-1,0,-1,5,-1,-1,-1,-1,7,-1,13,-1],"answer":1162},{"id":"up-29","n":4,"clue":[11,-1,-1,-1,-1,8,-1,-1,-1,-1,-1,-1,-1,12,-1,-1],"answer":1132},{"id":"up-30","n":4,"clue":[-1,-1,-1,-1,6,-1,-1,-1,-1,-1,-1,10,-1,7,-1,12],"answer":730},{"id":"up-31","n":4,"clue":[-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,7,17,-1,-1,-1],"answer":2178},{"id":"up-32","n":4,"clue":[7,-1,-1,-1,-1,-1,-1,-1,-1,5,3,-1,-1,8,-1,8],"answer":1106},{"id":"up-33","n":4,"clue":[-1,12,-1,-1,4,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,-1],"answer":970},{"id":"up-34","n":4,"clue":[-1,1,-1,-1,-1,-1,-1,-1,4,-1,-1,7,-1,-1,9,11],"answer":1212},{"id":"up-35","n":4,"clue":[-1,-1,-1,-1,-1,-1,3,5,-1,-1,-1,3,9,-1,-1,1],"answer":1682},{"id":"up-36","n":4,"clue":[-1,6,-1,-1,-1,-1,-1,-1,-1,-1,10,-1,3,-1,-1,-1],"answer":1124},{"id":"up-37","n":4,"clue":[0,-1,4,-1,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,-1],"answer":1430},{"id":"up-38","n":4,"clue":[-1,-1,-1,-1,3,-1,-1,-1,-1,-1,-1,15,-1,-1,10,-1],"answer":1684},{"id":"up-39","n":4,"clue":[-1,-1,-1,-1,-1,-1,5,-1,-1,9,-1,-1,-1,-1,11,14],"answer":1164},{"id":"up-40","n":4,"clue":[-1,-1,13,-1,8,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"answer":1164},{"id":"up-41","n":4,"clue":[-1,-1,-1,-1,-1,3,-1,-1,11,-1,-1,-1,13,-1,-1,8],"answer":1090},{"id":"up-42","n":4,"clue":[9,3,-1,-1,7,-1,-1,-1,-1,-1,-1,3,-1,5,-1,-1],"answer":882},{"id":"up-43","n":4,"clue":[-1,-1,14,-1,-1,-1,-1,-1,7,-1,-1,-1,9,-1,-1,-1],"answer":2292},{"id":"up-44","n":5,"clue":[30,-1,-1,-1,-1,-1,-1,-1,-1,-1,14,10,-1,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1],"answer":4447},{"id":"up-45","n":5,"clue":[-1,-1,9,-1,19,-1,5,-1,18,-1,-1,-1,-1,-1,-1,0,1,-1,-1,23,-1,-1,-1,-1,-1],"answer":4463},{"id":"up-46","n":5,"clue":[-1,5,3,-1,3,-1,-1,-1,-1,-1,-1,3,-1,-1,-1,14,-1,-1,3,-1,16,11,-1,-1,-1],"answer":2655},{"id":"up-47","n":5,"clue":[-1,-1,4,7,-1,-1,-1,-1,-1,8,-1,-1,0,1,-1,-1,3,-1,-1,-1,11,-1,7,13,-1],"answer":2667}];
 /* PRACTICE BOARDS:END */
 
 /* ---------- the two languages ----------
@@ -551,6 +628,20 @@ const I18N = {
   ruleNumber: '<b>格子里的数</b>是从它走到任意首都的最小总代价。一个完成的划分必须把每个已发布数<b>走出来</b>，而且它得是最便宜的那条路。',
   ruleAnswer: '<b>答案</b> —— 一行的行和是所有碰这一行的州的面积之和（一个州碰到几行就算几行）；答案是各行行和的平方之和。',
   rulesMore: '棋盘会随着你的涂法，一遍遍把每个已发布数重新对账。格子右上角的徽章说这个数是已钉死、还待定、在要求一个隐藏首都，还是被推翻了；棋盘下面的说明解释盘面上的每一个记号。',
+  agentTitle: '给在这一页上玩这个游戏的智能体',
+  agentGoal: '<b>目标。</b>把整块板子铺满 —— 每个格子都归某个州 —— 并且把每一个已发布数都推到 <code>FORCED</code>。在浏览器里玩，并且把浏览器当成你的唯一工具。页面顶部的<b>规则</b>块就是完整的规格说明：你需要的一切都写在那里，而页面严格按它实现 —— 所以不要去推导它背后的代价模型，不要手工复核它算出来的代价，也不要写求解器。反应式地认真玩，比任何求解器都快，而且这是唯一能让你真的弄懂这个划分的办法。',
+  agentDrive: '<b>怎么操控。</b>格子认的是 <code>pointerdown</code>，不认 <code>click</code>；工具和调色板认的是 <code>click</code>。键盘上的数字 <code>0</code>–<code>9</code> 直接选那个颜色，这是最稳的办法 —— 调色板上的点击可能发出去了却仍然停在原来的颜色上，所以每改一次控件就把 <code>aria-pressed</code> 读回来。下面那段代码把整套操作都包好了，别的一概不需要。一笔 = 一次 <code>pointerdown</code> 加一次 <code>pointerup</code>，撤销栈每一笔记一步。',
+  agentCareful: '<b>小心。</b>要用 <code>data-i</code> 去找一个格子，绝不要用像素坐标：页面在某些点击之后会滚动，落错格的点击会悄无声息地毁掉一个州。每做一步都要把盘面读回来 —— 一次点击可能发出去了却仍然停在旧的控件上。换盘之后要核对盘子上的名字和已发布的数字，因为选择器和真正的盘面可能对不上。每块盘子各自存一张纸，所以你在一块盘上涂的不会影响另一块 —— 但也别去动你没有被要求玩的那块盘。',
+  agentMistakes: '<b>犯错不要紧。</b>你不需要一次就做对：<code>撤销</code>收回一笔，<code>Ctrl+Z</code>（<code>Cmd+Z</code>）也是同一个动作，所以画错的形状点一下就没了；<code>清空</code>把整张纸抹掉重来。你也不必只有一次尝试：<code>JSON</code> 那几个按钮负责存盘和读盘。<code>保存 JSON</code> 把它存成文件，<code>复制 JSON</code> 把同一份文本放进剪贴板，<code>打开 JSON</code> 把文件读回页面，<code>保存 PNG</code> 把盘面存成图片。给一次尝试起个名字存下来，再试别的，随时可以回来。如果你自己驱动这个页面，同样的东西不点也能用 —— 那些 id 就写在上面那段代码的注释里：把文件交给那个文件输入框，它立刻就加载；撤销和清空两个按钮做的正是它们名字说的事情。存下来的那张纸就是那份 <code>JSON</code>：州、假想的首都和你自己设的约束，格式是 <code>metric-too-ledger/1</code>。',
+  agentLoop: '<b>循环。</b>先涂一个州，然后在碰别的之前先读盘：每格右上角的徽章、墙的颜色、每格左下角的代价、右边那张表的每一行，以及那一行总结。它们各自在告诉你：你的哪一个假设刚刚被盘面拒绝了。只修盘面抱怨的那一处最小的东西，再读一遍，继续。不要一上来就在脑子里把整块划分规划完 —— 盘面是个很便宜的试验台。',
+  agentSignals: '<b>盘面在说什么，以及你该怎么做。</b><ul><li><b>红色的墙</b> —— 这块涂出来的区域一点对称都没有，所以它还不是一个州：按镜像或旋转的形状重涂一次。</li><li><b>琥珀色的墙</b> —— 那个州没有首都，所以它哪儿也不去，而且里面每走一步都按整块面积计代价：给它一个首都，或者重涂成一个有首都的形状。</li><li><b>&#10005; 徽章</b> —— 你知道的某个首都比这个已发布数更近，所以这个数不可能是最小值：你的某个假设错了。撤销上一步，换一个形状试试。</li><li><b>&#9675; 徽章</b> —— 这个数付得起，但还没被钉死：给那些自由格定大小，或者去掉一个你并不需要的假设。</li><li><b>&#9650; 徽章</b> —— 必须有一个还没露面的首都更近：把指针停在这一格上，可能放得下它的格子会亮起虚线圆环；用首都工具假设其中一格。</li><li><b>绿色的代价</b> —— 你假设的这条路线比已发布数更贵：把这条路线上的某个州改小。</li><li><b>琥珀色的代价</b> —— 你假设的这条路线比已发布数更便宜：真正的路线必须更长，所以路线上某个州要变大，或者那个首都离得太近。</li><li><b>读作 1 的格子</b> —— 它旁边必须有一个 1×1 的州，而那个州自己就是一个首都。</li><li><b>读作 0 的格子</b> —— 那一格就是它自己那个州的首都。</li></ul>',
+  agentVerdicts: '<b>判定</b>是页面给每一个已发布数的结论。右边那张表每个已发布数一行：格子、它读作多少、你的涂法允许的代价范围、判定名、理由，以及证明它的那条路线。判定名的意思：<code>FORCED</code> —— 假设正好把这个数钉死，别动它。<code>TIGHT_CHEAPEST</code> —— 最便宜的那条路已经正好是这个代价，所以这个数就是最小值。<code>TIGHT_GEODESIC</code> —— 已知的那条路正好是这个代价，而且不允许有更近的。<code>NEEDS_EXACT_PATH</code> —— 这个数落在范围里：你需要一条正好花这么多代价的路线。<code>NEEDS_HIDDEN_CAPITOL</code> —— 必须有一个还没露面的首都严格更近。<code>CONTRADICTED</code> —— 你知道的某个首都已经更便宜，所以你的某个假设错了：撤销。<code>UNPRODUCIBLE</code> —— 没有任何路线能付掉这个数，只能靠一个隐藏首都。<b>备注不是判定</b> —— 表下面的「备注」栏解释页面刚刚发现了什么，而且通常会点名是哪一个格子错了。',
+  agentTexts: '<b>盘面周围的那些文字。</b>工具栏下面那一行 —— 撤销按钮底下的那个方框 —— 是总结。「涂一个州，或者打开一个板子文件」= 还什么都没涂。「没有矛盾：在这些假设下，每个已发布数都还走得出来」= 你的假设还允许每一个数。「N 个已发布数是矛盾的」会点名是哪几个格子错了。绿色那行「划分已经完整，而且每个已发布数都走得出来、并且就是最便宜的那条」= 你到了。计数那排小标签是各种判定的数目。板子头上写着你有几个州、其中几个有首都、还有几格未知。行和按钮旁边的提示说明还差什么：「板子还没涂满」「有一块涂出来的区域还不是一个州」「有个假想首都和它所在的州对不上」「还有 N 个已发布数没被钉死」。',
+  agentLegend: '<b>把页面最底下那段说明读一遍。</b>它解释了盘面上的每一个记号：角落里的面积、首都、两个代价数字、徽章、墙的颜色、隐藏首都的圆环，以及你自己设的约束。读一遍；每当某个记号的意思和你想的不一样时，就再读一遍。其中有些记号是颜色而不是文字：当文字不够用时，就去看盘面 —— 用截图和你的眼睛读那些墙、徽章和圆环。',
+  agentFinish: '<b>什么时候算完。</b>那一行总结说划分已经完整、每个已发布数都已钉死，计数里也没有剩下的待定、要求或矛盾 —— 每个数都是 <code>FORCED</code>。练习盘上，板子下面会给出算出来的答案和行和；11×11 上页面永远不给，因为那道题还没结束。在相信自己的划分之前，先拿已发布数自己核对一遍。',
+  agentSave: '<b>读盘与存档。</b>整块盘子都在 <code>localStorage</code> 的 <code>mt2ledger:&lt;board id&gt;</code> 下面：<code>c</code> 是每格的涂色，<code>a</code> 是你假设的首都，<code>con</code> 是你设的约束。读它，别去抓屏幕。每块盘各自存一张纸，所以你可以走了再回来。<code>JSON</code> 那个按钮把同一份东西以 <code>metric-too-ledger/1</code> 的格式放进剪贴板 —— 州、假想的首都和约束 —— <code>JSON</code> 那个读取按钮再把它读回来。在这一页的控制台里，<code>colors</code>、<code>assumed</code>、<code>hiddenCapMap</code> 可以直接读；最后一个把「需要隐藏首都」的那格映射到「可能放得下」它的那些格，可以省掉等圆环的那一下。',
+  agentNever: '<b>不要做的事。</b>这一页里没有答案键：解答的形状故意不在页面源码里；就算你找到一页带答案键的，那也是答案，不是玩法。不要写求解器，也不要试图去推导代价模型 —— 页面已经忠实地算了，而玩的意义就在于让盘面来告诉你。隐藏首都的候选也不要自己去推：把指针停在那个数上读圆环，或者直接假设一个首都，让盘面来判。还有一点要记住：页面只会拿已发布数重新对账，它没法告诉你你的划分是不是唯一能成立的那个。',
+  agentMore: '<b>整个游戏就是这些。</b>盘面就是裁判，它在代价上从不说谎 —— 所以用它，别自己再推一遍。',
   sub: '把你假设的州涂出来，标出你假设的首都 —— 包括<b>隐藏</b>的那些 —— 每个已发布数都会按真实的行走代价重新核对一遍。',
   backLink: '← 全部谜题',
   backLinkHref: '../index.zh.html',
@@ -560,8 +651,8 @@ const I18N = {
   boardGroupLedger: '原题',
   boardLedger: '原题 · 11×11',
   boardOfficial: '官方例子',
-  boardNote: '练习盘：自带解，可以拿来对账。',
-  btnShowSolution: '显示解',
+  boardNote: '练习盘：划分不在这一页里 —— 自己找出来。',
+  labelExpected: '这道题的结果是 %s',
   btnRowSums: '行和与答案',
   sumReady: '板子涂满了，每个已发布数都钉死了',
   sumWhyTiling: '板子还没涂满',
@@ -1358,6 +1449,10 @@ function refresh() {
     $('answerNum').textContent = String(ans.answer);
     $('rowSums').textContent = fmt(t('labelRowSums'), ans.rows.join(' / '));
   }
+  // and the number the board comes out with, if it is known: a check at the
+  // end, not a hint at the start
+  const exp = $('expAnswer');
+  if (exp) exp.textContent = (BOARD.answer != null) ? fmt(t('labelExpected'), BOARD.answer) : '';
 
   drawSums();
   drawHover();
@@ -1379,7 +1474,7 @@ function clueTriples(n, flat) {
   return out;
 }
 const BOARDS = [LEDGER_BOARD].concat(PRACTICE_BOARDS.map(b => ({
-  id: b.id, n: b.n, clues: clueTriples(b.n, b.clue), solution: b.owner,
+  id: b.id, n: b.n, clues: clueTriples(b.n, b.clue), answer: b.answer,
   official: !!b.official,
 })));
 const boardById = id => BOARDS.find(b => b.id === id) || BOARDS[0];
@@ -1437,7 +1532,6 @@ function loadBoard(id) {
   $('board').style.setProperty('--n', N);
   $('routeSvg').setAttribute('viewBox', '0 0 ' + N + ' ' + N);
   $('capSize').max = String(N * N);
-  $('showSolution').hidden = !b.solution;
   $('boardNote').hidden = b.id === LEDGER_BOARD.id;
   $('plateName').textContent = boardLabel(b);
   $('boardSel').value = b.id;
@@ -1447,19 +1541,13 @@ function loadBoard(id) {
   save();
 }
 
-/* The solution of a practice board, painted on.  The 11x11 has none: it is
-   still an open puzzle, and this page does not carry its answer. */
-function showSolution() {
-  if (!BOARD.solution) return;
-  pushUndo();
-  colors = new Array(N * N).fill(-1);
-  for (let k = 0; k < BOARD.solution.length; k++) {
-    const o = BOARD.solution[k];
-    if (o === null || o === undefined) continue;
-    colors[k] = o;
-  }
-  refresh();
-}
+/* There is no answer key here.  A practice board used to carry its own
+   partition, so that a reader could paint it with one button; that is gone
+   on purpose: the shapes of the solution must not sit in the page source,
+   where an agent could read them instead of playing.  What the page still
+   knows is the NUMBER the board comes out with, and that is a check at the
+   end, not a way to play.  The 11x11 has neither: it is still an open
+   puzzle, and this page does not carry its answer. */
 
 /* The answer, computed from what is painted right now -- never read out of a
    file.  A row's sum is the total area of the states that touch that row: a
@@ -2402,7 +2490,6 @@ $('presetClear').addEventListener('click', () => { pushUndo(); colors = new Arra
   box.addEventListener('toggle', () => store.set('mt2rules', box.open ? 'open' : 'closed'));
 }
 $('boardSel').addEventListener('change', e => loadBoard(e.target.value));
-$('showSolution').addEventListener('click', showSolution);
 // The row sums and the total.  One press, and from then on they follow the
 // painting; they go away again if the sheet stops qualifying.
 $('sumBtn').addEventListener('click', () => { showSums = true; drawSums(); });

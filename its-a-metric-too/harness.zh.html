@@ -1102,6 +1102,15 @@ function paint(i) {
   // painted region against the blank board is a wall too.  The colour of a
   // wall is the worst of its two sides: a region with no symmetry at all is
   // outlined in red, a state with no capitol in amber.
+  //
+  // Where each band lands is not guesswork -- an inset shadow paints the side
+  // OPPOSITE to the sign of its offset: `inset 0 -W 0` paints the BOTTOM band,
+  // `inset 0 +W 0` the TOP, `inset -W 0 0` the RIGHT, `inset +W 0 0` the LEFT.
+  // So the south wall (bottom) and the east wall (right) take a negative
+  // offset, and the north wall (top) and the west wall (left) a positive one.
+  // Getting this wrong puts the left rim one square too far right -- a wall
+  // through the middle of a state.  tools/lr11/check/wall_geometry_check.py
+  // reads the pixels and holds every edge to its own side.
   const rr = (i / N) | 0, cc = i % N, st = led.comp[i];
   const flag = j => (j >= 0 && j < N * N) ? led.flags[j] : 0;
   const wallColour = (a, b) => {
@@ -1109,8 +1118,8 @@ function paint(i) {
     return f === 2 ? 'var(--bad)' : (f === 1 ? 'var(--warn)' : 'var(--ink)');
   };
   const plain = '0 0 0 transparent';
-  d.style.setProperty('--wN', (rr === 0 && st >= 0) ? 'inset 0 calc(-1 * var(--wall)) 0 ' + wallColour(i, i) : plain);
-  d.style.setProperty('--wW', (cc === 0 && st >= 0) ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i) : plain);
+  d.style.setProperty('--wN', (rr === 0 && st >= 0) ? 'inset 0 var(--wall) 0 ' + wallColour(i, i) : plain);
+  d.style.setProperty('--wW', (cc === 0 && st >= 0) ? 'inset var(--wall) 0 0 ' + wallColour(i, i) : plain);
   d.style.setProperty('--wE', cc === N - 1 ? (st >= 0 ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i) : plain)
     : (led.comp[i + 1] !== st ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i + 1) : plain));
   d.style.setProperty('--wS', rr === N - 1 ? (st >= 0 ? 'inset 0 calc(-1 * var(--wall)) 0 ' + wallColour(i, i) : plain)

@@ -102,7 +102,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 .foot-sum b { font: 700 1.05rem/1 var(--f-num); color: var(--ink); letter-spacing: 0.02em; }
 .axes .axis-note { position: absolute; }
 #board {
-  display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-rows: repeat(var(--n), minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-template-rows: repeat(var(--n), minmax(0, 1fr));
   width: 100%; aspect-ratio: 1; border: 2.5px solid var(--ink); touch-action: none; user-select: none; -webkit-user-select: none;
   -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
 }
@@ -275,6 +275,15 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 .iterrow .bad { color: var(--bad); font-weight: 700; }
 .iterrow .good { color: var(--good); font-weight: 700; }
 .iterrow button { font-size: 0.75rem; padding: 2px 8px; }
+/* the paint history: a list of links, one per action, each with its own URL */
+.histbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 7px; }
+.histbar .btn { font-size: 0.78rem; padding: 3px 9px; }
+.histbar .btn.off { opacity: 0.4; pointer-events: none; }
+.histbar .hint { font-size: 0.78rem; }
+#histList { max-height: 32vh; overflow: auto; }
+.iterrow.cur { box-shadow: inset 3px 0 0 var(--accent); background: var(--sheet); }
+.iterrow a.lnk { font-family: var(--f-num); font-size: 0.78rem; color: var(--accent); text-decoration: none; }
+.iterrow a.lnk:hover { text-decoration: underline; }
 .io { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
 .io-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-right: 2px; }
 .io .btn { font-size: 0.84rem; padding: 6px 11px; }
@@ -437,6 +446,17 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
       <section class="box" id="notesBox">
         <h2 data-i18n="panelNotes">Notes</h2>
         <div class="notes" id="notes"></div>
+      </section>
+      <section class="box" id="historyBox">
+        <h2 data-i18n="panelHistory">Paint history</h2>
+        <div class="histbar">
+          <a class="btn off" id="histPrev" href="#"><span data-i18n="histBack">← Back</span></a>
+          <a class="btn off" id="histNext" href="#"><span data-i18n="histForward">Forward →</span></a>
+          <span class="hint" id="histPos"></span>
+          <button class="btn" id="histJson" data-i18n="btnHistJson">History JSON</button>
+          <button class="btn" id="histClear" data-i18n="btnHistClear">Clear history</button>
+        </div>
+        <div class="iterlist" id="histList"></div>
       </section>
     </div>
   </main>
@@ -631,6 +651,28 @@ const I18N = {
   thRange: 'range',
   thVerdict: 'verdict',
   panelNotes: 'Notes',
+  panelHistory: 'Paint history',
+  histBack: '← Back',
+  histForward: 'Forward →',
+  histNone: 'Nothing painted yet.',
+  histPos: 'action %s of %s',
+  histPainted: '%s painted',
+  btnHistJson: 'History JSON',
+  btnHistClear: 'Clear history',
+  histCleared: 'History cleared.',
+  histExported: 'Exported %s action(s).',
+  histRestored: 'Back to action #%s.',
+  histLoaded: 'Loaded %s action(s).',
+  histWhat: 'Every action taken on this board, with the board as it was after that action. Open this file to get the whole history back.',
+  actStart: 'start',
+  actPaint: 'paint %s',
+  actErase: 'erase %s',
+  actCap: 'assume capitol %s (%s)',
+  actUncap: 'drop the assumption at %s',
+  actConstraint: 'constraint at %s',
+  actClear: 'clear the board',
+  actUndo: 'undo',
+  actLoad: 'load a board file',
   hiddenCapTitle: 'Where could a hidden capitol be?',
   badgeForced: 'confirmed: the assumptions pin this number exactly',
   badgeTightGeo: 'open: a known capitol pays exactly this, but a hidden one may be nearer',
@@ -1243,7 +1285,7 @@ function paint(i) {
 }
 function setStatus(html, kind) { const st = $('status'); st.innerHTML = html; st.className = 'status' + (kind ? ' ' + kind : ''); }
 function pushUndo() { undoStack.push({ c: colors.slice(), a: [...assumed] }); if (undoStack.length > 200) undoStack.shift(); }
-function doUndo() { const u = undoStack.pop(); if (!u) return; colors = u.c; assumed = new Map(u.a); refresh(); }
+function doUndo() { const u = undoStack.pop(); if (!u) return; const before = snapshot(); colors = u.c; assumed = new Map(u.a); record(before, 'undo', '', ''); refresh(); }
 function setPaintColor(id) {
   if (!Number.isInteger(id) || id < 0 || id >= NCOL) id = 0;   // a bad id would paint nothing at all
   paintColor = id;
@@ -1260,14 +1302,18 @@ function applyTool(i) {
   setCell(i);
 }
 function setCell(i) {
-  if (tool === 'erase') { colors[i] = -1; assumed.delete(i); }
+  const before = snapshot();
+  let kind = 'paint', extra = '';
+  if (tool === 'erase') { colors[i] = -1; assumed.delete(i); kind = 'erase'; }
   else if (tool === 'cap') {
     const k = Math.max(1, Math.min(121, +$('capSize').value || 1));
-    if (assumed.has(i)) assumed.delete(i); else { assumed.set(i, k); colors[i] = -1; }
+    if (assumed.has(i)) { assumed.delete(i); kind = 'uncap'; }
+    else { assumed.set(i, k); colors[i] = -1; kind = 'cap'; extra = k; }
   } else {
-    if (colors[i] === paintColor) { colors[i] = -1; }
-    else { colors[i] = paintColor; assumed.delete(i); }
+    if (colors[i] === paintColor) { colors[i] = -1; kind = 'erase'; }
+    else { colors[i] = paintColor; assumed.delete(i); kind = 'paint'; extra = paintColor; }
   }
+  record(before, kind, cellName(i), extra);
   refresh();
 }
 
@@ -1448,12 +1494,20 @@ function loadBoard(id) {
   selected = -1;
   undoStack = [];
   iterations = [];
+  actions = [];
+  actionSeq = 0;
+  histPos = -1;
   hoverCell = -1;
   if (saved && Array.isArray(saved.c) && saved.c.length === N * N) {
     colors = saved.c;
     assumed = new Map(saved.a || []);
     iterations = saved.it || [];
     constraints = new Map(saved.con || []);
+    if (Array.isArray(saved.act)) {
+      actions = saved.act.filter(a => a && Array.isArray(a.c) && a.c.length === N * N);
+      for (const a of actions) if (Number.isInteger(a.n) && a.n >= actionSeq) actionSeq = a.n + 1;
+      histPos = actions.length - 1;
+    }
   }
   $('axes').style.setProperty('--n', N);
   $('board').style.setProperty('--n', N);
@@ -1464,6 +1518,7 @@ function loadBoard(id) {
   $('boardSel').value = b.id;
   buildBoard();
   renderIterations();
+  renderHistory();
   refresh();
   save();
 }
@@ -1622,9 +1677,14 @@ function formatNums(set) {
 function constraintOf(i) { return constraints.get(i) || { size: '', cost: '' }; }
 
 function setConstraint(i, cfg) {
+  const before = snapshot();
+  const was = constraintOf(i);
   const clean = { size: String(cfg.size || ''), cost: String(cfg.cost || '') };
   if (!clean.size.trim() && !clean.cost.trim()) constraints.delete(i);
   else constraints.set(i, clean);
+  if (was.size !== clean.size || was.cost !== clean.cost) {
+    record(before, 'constraint', cellName(i), '');
+  }
   refresh();
 }
 
@@ -1700,6 +1760,145 @@ function renderIterations() {
     iterations.splice(+b.dataset.del, 1);
     renderIterations(); save();
   }));
+}
+
+/* ---------- the paint history ----------
+   Every action on the board is written down, together with the board as it was
+   after that action.  The log is a list of links: click one and the page goes
+   back to that state -- and because every state has an address of its own
+   (#act=N), the browser's own back button walks the same list.  The log is
+   JSON: the button under it writes the whole thing to a file, and Open JSON
+   reads such a file back, board and all. */
+let actions = [];        // { n, at, kind, what, extra, c, a, con }
+let actionSeq = 0;       // the number the next action will carry
+let histPos = -1;        // which entry the board is showing right now
+const HIST_MAX = 60;     // how many actions are kept
+
+function snapshot() {
+  return { c: colors.slice(), a: [...assumed], con: [...constraints] };
+}
+function actionLabel(a) {
+  switch (a.kind) {
+    case 'start': return t('actStart');
+    case 'paint': return fmt(t('actPaint'), a.what);
+    case 'erase': return fmt(t('actErase'), a.what);
+    case 'cap': return fmt(t('actCap'), a.what, a.extra);
+    case 'uncap': return fmt(t('actUncap'), a.what);
+    case 'constraint': return fmt(t('actConstraint'), a.what);
+    case 'clear': return t('actClear');
+    case 'undo': return t('actUndo');
+    case 'load': return t('actLoad');
+    default: return a.kind;
+  }
+}
+/* Write one action down.  The state BEFORE it is handed in, because the first
+   entry of a log is the board as it was before anything happened. */
+function record(before, kind, what, extra) {
+  const now = new Date().toISOString();
+  if (!actions.length) {
+    actions.push({ n: actionSeq++, at: now, kind: 'start', what: '', extra: '',
+                   c: before.c, a: before.a, con: before.con });
+  }
+  const st = snapshot();
+  actions.push({ n: actionSeq++, at: now, kind: kind, what: what || '',
+                 extra: extra === undefined ? '' : extra, c: st.c, a: st.a, con: st.con });
+  while (actions.length > HIST_MAX) actions.shift();
+  histPos = actions.length - 1;
+  renderHistory();
+  setHistHash(actions[actions.length - 1].n);
+  save();
+  return actions[actions.length - 1].n;
+}
+/* Go back to a state that is written down. */
+function restoreAction(a) {
+  if (!a) return false;
+  colors = a.c.slice();
+  assumed = new Map(a.a);
+  constraints = new Map(a.con);
+  histPos = actions.indexOf(a);
+  renderHistory();
+  refresh();
+  return true;
+}
+/* The same thing by number -- this is what the links do. */
+function gotoAction(n) {
+  const a = actions.find(x => x.n === n);
+  if (!a) return false;
+  restoreAction(a);
+  setHistHash(a.n);
+  return true;
+}
+function setHistHash(n) {
+  // the address of the state on show.  A file:// page refuses to be told, and
+  // there the address is set the other way round: replace the entry, do not
+  // add one, so the browser's back button still walks the list.
+  const h = '#act=' + n;
+  try { history.replaceState(null, '', h); return; } catch (e) {}
+  try { location.replace(h); } catch (e) {}
+}
+function renderHistory() {
+  const list = $('histList'), pos = $('histPos'), prev = $('histPrev'), next = $('histNext');
+  if (!list) return;
+  if (!actions.length) {
+    list.innerHTML = ''; list.hidden = true;
+    pos.textContent = t('histNone');
+    prev.href = '#'; prev.classList.add('off');
+    next.href = '#'; next.classList.add('off');
+    return;
+  }
+  list.hidden = false;
+  list.innerHTML = actions.slice().reverse().map(a => {
+    const here = (actions.indexOf(a) === histPos) ? ' cur' : '';
+    return '<div class="iterrow' + here + '">'
+      + '<a class="lnk" href="#act=' + a.n + '">#' + a.n + '</a>'
+      + '<b>' + actionLabel(a) + '</b>'
+      + '<span class="n">' + String(a.at).slice(5, 16).replace('T', ' ') + '</span>'
+      + '<span class="n">' + fmt(t('histPainted'), a.c.filter(x => x >= 0).length) + '</span>'
+      + '</div>';
+  }).join('');
+  const back = histPos > 0 ? actions[histPos - 1] : null;
+  const fwd = (histPos >= 0 && histPos < actions.length - 1) ? actions[histPos + 1] : null;
+  prev.href = back ? '#act=' + back.n : '#';
+  prev.classList.toggle('off', !back);
+  next.href = fwd ? '#act=' + fwd.n : '#';
+  next.classList.toggle('off', !fwd);
+  pos.textContent = fmt(t('histPos'), histPos + 1, actions.length);
+}
+/* The whole log, as JSON -- the file the button under the list writes. */
+function historyJSON() {
+  return {
+    format: 'metric-too-ledger-history/1',
+    n: N,
+    board: BOARD.id,
+    saved: new Date().toISOString(),
+    what_this_is: t('histWhat'),
+    actions: actions.map(a => ({
+      n: a.n, at: a.at, kind: a.kind, what: a.what, extra: a.extra,
+      label: actionLabel(a),
+      state: { c: a.c, a: a.a, con: a.con },
+    })),
+  };
+}
+/* Read such a file back: the board it was played on, and the whole log. */
+function loadHistory(data) {
+  const list = Array.isArray(data.actions) ? data.actions : [];
+  const bid = data.board;
+  if (bid && bid !== BOARD.id && BOARDS.some(b => b.id === bid)) loadBoard(bid);
+  actions = [];
+  actionSeq = 0;
+  for (const a of list) {
+    const st = (a && a.state) || a;
+    if (!st || !Array.isArray(st.c) || st.c.length !== N * N) continue;
+    const n = (a && Number.isInteger(a.n)) ? a.n : actionSeq;
+    actions.push({ n: n, at: (a && a.at) || '', kind: (a && a.kind) || 'start',
+                   what: (a && a.what) || '', extra: (a && a.extra) === undefined ? '' : a.extra,
+                   c: st.c.slice(), a: st.a || [], con: st.con || [] });
+    actionSeq = Math.max(actionSeq, n + 1);
+  }
+  histPos = actions.length - 1;
+  if (actions.length) restoreAction(actions[actions.length - 1]);
+  else { renderHistory(); save(); }
+  return { ok: true, actions: actions.length };
 }
 
 /* ---------- save and load ---------- */
@@ -1818,12 +2017,16 @@ function parseBoard(data) {
 function loadJSON(data) {
   // a bundle of candidates from goal.py: not a board, a LIST of boards
   if (data && data.format === 'metric-too-ledger-candidates/1') return loadBundle(data);
+  // a paint history: a board and every state it passed through
+  if (data && data.format === 'metric-too-ledger-history/1') return loadHistory(data);
   const p = parseBoard(data);
   if (!p.ok) return p;
   pushUndo();                                    // snapshot the board we are about to replace
+  const before = snapshot();
   colors = p.labels;
   assumed = p.assumed;
   constraints = p.constraints;
+  record(before, 'load', '', '');
   refresh();
   return { ok: true, states: p.states.length };
 }
@@ -2407,7 +2610,7 @@ $('tools').addEventListener('click', e => {
   const palChip = e.target.closest('.chip[data-id]');
   if (palChip) { setPaintColor(+palChip.dataset.id); return; }
 });
-$('presetClear').addEventListener('click', () => { pushUndo(); colors = new Array(N * N).fill(-1); assumed = new Map(); refresh(); });
+$('presetClear').addEventListener('click', () => { pushUndo(); const before = snapshot(); colors = new Array(N * N).fill(-1); assumed = new Map(); record(before, 'clear', '', ''); refresh(); });
 /* The rules are open the first time -- a reader who lands here has to be able
    to play without reading any code.  A reader who has read them once should
    not have to scroll past them every time, so the choice is remembered. */
@@ -2526,6 +2729,28 @@ $('exportIter').addEventListener('click', () => {
     'metric-too-ledger-iterations-' + stamp() + '.json');
   toast(fmt(t('iterExported'), iterations.length), 'good');
 });
+/* the paint history: write the whole log to a file, or throw it away */
+$('histJson').addEventListener('click', () => {
+  if (!actions.length) { toast(t('histNone'), 'bad'); return; }
+  download(new Blob([JSON.stringify(historyJSON(), null, 2)], { type: 'application/json' }),
+    'metric-too-ledger-history-' + stamp() + '.json');
+  toast(fmt(t('histExported'), actions.length), 'good');
+});
+$('histClear').addEventListener('click', () => {
+  actions = []; actionSeq = 0; histPos = -1;
+  renderHistory(); save();
+  toast(t('histCleared'), 'good');
+});
+/* The browser's own back button walks the log: every state has an address of
+   its own, so a link is a real link and the history of the page is the history
+   of the board. */
+window.addEventListener('hashchange', () => {
+  const m = /^#act=(\d+)$/.exec(location.hash || '');
+  if (!m) return;
+  const a = actions.find(x => x.n === +m[1]);
+  if (!a || a === actions[histPos]) return;
+  restoreAction(a);
+});
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); doUndo(); return; }
   if (e.key >= '0' && e.key <= '9') setPaintColor(+e.key);
@@ -2545,7 +2770,7 @@ for (let i = 0; i < NCOL; i++) {
 /* Every board keeps its own sheet, so switching to a practice board and back
    does not lose what was painted on either of them. */
 function save() {
-  store.set('mt2ledger:' + BOARD.id, { c: colors, a: [...assumed], it: iterations, con: [...constraints] });
+  store.set('mt2ledger:' + BOARD.id, { c: colors, a: [...assumed], it: iterations, con: [...constraints], act: actions });
   store.set('mt2ledger:last', BOARD.id);
 }
 (function boot() {
@@ -2556,6 +2781,9 @@ function save() {
   const last = boardById(store.get('mt2ledger:last') || LEDGER_BOARD.id);
   loadBoard(last.id);
   setPaintColor(0);
+  // an address in the bar names a state of the log: show that state
+  const m = /^#act=(\d+)$/.exec(location.hash || '');
+  if (m) gotoAction(+m[1]);
 })();
 </script>
 </body></html>

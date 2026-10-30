@@ -165,6 +165,10 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; al
 .cell .dv { position: absolute; bottom: 1px; right: 3px; font-size: max(8px, calc(100cqw / var(--n) * 0.19)); font-weight: 500; color: var(--muted); line-height: 1; }
 .cell .dv.bad { color: var(--bad); font-weight: 700; }
 .cell .cap { position: absolute; width: 24%; aspect-ratio: 1; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px var(--sheet); }
+/* a square that could host a hidden capitol: a dashed ring where a known
+   capitol gets a solid dot -- same place, hollow instead of filled */
+.cell.hcap::after { content: ''; position: absolute; width: 24%; aspect-ratio: 1;
+  border-radius: 50%; border: 2px dashed var(--accent); box-shadow: 0 0 0 2px var(--sheet); }
 .cell.assumed { outline: 2px dashed var(--accent); outline-offset: -2px; }
 .cell.assumed .cap { background: var(--accent); }
 .cell.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
@@ -406,7 +410,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
         <b>&#9675;</b> open (payable, but not pinned down yet),
         <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),
         <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).
-        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet.</p>
+        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet. <b>Dashed ring</b> in the middle — the square could host a hidden capitol: rest the pointer on a number that needs one (hold it on a touch screen) and every square that could carry it is ringed.</p>
       <p class="hint credits" id="credits" data-i18n="credits">The practice boards come from two public pages, and the route-on-hover idea is theirs as well: the puzzle set from <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a> and Jane Street's own 5×5 example from <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>. Neither carries a licence, so no code was copied: this page recomputes every board with its own rule kernel, and the route feature is reimplemented on our own cost model.</p>
 
 </div>
@@ -550,7 +554,7 @@ const I18N = {
   jsonPractice: 'Practice board -- %s×%s',
   credits: 'The practice boards come from two public pages, and the route-on-hover idea is theirs as well: the puzzle set from <a href="https://github.com/jimmyli2468/jane-street-puzzle-practice" target="_blank" rel="noopener">jimmyli2468/jane-street-puzzle-practice</a> and Jane Street\'s own 5×5 example from <a href="https://github.com/sharmavedic/its-a-metric-too" target="_blank" rel="noopener">sharmavedic/its-a-metric-too</a>. Neither carries a licence, so no code was copied: this page recomputes every board with its own rule kernel, and the route feature is reimplemented on our own cost model.',
   axCornerTitle: 'rows (Y) — index down the left',
-  cellKey: '<b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;\n        a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.\n        <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has\n        <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no\n        destination and every step inside it costs the whole area. <b>Walls</b> — the bold lines between\n        squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain\n        border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line\n        marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a\n        mirror or a rotation. <b>Bottom-right</b> — the cheapest\n        distance from that square to a capitol we already know about, if every unknown square were as\n        small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is\n        exactly what a number below that floor demands. <b>Bottom-left</b> — the cost the current\n        assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only\n        squares whose state size is known. Where no such route exists yet, nothing is shown there — the\n        free squares would have to be sized first. Its colour compares that cost with the published\n        number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated\n        cost is higher, <b>amber</b> when it is lower. <b>Top-right</b> — the verdict, as a badge:\n        <b>&#9679;</b> confirmed (the assumptions pin the number exactly),\n        <b>&#9675;</b> open (payable, but not pinned down yet),\n        <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),\n        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).\n        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet.',
+  cellKey: '<b>Coordinates</b> — columns (X) are numbered across the top, rows (Y) down the left;\n        a square is named <b>rNcM</b>, so r2c5 is column 5 of row 2.\n        <b>Top-left of a square</b> — the area of the state it is in; a <b>✱</b> means that state has\n        <b>no capitol</b> (its symmetries fix more than one square, or none), so it contributes no\n        destination and every step inside it costs the whole area. <b>Walls</b> — the bold lines between\n        squares are the state borders, and they carry the symmetry check: a <b>dark</b> line is a plain\n        border, an <b>amber</b> line marks a state with no capitol (it goes nowhere), and a <b>red</b> line\n        marks a painted region with no symmetry at all — that is not a state yet, so repaint it with a\n        mirror or a rotation. <b>Bottom-right</b> — the cheapest\n        distance from that square to a capitol we already know about, if every unknown square were as\n        small as possible. It is a floor, not the answer: a hidden capitol can be nearer, which is\n        exactly what a number below that floor demands. <b>Bottom-left</b> — the cost the current\n        assumptions actually pin down: the cheapest route to a known or assumed capitol that uses only\n        squares whose state size is known. Where no such route exists yet, nothing is shown there — the\n        free squares would have to be sized first. Its colour compares that cost with the published\n        number in the same square: <b>black and bold</b> when they agree, <b>green</b> when the calculated\n        cost is higher, <b>amber</b> when it is lower. <b>Top-right</b> — the verdict, as a badge:\n        <b>&#9679;</b> confirmed (the assumptions pin the number exactly),\n        <b>&#9675;</b> open (payable, but not pinned down yet),\n        <b>&#9650;</b> demand (an unrevealed capitol has to be nearer),\n        <b>&#10005;</b> contradicted (a known capitol is cheaper, so the number is wrong).\n        <b>C</b> at the bottom — a constraint you set on that square: green when it holds, red when it is broken, amber when it cannot be decided yet. <b>Dashed ring</b> in the middle — the square could host a hidden capitol: rest the pointer on a number that needs one (hold it on a touch screen) and every square that could carry it is ringed.',
   toolPaint: 'Paint state',
   toolCap: 'Assume capitol',
   toolErase: 'Erase',
@@ -1293,6 +1297,7 @@ function refresh() {
     '<div class="hint">' + t('notesNone') + '</div>';
 
   const cands = hiddenCapitolCandidates(led.rows);
+  hiddenCapMap = new Map(cands.map(c => [c.row.i, c.cand]));
   $('cands').innerHTML = cands.length
     ? cands.map(c => '<p>' + fmt(t('hiddenCap'), cellName(c.row.i), c.row.v,
         Math.floor((c.row.v + 1) / 2), c.cand.map(cellName).join(', ')) + '</p>').join('')
@@ -1310,7 +1315,7 @@ function refresh() {
   }
 
   drawSums();
-  drawRoute();
+  drawHover();
   save();
 }
 
@@ -2012,6 +2017,9 @@ const HOVER_MS = 900;          // the mouse has to rest a moment
 const LONG_PRESS_MS = 450;     // a finger has no hover, so it holds instead
 const SVGNS = 'http://www.w3.org/2000/svg';
 let hoverCell = -1, hoverTimer = null, routeOn = true;
+/* square -> the squares where a hidden capitol could sit for it (see
+   hiddenCapitolCandidates).  Rebuilt every time the ledger is. */
+let hiddenCapMap = new Map();
 
 function stepCost(u, v) {
   const led = lastLedger;
@@ -2108,6 +2116,35 @@ function drawRoute() {
     }
     line.textContent = parts.join('   |   ');
   }
+}
+
+/* ---------- where could a hidden capitol be? (on the board) ---------- */
+/* The panel under the board lists the squares in words; this puts the same
+   answer on the board: rest the pointer on a square (or hold it on a touch
+   screen) and every square that could host the hidden capitol for that
+   number gets a dashed ring.
+
+   It is the same set the panel prints -- a necessary condition, not a
+   promise: the hidden capital has to sit within floor((v+1)/2) steps and on
+   a square that carries no published number.  Whether it really works out
+   there depends on the hidden state's size and symmetry, which we do not
+   know. */
+function drawHiddenCap() {
+  for (const d of $('board').children) d.classList.remove('hcap');
+  if (hoverCell < 0 || hoverCell >= N * N) return;
+  const cand = hiddenCapMap.get(hoverCell);
+  if (!cand) return;
+  for (const j of cand) {
+    const cell = $('board').children[j];
+    if (cell) cell.classList.add('hcap');
+  }
+}
+
+/* the route and the hidden-capitol rings follow the same hover, so they are
+   drawn together -- the route may be switched off, the rings may not */
+function drawHover() {
+  drawRoute();
+  drawHiddenCap();
 }
 
 /* ---------- the constraint dialog ---------- */
@@ -2233,7 +2270,7 @@ $('board').addEventListener('pointerdown', e => {
     const p = { i: i, x: e.clientX, y: e.clientY, long: false, timer: null };
     p.timer = setTimeout(() => {
       p.long = true; hoverCell = i; hoverVerdict = i;
-      markVerdictRow(i); drawRoute();
+      markVerdictRow(i); drawHover();
     }, LONG_PRESS_MS);
     touchPending.set(e.pointerId, p);
     return;
@@ -2266,7 +2303,7 @@ window.addEventListener('pointerup', e => {
   touchPending.delete(e.pointerId);
   if (pending.long) {
     hoverCell = -1; hoverVerdict = -1;
-    markVerdictRow(-1); drawRoute();
+    markVerdictRow(-1); drawHover();
     return;
   }
   if (pointers.size === 0 && tool !== 'constraint') pushUndo();
@@ -2287,15 +2324,15 @@ $('board').addEventListener('pointerover', e => {
   if (!routeOn) return;
   clearTimeout(hoverTimer);
   if (i === hoverCell) return;
-  hoverCell = -1; drawRoute();
-  hoverTimer = setTimeout(() => { hoverCell = i; drawRoute(); }, HOVER_MS);
+  hoverCell = -1; drawHover();
+  hoverTimer = setTimeout(() => { hoverCell = i; drawHover(); }, HOVER_MS);
 });
 $('board').addEventListener('pointerout', e => {
   if (e.pointerType !== 'mouse') return;
   const to = e.relatedTarget;
   if (to && to.closest && to.closest('.cell')) return;    // moving to the next square
   clearTimeout(hoverTimer);
-  if (hoverCell !== -1) { hoverCell = -1; drawRoute(); }
+  if (hoverCell !== -1) { hoverCell = -1; drawHover(); }
   if (hoverVerdict !== -1) { hoverVerdict = -1; markVerdictRow(-1); }
 });
 $('tools').addEventListener('click', e => {
@@ -2319,7 +2356,7 @@ $('sumBtn').addEventListener('click', () => { showSums = true; drawSums(); });
 $('tPath').addEventListener('change', e => {
   routeOn = e.target.checked;
   if (!routeOn) hoverCell = -1;
-  drawRoute();
+  drawHover();
 });
 /* the constraint dialog */
 $('cellSize').addEventListener('input', e => {

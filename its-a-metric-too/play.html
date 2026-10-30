@@ -1,0 +1,2888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title data-i18n="pageTitle">Play · It's a Metric, Too</title>
+<meta name="description" content="Play Jane Street's “It's a Metric, Too”: put a state's area on the board, assume a capitol, and see every published number re-checked against the real travel costs." data-i18n-content="Play Jane Street's “It's a Metric, Too”: put a state's area on the board, assume a capitol, and see every published number re-checked against the real travel costs.">
+<meta name="theme-color" content="#e9eeec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111a1e" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e6b70'/%3E%3Cpath d='M6 6h9v9H6zM17 6h9v9h-9zM6 17h9v9H6z' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='21.5' cy='21.5' r='3.5' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Ledger sheet: the board is a worksheet, the right column is the audit trail. */
+:root {
+  --ground: #e9eeec; --sheet: #f7f9f8; --ink: #1b2a31; --muted: #5b6b70; --line: #c3cdcc;
+  --accent: #0e6b70; --accent-ink: #ffffff; --bad: #b3261e; --good: #2f6b2a; --warn: #8a5a00;
+  --blank: #fbfcfb;
+  --t0: #eaa98f; --t1: #ecc96a; --t2: #9fc884; --t3: #7fbfc4; --t4: #9aa6de;
+  --t5: #c897d0; --t6: #e797ae; --t7: #c8b183; --t8: #79a9dc; --t9: #c4dfa0;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #111a1e; --sheet: #172327; --ink: #e3ecec; --muted: #93a5a8; --line: #33464b;
+    --accent: #5cc3c4; --accent-ink: #0c1b1d; --bad: #ff8a80; --good: #9bd68f; --warn: #e0b25e;
+    --blank: #1c2a2f;
+    --t0: #7e4a3a; --t1: #7f6b2f; --t2: #4b6c40; --t3: #386a6e; --t4: #4b5687;
+    --t5: #6c4b78; --t6: #80485a; --t7: #6f6147; --t8: #3a6189; --t9: #56764f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #111a1e; --sheet: #172327; --ink: #e3ecec; --muted: #93a5a8; --line: #33464b;
+  --accent: #5cc3c4; --accent-ink: #0c1b1d; --bad: #ff8a80; --good: #9bd68f; --warn: #e0b25e;
+  --blank: #1c2a2f;
+  --t0: #7e4a3a; --t1: #7f6b2f; --t2: #4b6c40; --t3: #386a6e; --t4: #4b5687;
+  --t5: #6c4b78; --t6: #80485a; --t7: #6f6147; --t8: #3a6189; --t9: #56764f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
+}
+.back { font-size: 0.85rem; color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 4px; }
+.back:hover { color: var(--accent); }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 20px; }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.6rem, 3.6vw, 2.3rem); line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; font-size: 0.93rem; max-width: 62ch; }
+.sub a { color: var(--accent); }
+h2 { font-family: var(--f-display); font-size: 1.05rem; margin: 0 0 8px; letter-spacing: -0.005em; }
+button, select, input { font: inherit; touch-action: manipulation; }
+@media (pointer: coarse) { select.btn, input.btn { font-size: 16px; } }
+.btn { background: var(--sheet); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-weight: 500; font-size: 0.9rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+select.btn, input.btn { padding: 6px 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; }
+@media (max-width: 860px) { main { grid-template-columns: minmax(0, 1fr); } }
+.plate { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: clamp(10px, 2.5vw, 20px); display: grid; gap: 10px; }
+.plate-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.plate-head b { color: var(--ink); font-weight: 600; }
+.boardbox { container-type: inline-size; width: 100%; max-width: 640px; margin: 0 auto; }
+/* coordinate rulers: columns (X) on top, rows (Y) on the left.
+   On the right there is a third ruler -- what the rows of the answer add up
+   to -- and under the board a foot with the total.  The space for them is
+   always reserved, so the board never jumps when the numbers appear. */
+.axes { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) 4.4em;
+  grid-template-rows: 1.6em minmax(0, 1fr) 2.6em;
+  grid-template-areas: "corner cols ." "rows board sums" ". foot foot"; }
+.ax-corner { grid-area: corner; display: grid; place-items: center; font: 600 0.62rem/1 var(--f-num); color: var(--muted); letter-spacing: 0.04em; }
+.ax-cols { grid-area: cols; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  padding: 0 2.5px 2px; }
+.ax-rows { grid-area: rows; display: grid; grid-template-rows: repeat(var(--n), minmax(0, 1fr));
+  padding: 2.5px 2px 2.5px 0; }
+.ax-cols span, .ax-rows span { display: grid; place-items: center;
+  font: 500 max(8px, calc(100cqw / var(--n) * 0.20)) / 1 var(--f-num);
+  font-variant-numeric: tabular-nums; color: var(--muted); }
+.ax-rows span { justify-items: end; padding-right: 2px; }
+/* the right-hand ruler: a row's sum, and under it the square of that sum */
+.ax-sums { grid-area: sums; display: grid; grid-template-rows: repeat(var(--n), minmax(0, 1fr));
+  padding: 2.5px 0 2.5px 4px; }
+.ax-sums span { display: grid; justify-items: start; align-content: center;
+  font: 600 max(8px, calc(100cqw / var(--n) * 0.19)) / 1.25 var(--f-num);
+  font-variant-numeric: tabular-nums; color: var(--ink); }
+.ax-sums span em { font-style: normal; font-weight: 500; font-size: 0.8em; color: var(--muted); }
+/* the foot: the sum of those squares */
+.foot-sum { grid-area: foot; display: flex; align-items: baseline; justify-content: center; gap: 8px;
+  padding-top: 6px; font: 500 0.78rem/1 var(--f-num); color: var(--muted); }
+.foot-sum b { font: 700 1.05rem/1 var(--f-num); color: var(--ink); letter-spacing: 0.02em; }
+.axes .axis-note { position: absolute; }
+#board {
+  display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-template-rows: repeat(var(--n), minmax(0, 1fr));
+  width: 100%; aspect-ratio: 1; border: 2.5px solid var(--ink); touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+}
+/* The board sits inside a wrapper so that the route overlay can lie exactly on
+   top of it: the SVG's user units ARE the cells, one unit per square, so a
+   line from (c+0.5, r+0.5) to the next cell's centre always hits the square. */
+.boardwrap { grid-area: board; position: relative; }
+.routesvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.routesvg .rl { stroke: var(--accent); stroke-width: 0.17; stroke-linecap: round; stroke-linejoin: round; }
+.routesvg .rl.far { stroke-dasharray: 0.22 0.16; stroke-width: 0.12; opacity: 0.85; }
+.routesvg .rc { fill: none; stroke: var(--accent); stroke-width: 0.09; }
+.routesvg .rh { fill: var(--accent); }
+.cell.hov { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* the board bar: which board is on the sheet, and the button that solves it */
+.boardbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 10px; }
+.boardbar select { max-width: 15em; }
+/* the computed answer, for the practice boards only */
+.answerbox { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+  margin: 8px 0 0; padding: 8px 12px; background: var(--sheet);
+  border: 1px solid var(--line); border-radius: 10px; font-size: 0.92rem; }
+.answerbox b { font-family: var(--f-num); font-size: 1.15rem; letter-spacing: 0.02em; }
+.answerbox .rows { font-family: var(--f-num); color: var(--muted); }
+/* the credit line at the very bottom */
+/* the cell-constraint editor: a small dialog over the sheet */
+.overlay { position: fixed; inset: 0; background: rgba(12, 22, 26, 0.45);
+  display: grid; place-items: center; z-index: 40; padding: 16px; }
+.cm { background: var(--sheet); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 14px; padding: 16px 18px; width: min(30rem, 100%);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3); }
+.cm h2 { margin: 0 0 4px; font-size: 1.05rem; }
+.cm .field { margin-top: 14px; }
+.cm .field > label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.92rem; }
+.cm input[type="text"] { width: 100%; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 9px; background: var(--blank); color: var(--ink); font-family: var(--f-num); }
+.cm .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; max-height: 7.5rem; overflow: auto; }
+.cm .chips .chip { padding: 4px 9px; font-size: 0.8rem; }
+.cm .err { color: var(--bad); font-size: 0.8rem; margin-top: 5px; min-height: 1em; }
+.cm .row { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+.cm .cur { font-family: var(--f-num); color: var(--muted); font-size: 0.85rem; }
+/* the constraint tag on a constrained square */
+.cell .con { position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+  font: 700 max(7px, calc(100cqw / var(--n) * 0.15)) / 1 var(--f-num);
+  color: var(--sheet); background: var(--ink); border-radius: 3px; padding: 1px 2px; }
+.cell .con.ok { background: var(--good); }
+.cell .con.bad { background: var(--bad); }
+.cell .con.open { background: var(--warn); }
+.cell { position: relative; display: grid; place-items: center; background: var(--blank);
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  font-family: var(--f-num); font-weight: 600; font-size: calc(100cqw / var(--n) * 0.34); font-variant-numeric: tabular-nums; color: var(--ink);
+  /* Walls.  Colour alone is not enough for a colour-weak eye, so every edge
+     where a state ends is drawn as a bold line as well.  Each edge is drawn
+     once, by the cell on its upper-left side, so no line is doubled up. */
+  --wall: clamp(1.6px, 0.55cqw, 3.5px);
+  --wN: 0 0 0 transparent; --wE: 0 0 0 transparent; --wS: 0 0 0 transparent; --wW: 0 0 0 transparent;
+  box-shadow: var(--wN), var(--wE), var(--wS), var(--wW); }
+.cell .sz { position: absolute; top: 1px; left: 3px; font-size: max(8px, calc(100cqw / var(--n) * 0.19)); font-weight: 500; color: var(--muted); line-height: 1; }
+.cell .sz.nocap { color: var(--warn); font-weight: 700; }
+.cell .dv { position: absolute; bottom: 1px; right: 3px; font-size: max(8px, calc(100cqw / var(--n) * 0.19)); font-weight: 500; color: var(--muted); line-height: 1; }
+.cell .dv.bad { color: var(--bad); font-weight: 700; }
+.cell .cap { position: absolute; width: 24%; aspect-ratio: 1; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px var(--sheet); }
+/* a square that could host a hidden capitol: a dashed ring where a known
+   capitol gets a solid dot -- same place, hollow instead of filled */
+.cell.hcap::after { content: ''; position: absolute; width: 24%; aspect-ratio: 1;
+  border-radius: 50%; border: 2px dashed var(--accent); box-shadow: 0 0 0 2px var(--sheet); }
+.cell.assumed { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.cell.assumed .cap { background: var(--accent); }
+.cell.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+.chip { font: 500 0.88rem/1 var(--f-body); color: var(--ink); background: var(--sheet); border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
+.chip small { color: var(--muted); font-size: 0.74rem; font-family: var(--f-num); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.chip[aria-pressed="true"] small { color: inherit; opacity: 0.7; }
+.swatch { width: 13px; height: 13px; border-radius: 4px; border: 1px solid rgba(0,0,0,.25); }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tools .sep { width: 1px; height: 26px; background: var(--line); }
+.status { font-size: 0.9rem; padding: 8px 10px; border-radius: 6px; background: var(--blank); border: 1px solid var(--line); }
+.status.bad { border-color: var(--bad); color: var(--bad); }
+.status.good { border-color: var(--good); color: var(--good); }
+.status.warn { border-color: var(--warn); color: var(--warn); }
+.panel { display: grid; gap: 12px; }
+.tally { display: flex; flex-wrap: wrap; gap: 6px; }
+.tally .chip { padding: 5px 10px; font-size: 0.8rem; }
+table.ledger { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+table.ledger th { text-align: left; font-weight: 500; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 4px; border-bottom: 1px solid var(--line); }
+table.ledger td { padding: 3px 4px; border-bottom: 1px solid rgba(0,0,0,.05); font-family: var(--f-num); vertical-align: top; }
+table.ledger tr { cursor: pointer; }
+table.ledger tr:hover td { background: rgba(0,0,0,.04); }
+/* the verdict row the pointer is on: from the square, and from the row itself */
+table.ledger tr.hov td { background: color-mix(in srgb, var(--accent) 13%, transparent); }
+table.ledger tr.hov td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+table.ledger tr.hovrow td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+/* the square behind the verdict row the pointer is on */
+.cell.vh { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.v { font-weight: 700; }
+.v.CONTRADICTED, .v.UNPRODUCIBLE { color: var(--bad); }
+.pay { margin-top: 3px; font-size: 11px; }
+.pay.ok { color: var(--good); }
+.pay.mid { color: var(--warn); }
+.cell .cost { position: absolute; bottom: 1px; left: 3px; font-size: max(8px, calc(100cqw / var(--n) * 0.19)); font-weight: 600; color: #2f6f7d; line-height: 1; }
+.cell .cost.zero { color: var(--muted); font-weight: 500; }
+.cell .cost.match { color: #14181d; font-weight: 800; }
+.cell .cost.higher { color: #1f7a3d; font-weight: 700; }
+.cell .cost.lower { color: #b58900; font-weight: 700; }
+.cell .badge { position: absolute; top: 1px; right: 2px; font-size: max(7px, calc(100cqw / var(--n) * 0.16)); line-height: 1; }
+.cell .badge.confirmed { color: #14181d; }
+.cell .badge.open { color: #5b6b76; }
+.cell .badge.demand { color: #b58900; }
+.cell .badge.error { color: #c0392b; font-weight: 700; }
+.pay.no { color: var(--bad); }
+.v.NEEDS_HIDDEN_CAPITOL, .v.NEEDS_EXACT_PATH { color: var(--warn); }
+.v.FORCED, .v.TIGHT_GEODESIC, .v.TIGHT_CHEAPEST { color: var(--good); }
+.v.KEEP { color: var(--good); }
+.v.PARK { color: var(--muted); }
+.v.BACKTRACK { color: var(--bad); }
+.why { color: var(--muted); font-family: var(--f-body); font-size: 0.78rem; line-height: 1.35; }
+.route { color: var(--muted); font-size: 0.72rem; }
+.hint { color: var(--muted); font-size: 0.85rem; }
+.hint code { font-family: var(--f-num); font-size: 0.85em; }
+.notes { display: grid; gap: 8px; }
+.note { border-left: 3px solid var(--line); padding: 2px 0 2px 9px; font-size: 0.85rem; }
+.note.bad { border-color: var(--bad); }
+.note.warn { border-color: var(--warn); }
+.note.good { border-color: var(--good); }
+.sugg { display: flex; flex-wrap: wrap; gap: 6px; }
+.sugg button { font-size: 0.8rem; padding: 4px 9px; }
+details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+/* the rules: they are the puzzle itself, not a remark about the board, so they
+   get their own box above it.  Open by default -- a reader who lands here has
+   to be able to play without reading any code.  The reader's choice (open or
+   folded away) is remembered. */
+.rules { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+  padding: clamp(9px, 2vw, 15px) clamp(11px, 2.4vw, 18px); }
+.rules > summary { font-size: 0.95rem; font-weight: 600; color: var(--ink); list-style-position: outside; }
+.rules ol { margin: 9px 0 2px; padding-left: 1.4em; display: grid; gap: 6px;
+  font-size: 0.88rem; line-height: 1.45; }
+.rules li b { color: var(--ink); }
+.rules .rule-more { margin: 8px 0 0; font-size: 0.82rem; color: var(--muted); }
+/* the agent box quotes selectors and attribute names: they have to read as
+   code, not as prose, or an agent cannot tell them from the sentences. */
+.rules code { font-family: var(--f-num); font-size: 0.9em; background: var(--blank);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.rules code + code { margin-left: 1px; }
+/* the driving snippet: it is the same in both languages, so it lives in the
+   markup and not in the translation table. */
+.rules pre.agent-code { margin: 7px 0 2px; padding: 8px 10px; overflow-x: auto;
+  background: var(--blank); border: 1px solid var(--line); border-radius: 4px;
+  font-family: var(--f-num); font-size: 0.74rem; line-height: 1.45; }
+.rules pre.agent-code code { border: 0; padding: 0; background: none; font-size: 1em;
+  white-space: pre; }
+.rules ul { margin: 4px 0 0; padding-left: 1.15em; }
+.rules li li { margin: 2px 0; }
+/* the goal: a box like the rules, but one line long */
+.rules > h2 { font-size: 0.95rem; font-weight: 600; margin: 0 0 6px; }
+.rules > p { margin: 0; font-size: 0.92rem; }
+/* Every other block of information is a box with a name on it: the board
+   is the work, the boxes around it are the reference. */
+.box { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+  padding: 12px 14px; }
+.box > h2 { margin: 0 0 8px; }
+.box > h2 + .tally { margin-bottom: 8px; }
+/* the links to the pages that used to be inside this one */
+.pagelinks { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.88rem; }
+.pagelinks a { color: var(--accent); }
+/* the export area: a download can be blocked, so the same content is always
+   on the page as text (copyable) and as a picture (saveable by long-press) */
+.iterlist { display: grid; gap: 4px; }
+.iterrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 0.82rem;
+  padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--blank); }
+.iterrow b { font-weight: 600; }
+.iterrow .n { color: var(--muted); font-family: var(--f-num); }
+.iterrow .bad { color: var(--bad); font-weight: 700; }
+.iterrow .good { color: var(--good); font-weight: 700; }
+.iterrow button { font-size: 0.75rem; padding: 2px 8px; }
+/* the paint history: a list of links, one per action, each with its own URL */
+.histbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 7px; }
+.histbar .btn { font-size: 0.78rem; padding: 3px 9px; }
+.histbar .btn.off { opacity: 0.4; pointer-events: none; }
+.histbar .hint { font-size: 0.78rem; }
+#histList { max-height: 32vh; overflow: auto; }
+.iterrow.cur { box-shadow: inset 3px 0 0 var(--accent); background: var(--sheet); }
+.iterrow a.lnk { font-family: var(--f-num); font-size: 0.78rem; color: var(--accent); text-decoration: none; }
+.iterrow a.lnk:hover { text-decoration: underline; }
+/* ---- the minimal page ---------------------------------------------------
+   The same board, the same buttons, and nothing but visual cues.  The prose
+   -- the goal, the rules, the verdict table, the notes, the hidden capitols
+   -- lives on the full page; the minimal page links to it and shows nothing
+   else.  The build writes the minimal face from the same source: one file,
+   two faces. */
+#moreBox { display: none; }
+body.minimal #moreBox { display: block; }
+body.minimal .sub { display: none; }        /* the one-line goal, in prose */
+body.minimal #goalBox,
+body.minimal #rulesBox,
+body.minimal #verdictBox,
+body.minimal #notesBox,
+body.minimal #hiddenCapBox,
+body.minimal #candPanel,
+body.minimal #histList { display: none !important; }
+body:not(.minimal) .only-minimal { display: none; }
+body.minimal .only-full { display: none; }
+.morelinks { margin: 0; padding-left: 1.2em; display: grid; gap: 5px; font-size: 0.9rem; }
+.morelinks a { color: var(--accent); }
+.io { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+.io-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-right: 2px; }
+.io .btn { font-size: 0.84rem; padding: 6px 11px; }
+.exports { display: grid; gap: 10px; }
+.exp { display: grid; gap: 5px; }
+.exp label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.exp textarea {
+  width: 100%; font: 500 11px/1.45 var(--f-num); color: var(--ink); background: var(--blank);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; resize: vertical;
+}
+.exp img { max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--ground); }
+/* the toast: whatever happened has to be visible without scrolling */
+.toast {
+  position: fixed; left: 50%; top: 10px; z-index: 50; max-width: min(92vw, 560px);
+  transform: translate(-50%, -260%); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--sheet); border-radius: 8px; padding: 9px 14px;
+  font-size: 0.86rem; line-height: 1.35; box-shadow: 0 6px 22px rgba(0,0,0,.24);
+  transition: transform .22s ease, opacity .22s ease;
+}
+.toast.show { transform: translate(-50%, 0); opacity: 1; }
+.toast.good { background: var(--good); color: #fff; }
+.toast.bad { background: var(--bad); color: #fff; }
+</style>
+</head>
+<body class="minimal">
+<noscript>
+  <div data-i18n="noscript"><b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the Files app), you are looking at a picture of the page, not the page itself -- iOS previews do not run scripts, so the board stays empty and the buttons do nothing. Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>; on a computer, double-click it, or serve the folder with <code>python3 -m http.server</code> and open the address it prints.</div>
+</noscript>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="wrap">
+  <a class="back" href="../index.html" data-i18n="backLink" data-i18n-href="../index.html">← All puzzles</a>
+  <header>
+    <div>
+      <h1 data-i18n="h1">Play</h1>
+      <p class="sub" data-i18n="sub">Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.</p>
+    </div>
+    <div class="tools">
+      <input type="file" id="fileIn" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <!-- the rules of the puzzle, in the page itself: a reader (or an agent) must
+       be able to play from here without opening any code.  The legend further
+       down explains how to READ the board; this box says what the game IS. -->
+  <section class="rules" id="goalBox">
+    <h2 data-i18n="goalTitle">Goal</h2>
+    <p data-i18n="goalText">Goal: follow the rules below to cover the whole board with squares</p>
+  </section>
+
+  <details class="rules" id="rulesBox" open>
+    <summary data-i18n="rulesTitle">Rules</summary>
+    <ol>
+      <li data-i18n="ruleState"><b>A state</b> is a connected group of squares that has a mirror or a rotation symmetry of its own.</li>
+      <li data-i18n="ruleCapitol"><b>Its capitol</b> — if <b>every</b> symmetry of the state fixes exactly one of its squares, that square is the capitol; if some symmetry fixes none, or more than one, the state has <b>no capitol</b>. Capitols are never painted: they follow from the shape.</li>
+      <li data-i18n="ruleCost"><b>The cost of a step</b> — inside one state a step costs the area of that state; between two states it costs the smaller of the two areas.</li>
+      <li data-i18n="ruleNumber"><b>The number in a square</b> is the least total cost of any walk from that square to a capitol. A finished tiling has to reproduce every published number <b>and</b> make it the cheapest route there is.</li>
+      <li data-i18n="ruleAnswer"><b>The answer</b> — the row sum of a row is the total area of the states that touch that row (a state counts in every row it touches); the answer is the sum of the squares of the row sums.</li>
+    </ol>
+    <p class="rule-more" data-i18n="rulesMore">The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.</p>
+  </details>
+
+  <nav class="pagelinks">
+    <a href="legends.html" data-i18n="linkLegends">Legends</a>
+    <a href="agent-onboarding.html" data-i18n="linkOnboarding">Agent Onboarding</a>
+    <a class="only-full" id="linkMinimal" href="play.html" data-i18n="linkMinimal">Minimal view</a>
+    <a class="only-minimal" id="linkFull" href="harness.html" data-i18n="linkFull">Full page</a>
+    <a id="zhLink" href="harness.zh.html" data-i18n="linkZh">Chinese version</a>
+  </nav>
+
+  <!-- the minimal page has no prose of its own: it points at the full page -->
+  <section class="box" id="moreBox">
+    <h2 data-i18n="moreTitle">More on the full page</h2>
+    <p class="hint" data-i18n="moreText">This page keeps the board and the buttons. Everything that is written down is on the full page:</p>
+    <ul class="morelinks">
+      <li><a id="moreGoal" href="harness.html#goalBox" data-i18n="linkMoreGoal">The goal of the puzzle</a></li>
+      <li><a id="moreVerdict" href="harness.html#verdictPanel" data-i18n="linkMoreVerdict">Every square: its range and its verdict</a></li>
+      <li><a id="moreNotes" href="harness.html#notesBox" data-i18n="linkMoreNotes">The notes the page writes</a></li>
+      <li><a id="moreHidden" href="harness.html#hiddenCapBox" data-i18n="linkMoreHidden">Where a hidden capitol could be</a></li>
+    </ul>
+  </section>
+
+  <main>
+    <div class="plate">
+      <div class="plate-head"><span id="plateName"></span><span id="stateCount" data-i18n="noStatesYet">no states yet</span></div>
+      <div class="boardbar">
+        <label class="hint" for="boardSel" data-i18n="labelBoard">Board</label>
+        <select class="btn" id="boardSel"></select>
+        <button class="btn" id="sumBtn" data-i18n="btnRowSums">Row sums and answer</button>
+        <span class="hint" id="sumHint"></span>
+        <span class="hint" id="boardNote" data-i18n="boardNote">A practice board: the partition is not in this page — find it yourself.</span>
+      </div>
+      <div class="boardbox">
+        <div class="axes" style="--n:11" id="axes">
+          <div class="ax-corner" data-i18n="axCornerTitle">rows (Y) — index down the left</div>
+          <div class="ax-cols" id="axCols"></div>
+          <div class="ax-rows" id="axRows"></div>
+          <div class="boardwrap">
+            <div id="board" style="--n:11"></div>
+            <svg class="routesvg" id="routeSvg" aria-hidden="true" viewBox="0 0 11 11"></svg>
+          </div>
+          <div class="ax-sums" id="axSums"></div>
+          <div class="foot-sum" id="footSum"></div>
+        </div>
+      </div>
+
+      <div class="routeline hint" id="routeLine"></div>
+
+      <div class="tools" id="tools">
+        <span class="chip" aria-pressed="true" data-tool="paint"><span class="swatch" style="background:var(--t0)"></span><span data-i18n="toolPaint">Paint state</span></span>
+        <span class="chip" aria-pressed="false" data-tool="cap"><span data-i18n="toolCap">Assume capitol</span></span>
+        <span class="chip" aria-pressed="false" data-tool="erase"><span data-i18n="toolErase">Erase</span></span>
+        <span class="chip" aria-pressed="false" data-tool="constraint"><span data-i18n="toolConstraint">Constraint</span></span>
+        <span class="sep"></span>
+        <span id="palette" class="tools"></span>
+        <span class="sep"></span>
+        <label class="hint" for="tPath"><input type="checkbox" id="tPath" checked> <span data-i18n="toggleRoute">Show route on hover (hold on a touch screen)</span></label>
+        <label class="hint" for="capSize" data-i18n="capSizeLabel">assumed capitol's state size</label>
+        <input class="btn" id="capSize" type="number" min="1" max="121" value="1" style="width:5.2em">
+        <span class="sep"></span>
+        <button class="btn" id="presetClear" data-i18n="presetClear">Clear</button>
+        <button class="btn" id="undoBtn" disabled data-i18n="undoBtn">Undo</button>
+      </div>
+
+      <div class="status" id="status" data-i18n="statusIdle">Paint a state, or open a board file.</div>
+      <div class="answerbox" id="answerBox" hidden>
+        <span data-i18n="labelAnswer">Computed answer</span><b id="answerNum"></b>
+        <span class="rows" id="rowSums"></span>
+        <span class="rows" id="expAnswer"></span>
+      </div>
+
+      <div class="io">
+        <span class="io-label" data-i18n="labelIterations">iterations</span>
+        <input class="btn" id="iterName" placeholder="name this try" data-i18n-ph="labelIterName" style="width:9em">
+        <button class="btn" id="saveIter" data-i18n="btnSaveIter">Save iteration</button>
+        <button class="btn" id="exportIter" data-i18n="btnExportIter">Export all</button>
+      </div>
+      <div id="iterList" class="iterlist"></div>
+
+      <div class="io">
+        <span class="io-label" data-i18n="labelSaveShare">save / share</span>
+        <button class="btn" id="saveJson" data-i18n="btnSaveJson">Save JSON</button>
+        <button class="btn" id="copyJson" data-i18n="btnCopyJson">Copy JSON</button>
+        <button class="btn" id="openJson" data-i18n="btnOpenJson">Open JSON</button>
+        <button class="btn" id="savePng" data-i18n="btnSavePng">Save PNG</button>
+      </div>
+      <div class="exp" id="pngRow" hidden>
+        <label data-i18n="pngPreviewLabel">PNG preview — long-press it to save</label>
+        <img id="pngOut" alt="the painted board">
+      </div>
+      <textarea id="jsonFallback" rows="6" spellcheck="false" hidden></textarea>
+    </div>
+
+    <div class="panel">
+      <section class="box" id="candPanel" hidden>
+        <h2 data-i18n="panelCandidates">Candidates</h2>
+        <div class="hint" id="candMeta"></div>
+        <div style="max-height:36vh;overflow:auto">
+          <table class="ledger" id="candTable">
+            <thead><tr><th data-i18n="thCandidate">candidate</th><th data-i18n="thGoalPy">goal.py</th><th data-i18n="thThisPage">this page</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="box" id="verdictPanel">
+        <h2 data-i18n="panelVerdicts">Verdicts</h2>
+        <div class="tally" id="tally"></div>
+        <div style="max-height:52vh;overflow:auto" id="verdictBox">
+          <table class="ledger" id="verdicts">
+            <thead><tr><th data-i18n="thSquare">square</th><th data-i18n="thReads">reads</th><th data-i18n="thRange">range</th><th data-i18n="thVerdict">verdict</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="box" id="notesBox">
+        <h2 data-i18n="panelNotes">Notes</h2>
+        <div class="notes" id="notes"></div>
+      </section>
+      <section class="box" id="historyBox">
+        <h2 data-i18n="panelHistory">Paint history</h2>
+        <div class="histbar">
+          <a class="btn off" id="histPrev" href="#"><span data-i18n="histBack">← Back</span></a>
+          <a class="btn off" id="histNext" href="#"><span data-i18n="histForward">Forward →</span></a>
+          <span class="hint" id="histPos"></span>
+          <label class="hint" for="histGo" data-i18n="histGoLabel">Go to step</label>
+          <input class="btn" id="histGo" type="number" min="0" step="1" inputmode="numeric" style="width:5.4em">
+          <button class="btn" id="histGoBtn" data-i18n="btnHistGo">Go</button>
+          <button class="btn" id="histJson" data-i18n="btnHistJson">History JSON</button>
+          <button class="btn" id="histClear" data-i18n="btnHistClear">Clear history</button>
+        </div>
+        <div class="iterlist" id="histList"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- the hidden capitols: the last box of the page, and it is always open -->
+  <section class="box" id="hiddenCapBox">
+    <h2 data-i18n="hiddenCapTitle">Where could a hidden capitol be?</h2>
+    <div class="hint" id="cands"></div>
+  </section>
+
+</div>
+
+<!-- the cell-constraint editor.  A constraint is a number you made up: "this
+     square's travel cost must be 11, and the state it sits in must have size
+     5 or 7-9".  The page then judges your painting against it, with the same
+     machinery it uses for the published numbers.  The idea (and the shape of
+     the dialog) comes from the practice page by sharmavedic; the checking is
+     ours, on our own cost model. -->
+<div class="overlay" id="cellPop" hidden>
+  <div class="cm" role="dialog" aria-modal="true" aria-labelledby="cellTitle">
+    <h2 id="cellTitle"></h2>
+    <div class="hint" id="cellHelp"></div>
+    <div class="field">
+      <label for="cellSize" data-i18n="conSizeLabel">Allowed state sizes</label>
+      <input id="cellSize" type="text" autocomplete="off" spellcheck="false" placeholder="5, 7-9">
+      <div class="chips" id="sizeChips"></div>
+      <div class="err" id="sizeErr"></div>
+    </div>
+    <div class="field">
+      <label for="cellCost" data-i18n="conCostLabel">Allowed travel costs</label>
+      <input id="cellCost" type="text" autocomplete="off" spellcheck="false" placeholder="11 or 10-14">
+      <div class="chips" id="costChips"></div>
+      <div class="err" id="costErr"></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="useClue" data-i18n="conUseClue" hidden>Use clue (%s)</button>
+      <button class="btn" id="cellReset" data-i18n="conReset">Reset this cell</button>
+      <button class="btn" id="cellDone" data-i18n="conDone">Done</button>
+      <span class="cur" id="cellCur"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------------------------------------------------------------------------
+   The assumption ledger.
+
+   Rules that this page encodes, and that a value-only check gets wrong:
+
+     * A state's capitol exists only if EVERY non-trivial self-symmetry leaves
+       EXACTLY ONE square fixed.  A mirror that runs along a column of squares
+       fixes all of them, so such a state has NO capitol and contributes no
+       destination to the distance field.  Every even-sized state is in this
+       class: a state with a capitol has size 1 + (sum of 2/4/8), so it is
+       always odd.
+     * A square that reads 1 cannot be a 1x1 state: a singleton is its own
+       capitol, so it would read 0.
+     * A square that reads 0 IS a capitol, but that does not make it a
+       singleton -- the size of a capitol's own state is a separate question.
+
+   Two books are kept for every square:
+     lower  every unknown square is charged as little as possible (size 1);
+     upper  a route through two unknown squares has no upper bound at all, so
+            it is not used; a route from a known square into an unknown one is
+            charged the known side.
+   A published number is CONTRADICTED only when the upper book is already
+   cheaper than it.  A published number BELOW the lower book is not a
+   contradiction -- it is a DEMAND for a hidden capitol.
+--------------------------------------------------------------------------- */
+
+/* ---------- the boards ----------
+   The sheet can hold more than one puzzle.  The first is the one this whole
+   notebook was built for: Jane Street's 11x11, with its 33 published numbers.
+   The rest are practice boards -- smaller puzzles that come with the number
+   they come out with, so a reader can check a finished tiling against it.
+   None of them carries its partition: the shapes of the solution stay out
+   of the page on purpose, so that nobody can read the answer key off the
+   page source instead of playing.  The 11x11 has neither the number nor a
+   partition here: it is still an open puzzle.
+
+   The practice boards are vendored from two public pages; the credits are on
+   the front page, and the details are in note 28 of
+   docs/inference-notes-11x11/.  Their data lives in
+   tools/lr11/data/practice_boards.json and is copied into this file by
+   tools/lr11/page/sync_boards.py, which also checks that the copy is the
+   same data. */
+const LEDGER_CLUES = [[0,1,8],[0,2,4],[0,5,11],[0,9,5],[1,7,11],[2,2,7],[2,5,1],[2,10,14],[3,0,28],[3,3,51],[3,6,1],[3,8,6],
+  [4,1,22],[4,8,4],[4,10,1],[5,3,15],[5,5,10],[5,7,0],[6,0,11],[6,2,11],[6,9,9],[7,2,17],[7,4,14],[7,7,10],[7,10,13],
+  [8,0,30],[8,5,6],[8,8,45],[9,3,10],[10,1,26],[10,5,0],[10,8,77],[10,9,61]];
+const NCOL = 10;
+const TONES = ['--t0','--t1','--t2','--t3','--t4','--t5','--t6','--t7','--t8','--t9'];
+
+const LEDGER_BOARD = { id: 'jane-11x11', n: 11, clues: LEDGER_CLUES, answer: null };
+
+let N = LEDGER_BOARD.n;
+let CLUES = LEDGER_BOARD.clues;
+let BOARD = LEDGER_BOARD;
+let clueAt = [];
+function setClues(list) {
+  clueAt = new Array(N * N).fill(-1);
+  for (const [r, c, v] of list) clueAt[r * N + c] = v;
+}
+setClues(CLUES);
+
+/* PRACTICE BOARDS:BEGIN -- generated by tools/lr11/page/sync_boards.py, do not edit */
+const PRACTICE_BOARDS = [{"id":"up-0","n":6,"clue":[-1,7,4,-1,-1,13,-1,-1,1,0,1,-1,-1,-1,-1,-1,4,12,-1,9,-1,-1,7,-1,-1,-1,-1,7,-1,14,2,-1,6,8,10,14],"answer":4680},{"id":"up-1","n":6,"clue":[25,21,-1,17,-1,12,22,-1,15,13,9,9,19,15,-1,9,7,6,21,17,-1,7,5,3,23,-1,12,6,-1,0,-1,13,9,-1,-1,-1],"answer":3886},{"id":"up-2","n":7,"clue":[11,-1,3,1,-1,9,15,-1,7,-1,0,1,-1,-1,19,-1,8,1,3,10,-1,17,-1,5,-1,1,3,-1,-1,-1,-1,-1,-1,1,-1,26,20,-1,8,-1,8,-1,-1,19,17,15,8,15,23],"answer":12767},{"id":"up-3","n":6,"clue":[37,-1,25,-1,-1,-1,-1,-1,-1,-1,19,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,7,6,-1,-1,-1,5,6,1,-1],"answer":8240},{"id":"up-4","n":7,"clue":[0,-1,-1,1,7,9,13,1,-1,-1,0,-1,-1,-1,4,5,3,1,6,7,-1,7,7,5,-1,-1,-1,11,10,-1,-1,11,-1,17,19,-1,24,-1,16,21,-1,27,28,-1,25,21,26,32,35],"answer":13969},{"id":"official-5x5","n":5,"clue":[12,-1,-1,-1,17,8,-1,6,3,-1,-1,-1,-1,-1,-1,-1,7,6,-1,10,25,-1,-1,-1,0],"answer":8045},{"id":"up-5","n":5,"clue":[-1,9,-1,-1,-1,-1,-1,-1,1,4,-1,-1,-1,-1,-1,-1,-1,5,1,9,17,-1,-1,-1,-1],"answer":3131},{"id":"up-6","n":5,"clue":[7,-1,-1,-1,21,-1,-1,-1,-1,-1,-1,-1,11,-1,26,1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"answer":4463},{"id":"up-7","n":5,"clue":[-1,3,-1,5,-1,3,-1,-1,-1,3,-1,-1,-1,-1,5,11,-1,9,-1,-1,-1,15,-1,-1,9],"answer":3677},{"id":"up-8","n":6,"clue":[-1,7,-1,-1,0,3,-1,9,7,-1,3,-1,13,14,9,-1,-1,11,-1,11,10,-1,10,-1,-1,-1,-1,0,-1,-1,-1,11,-1,-1,6,11],"answer":6368},{"id":"up-9","n":5,"clue":[-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,14,11,-1,-1,-1,21,-1,12,-1,-1,-1,-1,-1,20],"answer":4387},{"id":"up-10","n":5,"clue":[7,-1,14,-1,-1,-1,-1,-1,-1,-1,3,-1,-1,1,-1,-1,-1,10,-1,-1,-1,12,-1,-1,-1],"answer":4061},{"id":"up-11","n":5,"clue":[-1,-1,14,18,-1,-1,14,-1,-1,18,-1,-1,-1,12,-1,0,-1,-1,-1,-1,-1,6,-1,-1,-1],"answer":2727},{"id":"up-12","n":5,"clue":[-1,-1,-1,-1,0,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,30,27,26,-1,-1],"answer":2413},{"id":"up-13","n":5,"clue":[-1,16,-1,-1,-1,-1,18,-1,-1,-1,20,14,-1,-1,10,-1,-1,-1,-1,-1,-1,9,-1,0,-1],"answer":2753},{"id":"up-14","n":5,"clue":[-1,-1,-1,-1,8,4,-1,0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,12,17,-1],"answer":2357},{"id":"up-15","n":5,"clue":[21,-1,-1,-1,13,-1,9,-1,-1,-1,-1,-1,1,-1,9,-1,-1,-1,-1,7,-1,5,-1,-1,-1],"answer":3913},{"id":"up-16","n":5,"clue":[-1,-1,-1,15,-1,17,-1,-1,11,-1,13,11,9,-1,4,11,-1,-1,-1,-1,-1,-1,5,-1,0],"answer":1731},{"id":"up-17","n":5,"clue":[-1,-1,-1,-1,-1,-1,9,1,-1,-1,25,17,-1,-1,-1,27,-1,-1,17,21,-1,-1,-1,-1,25],"answer":4785},{"id":"up-18","n":6,"clue":[2,-1,-1,-1,0,1,-1,-1,5,-1,1,-1,-1,-1,7,5,3,9,0,3,-1,-1,-1,15,3,-1,-1,-1,-1,-1,-1,-1,-1,14,22,27],"answer":5380},{"id":"up-19","n":6,"clue":[-1,11,8,15,-1,17,11,-1,-1,8,-1,-1,-1,-1,0,-1,3,-1,-1,-1,-1,-1,5,7,-1,-1,5,-1,-1,6,-1,7,-1,-1,-1,3],"answer":5614},{"id":"up-20","n":5,"clue":[-1,-1,-1,-1,-1,18,-1,-1,-1,1,-1,-1,4,-1,-1,17,9,6,-1,1,19,-1,-1,-1,-1],"answer":2931},{"id":"up-21","n":5,"clue":[5,-1,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,5,-1,0,3,11],"answer":3113},{"id":"up-22","n":5,"clue":[-1,-1,-1,16,17,11,-1,-1,-1,13,-1,-1,3,5,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,3],"answer":2165},{"id":"up-23","n":4,"clue":[-1,21,-1,-1,-1,-1,-1,-1,-1,-1,13,-1,-1,-1,-1,-1],"answer":2090},{"id":"up-24","n":4,"clue":[-1,-1,-1,7,4,-1,3,6,-1,0,-1,-1,-1,-1,3,-1],"answer":410},{"id":"up-25","n":5,"clue":[-1,-1,4,-1,-1,11,-1,1,-1,-1,-1,-1,-1,-1,-1,-1,15,-1,5,-1,-1,19,-1,9,11],"answer":2363},{"id":"up-26","n":4,"clue":[5,-1,-1,-1,-1,-1,5,-1,-1,-1,-1,-1,-1,-1,15,11],"answer":1188},{"id":"up-27","n":4,"clue":[1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,13,10,-1,9,-1],"answer":1132},{"id":"up-28","n":4,"clue":[-1,1,-1,-1,-1,0,-1,5,-1,-1,-1,-1,7,-1,13,-1],"answer":1162},{"id":"up-29","n":4,"clue":[11,-1,-1,-1,-1,8,-1,-1,-1,-1,-1,-1,-1,12,-1,-1],"answer":1132},{"id":"up-30","n":4,"clue":[-1,-1,-1,-1,6,-1,-1,-1,-1,-1,-1,10,-1,7,-1,12],"answer":730},{"id":"up-31","n":4,"clue":[-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,7,17,-1,-1,-1],"answer":2178},{"id":"up-32","n":4,"clue":[7,-1,-1,-1,-1,-1,-1,-1,-1,5,3,-1,-1,8,-1,8],"answer":1106},{"id":"up-33","n":4,"clue":[-1,12,-1,-1,4,-1,-1,9,-1,-1,-1,-1,-1,-1,-1,-1],"answer":970},{"id":"up-34","n":4,"clue":[-1,1,-1,-1,-1,-1,-1,-1,4,-1,-1,7,-1,-1,9,11],"answer":1212},{"id":"up-35","n":4,"clue":[-1,-1,-1,-1,-1,-1,3,5,-1,-1,-1,3,9,-1,-1,1],"answer":1682},{"id":"up-36","n":4,"clue":[-1,6,-1,-1,-1,-1,-1,-1,-1,-1,10,-1,3,-1,-1,-1],"answer":1124},{"id":"up-37","n":4,"clue":[0,-1,4,-1,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,-1],"answer":1430},{"id":"up-38","n":4,"clue":[-1,-1,-1,-1,3,-1,-1,-1,-1,-1,-1,15,-1,-1,10,-1],"answer":1684},{"id":"up-39","n":4,"clue":[-1,-1,-1,-1,-1,-1,5,-1,-1,9,-1,-1,-1,-1,11,14],"answer":1164},{"id":"up-40","n":4,"clue":[-1,-1,13,-1,8,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],"answer":1164},{"id":"up-41","n":4,"clue":[-1,-1,-1,-1,-1,3,-1,-1,11,-1,-1,-1,13,-1,-1,8],"answer":1090},{"id":"up-42","n":4,"clue":[9,3,-1,-1,7,-1,-1,-1,-1,-1,-1,3,-1,5,-1,-1],"answer":882},{"id":"up-43","n":4,"clue":[-1,-1,14,-1,-1,-1,-1,-1,7,-1,-1,-1,9,-1,-1,-1],"answer":2292},{"id":"up-44","n":5,"clue":[30,-1,-1,-1,-1,-1,-1,-1,-1,-1,14,10,-1,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1],"answer":4447},{"id":"up-45","n":5,"clue":[-1,-1,9,-1,19,-1,5,-1,18,-1,-1,-1,-1,-1,-1,0,1,-1,-1,23,-1,-1,-1,-1,-1],"answer":4463},{"id":"up-46","n":5,"clue":[-1,5,3,-1,3,-1,-1,-1,-1,-1,-1,3,-1,-1,-1,14,-1,-1,3,-1,16,11,-1,-1,-1],"answer":2655},{"id":"up-47","n":5,"clue":[-1,-1,4,7,-1,-1,-1,-1,-1,8,-1,-1,0,1,-1,-1,3,-1,-1,-1,11,-1,7,13,-1],"answer":2667}];
+/* PRACTICE BOARDS:END */
+
+/* ---------- the two languages ----------
+   Every user-visible string lives here: [English, Chinese].  The build
+   (tools/lr11/page/build_lang.py) rewrites this table into the single
+   language it publishes, so the two pages can never drift apart and the
+   source stays the one truth.  Machine-readable words -- the verdict
+   names, goal.py's KEEP / PARK / BACKTRACK, the JSON keys -- are NOT
+   translated: they are the protocol our other tools speak. */
+const LANG = 'en';          // 'en' or 'zh'; the build sets it
+const MINIMAL = true;      // the minimal page: the board, the buttons, nothing else
+                             // (the build sets this one too -- one source, two faces)
+const I18N = {
+  pageTitle: 'Play · It\'s a Metric, Too',
+  metaDesc: 'Play Jane Street\'s “It\'s a Metric, Too”: put a state\'s area on the board, assume a capitol, and see every published number re-checked against the real travel costs.',
+  h1: 'Play',
+  rulesTitle: 'Rules',
+  goalTitle: 'Goal',
+  goalText: 'Goal: follow the rules below to cover the whole board with squares',
+  linkHarness: 'Play the harness',
+  linkLegends: 'Legends',
+  linkOnboarding: 'Agent Onboarding',
+  linkMinimal: 'Minimal view',
+  linkFull: 'Full page',
+  moreTitle: 'More on the full page',
+  moreText: 'This page keeps the board and the buttons. Everything that is written down is on the full page:',
+  linkMoreGoal: 'The goal of the puzzle',
+  linkMoreVerdict: 'Every square: its range and its verdict',
+  linkMoreNotes: 'The notes the page writes',
+  linkMoreHidden: 'Where a hidden capitol could be',
+  linkZh: 'Chinese version',
+  ruleState: '<b>A state</b> is a connected group of squares that has a mirror or a rotation symmetry of its own.',
+  ruleCapitol: '<b>Its capitol</b> — if <b>every</b> symmetry of the state fixes exactly one of its squares, that square is the capitol; if some symmetry fixes none, or more than one, the state has <b>no capitol</b>. Capitols are never painted: they follow from the shape.',
+  ruleCost: '<b>The cost of a step</b> — inside one state a step costs the area of that state; between two states it costs the smaller of the two areas.',
+  ruleNumber: '<b>The number in a square</b> is the least total cost of any walk from that square to a capitol. A finished tiling has to reproduce every published number <b>and</b> make it the cheapest route there is.',
+  ruleAnswer: '<b>The answer</b> — the row sum of a row is the total area of the states that touch that row (a state counts in every row it touches); the answer is the sum of the squares of the row sums.',
+  rulesMore: 'The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.',
+  sub: 'Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.',
+  backLink: '← All puzzles',
+  backLinkHref: '../index.html',
+  noscript: '<b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the Files app), you are looking at a picture of the page, not the page itself -- iOS previews do not run scripts, so the board stays empty and the buttons do nothing. Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>; on a computer, double-click it, or serve the folder with <code>python3 -m http.server</code> and open the address it prints.',
+  plateHead: '<b>Original</b> · 11×11',
+  labelBoard: 'Board',
+  boardGroupLedger: 'The puzzle',
+  boardLedger: 'Original · 11×11',
+  boardOfficial: 'official example',
+  boardNote: 'A practice board: the partition is not in this page — find it yourself.',
+  labelExpected: 'this board comes out with %s',
+  btnRowSums: 'Row sums and answer',
+  sumReady: 'the sheet is tiled and every published number is settled',
+  sumWhyTiling: 'the sheet is not tiled yet',
+  sumWhyState: 'a painted region is not a state yet',
+  sumWhyAssumption: 'an assumed capitol does not match the state it sits in',
+  sumWhyVerdicts: '%s published numbers are not settled yet',
+  sumAxisTitle: 'row sum %s · its square %s',
+  sumFootLabel: 'answer',
+  sumFootCaption: 'computed from what you painted',
+  toggleRoute: 'Show route on hover (hold on a touch screen)',
+  labelAnswer: 'Computed answer',
+  labelRowSums: 'row sums %s',
+  routeText: '%s · %s = %s',
+  routeNear: 'cheapest walk: %s · %s = %s',
+  routeFar: 'upper bound: %s · %s = %s',
+  routeExact: 'the board is full, so this is the true cheapest walk',
+  routeOptimistic: 'optimistic: unknown squares are charged as little as possible',
+  routeUpper: 'the walk that proves the upper bound; it may cross unknown squares',
+  routeNone: 'No route yet: under the current assumptions this square cannot walk to a capitol.',
+  jsonPractice: 'Practice board -- %s×%s',
+  axCornerTitle: 'rows (Y) — index down the left',
+  toolPaint: 'Paint state',
+  toolCap: 'Assume capitol',
+  toolErase: 'Erase',
+  capSizeLabel: 'assumed capitol\'s state size',
+  presetClear: 'Clear',
+  undoBtn: 'Undo',
+  statusIdle: 'Paint a state, or open a board file.',
+  labelIterations: 'iterations',
+  labelIterName: 'name this try',
+  btnSaveIter: 'Save iteration',
+  btnExportIter: 'Export all',
+  labelSaveShare: 'save / share',
+  btnSaveJson: 'Save JSON',
+  btnCopyJson: 'Copy JSON',
+  btnOpenJson: 'Open JSON',
+  btnSavePng: 'Save PNG',
+  pngPreviewLabel: 'PNG preview — long-press it to save',
+  panelCandidates: 'Candidates',
+  thCandidate: 'candidate',
+  thGoalPy: 'goal.py',
+  thThisPage: 'this page',
+  panelVerdicts: 'Verdicts',
+  thSquare: 'square',
+  thReads: 'reads',
+  thRange: 'range',
+  thVerdict: 'verdict',
+  panelNotes: 'Notes',
+  panelHistory: 'Paint history',
+  histBack: '← Back',
+  histForward: 'Forward →',
+  histNone: 'Nothing painted yet.',
+  histPos: 'action %s of %s',
+  histPainted: '%s painted',
+  histGoLabel: 'Go to step',
+  btnHistGo: 'Go',
+  histNoNumber: 'Type the number of a step.',
+  histNoSuch: 'There is no step %s.',
+  histJumped: 'Now at step %s.',
+  btnHistJson: 'History JSON',
+  btnHistClear: 'Clear history',
+  histCleared: 'History cleared.',
+  histExported: 'Exported %s action(s).',
+  histRestored: 'Back to action #%s.',
+  histLoaded: 'Loaded %s action(s).',
+  histWhat: 'Every action taken on this board, with the board as it was after that action. Open this file to get the whole history back.',
+  actStart: 'start',
+  actPaint: 'paint %s',
+  actErase: 'erase %s',
+  actCap: 'assume capitol %s (%s)',
+  actUncap: 'drop the assumption at %s',
+  actConstraint: 'constraint at %s',
+  actClear: 'clear the board',
+  actUndo: 'undo',
+  actLoad: 'load a board file',
+  hiddenCapTitle: 'Where could a hidden capitol be?',
+  badgeForced: 'confirmed: the assumptions pin this number exactly',
+  badgeTightGeo: 'open: a known capitol pays exactly this, but a hidden one may be nearer',
+  badgeTightCheap: 'open: this is the floor, no capitol can be nearer',
+  badgeNeedsPath: 'open: some capitol has to be reachable at exactly this cost',
+  badgeDemand: 'demand: an unrevealed capitol has to be nearer than this',
+  badgeContradicted: 'contradicted: a known capitol is cheaper, so this cannot be the minimum',
+  badgeUnproducible: 'unproducible: no route can pay exactly this',
+  noteNoSymmetry: 'The region %s has no symmetry at all, so it is not a state yet — repaint it as a shape that has one (a mirror axis or a rotation).',
+  noteCapitolOnClue: 'The capitol of a painted state sits on the %s at %s, but a capitol reads 0.',
+  noteZeroElsewhere: 'The 0 at %s is inside a state whose capitol is elsewhere.',
+  noteEvenAssumed: 'You assumed a state of size %s for the capitol at %s, but a state with a capitol is always odd: an even-sized state has a mirror axis running along a column of squares, which fixes more than one of them, so it has no capitol at all. Use an odd size.',
+  noteSatisfactionAxis: 'Satisfaction axis (independent of “is it the minimum?”): %s numbers have a route whose cost is fully determined (however the free squares are filled), %s numbers need the free squares to be tuned, and %s numbers cannot be paid by any route at all (they need a hidden capitol).',
+  noteSatisfactionFull: 'The tiling is complete (all %s squares belong to a state), so the set of reachable costs is exact. Satisfaction test: of the %s published numbers, %s; and %s.%s',
+  noteSingleton: 'A square that reads 1 needs a 1×1 state right next to it (a step of cost 1). Candidates: %s.',
+  notesNone: 'Nothing to flag. Assumptions that fit the numbers are not the same as assumptions that are true.',
+  whyForced: 'your assumptions pin the distance to exactly %s',
+  whyContradicted: 'a capitol you already know about is reachable for %s, which is cheaper than %s, so the number cannot be the minimum',
+  whyUnproducible: 'no walk out of this square can cost exactly %s%s, so this number cannot be produced at all',
+  whyUnprodCosts: ' (the reachable costs are %s)',
+  whyUnprodNone: ' (not even one known capitol is within reach)',
+  whyTightGeo: 'a known capitol is reachable for at most %s, and the number says the minimum is %s, so no hidden capitol may be nearer',
+  whyDemand: 'the nearest capitol you know about is at least %s away, but the number says %s, so a hidden capitol has to be strictly nearer than that%s',
+  whyDemandExtra: '; no walk to a known capitol costs exactly %s either',
+  whyTightCheap: '%s is the floor: no capitol can be nearer than %s, and one has to sit at exactly %s',
+  whyNeedsPath: 'the number sits inside the range, so a capitol has to be reachable at exactly %s',
+  paySimpleNote: '(this route loops, so there is a cheaper way: the number is not the minimum)',
+  payOkHead: '<div class="pay ok">payable, and <b>independent of the free squares</b>:',
+  payMid: '<div class="pay mid">payable, but <b>the free squares have to make up the difference</b>: the route through known squares cannot make up %s, the free squares must add %s of cost (reachable costs %s)</div>',
+  payNo: '<div class="pay no">not payable: no route costs exactly %s%s ⇒ only a hidden capitol can pay it</div>',
+  payNoKnown: ' (known capitols reach %s)',
+  payNoNone: ' (not even one known capitol is within reach)',
+  stateCount: '%s states · %s with a capitol · %s squares unknown',
+  noStatesYet: 'no states yet',
+  statusContradicted: '<b>%s published numbers are contradicted.</b> %s',
+  statusComplete: 'The tiling is complete and <b>every published number is produced and is the cheapest one</b>: %s/%s check out.',
+  statusOk: 'No contradiction: every published number is still reachable under these assumptions.',
+  hiddenCap: '<b>%s reads %s</b>: a hidden capitol within %s steps, i.e. %s.',
+  hiddenCapNone: '<p>No square currently demands a hidden capitol.</p>',
+  iterContradicted: '%s contradicted',
+  iterOk: 'no contradiction',
+  iterForced: '%s forced · %s need a hidden capitol',
+  btnRestore: 'Restore',
+  btnDrop: 'Drop',
+  iterRestored: 'Restored <b>%s</b>.',
+  jsonPublished: 'Jane Street, It\'s a Metric, Too (October 2026) -- the 33 official numbers',
+  jsonWhat: 'the board only: the states you are assuming and the capitols you are assuming. The verdicts and notes are NOT here on purpose -- they are derived from this board and the published numbers, so a rule tool recomputes them instead of trusting a stored conclusion.',
+  errDisconnected: 'The state at %s is not one connected shape, so it cannot carry a colour of its own.',
+  errColourConflict: 'Colour conflict: the states at %s and %s both ask for colour %s and they touch, so they would melt into a single state. Give one of them a different colour.',
+  axisColumn: 'column %s',
+  axisRow: 'row %s',
+  paletteTitle: 'state colour %s',
+  candMeta: '<b>%s</b> candidate states proposed for <b>%s</b> (it reads %s), sizes %s. <b>Each one is judged again here</b> — the word on the left is goal.py\'s, the word on the right is this page\'s, and they come from different code.',
+  candTruncated: ' <b>This round stopped at the candidate limit: it did NOT exhaust the possibilities.</b>',
+  btnLoad: 'load',
+  candLoaded: 'Loaded candidate: %s',
+  candStatus: 'Loaded %s candidates for %s — %s',
+  candDisagree: '<b>%s disagree</b> with goal.py.',
+  candAgree: 'this page agrees with goal.py on all of them.',
+  pngTitle: 'It\'s a Metric, Too - play',
+  pngCounts: '%s states, %s with a capitol, %s assumed capitols',
+  pngLegend1: 'top-left = the area of the state   (* = that state has no capitol)',
+  pngLegend2: 'bottom-right = the cheapest distance to a capitol we already know about',
+  pngFail: 'The picture could not be made in this browser.',
+  pngReadyToast: 'Picture ready: %s. It is also shown below - long-press it to save on a phone.',
+  pngReadyStatus: 'Picture ready: <b>%s</b>. It is shown below the board as well; on a phone, long-press it to save.',
+  jsonReadyToast: 'JSON ready: %s. Copy JSON puts the very same text on your clipboard.',
+  jsonReadyStatus: 'JSON ready: <b>%s</b> - %s states and %s assumed capitols. <b>Copy JSON</b> puts the same text on your clipboard, and a rule tool can read it with <code>python3 lr11/assume.py %s</code>.',
+  jsonCopiedToast: 'JSON copied to the clipboard - paste it to a friend, or to a rule tool.',
+  jsonCopiedStatus: 'JSON copied to the clipboard.',
+  jsonCopyFailed: 'The browser would not let the page copy. The JSON is now in a box, selected - press Cmd/Ctrl+C.',
+  jsonLoaded: 'Loaded %s.',
+  fileUnreadable: 'Could not read that file: %s',
+  iterSaved: 'Saved iteration "%s".',
+  iterNone: 'No iterations saved yet.',
+  iterExported: 'Exported %s iteration(s).',
+  noteSatAllProduced: 'every one of them can be produced by some walk',
+  noteSatSomeUnproduced: ' %s of them cannot',
+  noteSatAllCheapest: 'every one of them is exactly the minimum',
+  noteSatSomeNotCheapest: ' %s of them are not the minimum',
+  noteSatWrong: 'the ones that do not match:',
+  noteSatWrongOne: 'reads',
+  noteSatEnd: '.',
+  toolConstraint: 'Constraint',
+  conSizeLabel: 'Allowed state sizes',
+  conCostLabel: 'Allowed travel costs',
+  conUseClue: 'Use clue (%s)',
+  conReset: 'Reset this cell',
+  conDone: 'Done',
+  conTitle: 'Square %s',
+  conTitleClue: ' · clue %s',
+  conHelp: 'A constraint is a number you made up: the page checks your painting against it, the same way it checks the published numbers.',
+  conBadTokens: 'Ignored: %s. Use numbers and ranges like 5, 7-9.',
+  conSizeBad: 'the state there has size %s, which is not in %s',
+  conCostBad: 'the travel cost there is %s, which is not in %s',
+  conCostTooDear: 'even the cheapest walk costs %s, more than %s allows',
+  conCostTooCheap: 'the dearest walk that can be proven costs %s, less than %s allows',
+  conCostUnknown: 'the travel cost is not known until the sheet is full',
+  conNoState: 'the square has no state yet, so its size is not known',
+  conOk: 'the constraint holds',
+  conTag: 'your constraint',
+  conCurSize: 'state size here: %s · ',
+  conCurCost: 'travel cost here: %s',
+  conCurUpper: ' (an upper bound for now)',
+  noteConBad: 'Your constraint at %s is broken: %s',
+  noteConOpen: 'Your constraint at %s cannot be checked yet: %s',
+  statusConBad: '%s of your own constraints are broken: %s',
+};
+const t = k => (I18N[k] !== undefined ? I18N[k] : k);
+const fmt = (s, ...a) => { let i = 0; return s.replace(/%s/g, () => String(a[i++])); };
+function applyI18n() {
+  document.title = t('pageTitle');
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta) meta.content = t('metaDesc');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.dataset.i18n); });
+}
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+let colors = new Array(N * N).fill(-1);   // state id per square, -1 = unknown
+let assumed = new Map();                  // square -> assumed state size of its capitol
+let tool = 'paint', paintColor = 0, selected = -1;
+let undoStack = [];
+const pointers = new Set();    // the fingers that are down on the board right now
+
+/* ---------- geometry (same rule kernel as the other pages) ---------- */
+function nbrs(i, n) {
+  const r = (i / n) | 0, c = i % n, out = [];
+  if (r > 0) out.push(i - n); if (c < n - 1) out.push(i + 1); if (r < n - 1) out.push(i + n); if (c > 0) out.push(i - 1);
+  return out;
+}
+function regionInfo(cells, n) {
+  let minC = n, maxC = -1, minR = n, maxR = -1;
+  const member = new Set(cells);  for (const i of cells) { const r = (i / n) | 0, c = i % n; minC = Math.min(minC, c); maxC = Math.max(maxC, c); minR = Math.min(minR, r); maxR = Math.max(maxR, r); }
+  const p = minC + maxC, q = minR + maxR;
+  let anySym = false, capOk = true, cap = -1; const fixes = [], symNames = [];
+  for (let g = 0; g < 7; g++) {
+    if (g >= 3 && ((p + q) & 1)) continue;
+    let ok = true, fixed = 0, fixedCell = -1;
+    for (const i of cells) {
+      const r = (i / n) | 0, c = i % n; let nc, nr;
+      switch (g) {
+        case 0: nc = p - c; nr = q - r; break;
+        case 1: nc = p - c; nr = r; break;
+        case 2: nc = c; nr = q - r; break;
+        case 3: nc = r + ((p - q) >> 1); nr = c + ((q - p) >> 1); break;
+        case 4: nc = ((p + q) >> 1) - r; nr = ((p + q) >> 1) - c; break;
+        case 5: nc = ((p + q) >> 1) - r; nr = ((q - p) >> 1) + c; break;
+        default: nc = ((p - q) >> 1) + r; nr = ((p + q) >> 1) - c; break;
+      }
+      if (nc < 0 || nr < 0 || nc >= n || nr >= n || !member.has(nr * n + nc)) { ok = false; break; }
+      if (nc === c && nr === r) { fixed++; fixedCell = i; }
+    }
+    if (!ok) continue;
+    anySym = true; fixes.push(fixed);
+    symNames.push(['rot180','refV','refH','refD1','refD2','rot90','rot270'][g]);
+    if (fixed !== 1) capOk = false;
+    else if (cap === -1) cap = fixedCell;
+    else if (cap !== fixedCell) capOk = false;
+  }
+  return { sym: anySym, capitol: anySym && capOk ? cap : -1, fixes, symNames };
+}
+function components(labels, n) {
+  const N2 = n * n, comp = new Array(N2).fill(-1), list = [];
+  for (let i = 0; i < N2; i++) {
+    if (labels[i] < 0 || comp[i] >= 0) continue;
+    const id = list.length, cells = [i]; comp[i] = id;
+    for (let k = 0; k < cells.length; k++) for (const v of nbrs(cells[k], n)) if (comp[v] < 0 && labels[v] === labels[i]) { comp[v] = id; cells.push(v); }
+    const info = regionInfo(cells, n);
+    list.push({ cells, sym: info.sym, capitol: info.capitol, fixes: info.fixes });
+  }
+  return { comp, list };
+}
+
+/* ---------- can this assumed capitol be REAL? ----------
+   An assumed capitol is a square plus a state size.  But a capitol is not
+   a free parameter: it is the unique square fixed by every non-trivial
+   self-symmetry of a REAL state, and that state occupies real squares of
+   the board.  So the assumption "this square is the capitol of a state of
+   size k" has to be checkable.
+
+   Two facts make it checkable without a search:
+
+     * a state with a capitol is always ODD in size (a mirror axis that runs
+       along a column of squares fixes all of them, so even-sized states
+       never have a capitol);
+     * a state of size 1 is its own capitol.
+
+   So an EVEN assumed size is impossible on the spot.  For odd sizes the
+   page cannot enumerate every shape cheaply, so it says what is knowable:
+   the size is at least legal, and the assumption still has to be paid for
+   by real squares elsewhere on the board. */
+function capitolSizeImpossible(k) {
+  if (k % 2 === 0) return 'even';
+  return null;
+}
+function cellName(i) { const r = (i / N) | 0, c = i % N; return 'r' + r + 'c' + c; }
+/* Which squares a note is talking about.  A small state is listed square by
+   square; a bigger one is given as a box and its size -- a note that names its
+   squares is a note you can act on, and a note that does not is a riddle. */
+function cellsLabel(cells) {
+  if (cells.length <= 6) return cells.map(cellName).join(' ');
+  let r0 = N, r1 = -1, c0 = N, c1 = -1;
+  for (const i of cells) {
+    const r = (i / N) | 0, c = i % N;
+    if (r < r0) r0 = r;
+    if (r > r1) r1 = r;
+    if (c < c0) c0 = c;
+    if (c > c1) c1 = c;
+  }
+  return cellName(r0 * N + c0) + '–' + cellName(r1 * N + c1) + ' (' + cells.length + ' squares)';
+}
+
+/* ---------- the two books ---------- */
+function book(sizeOf, sources, optimistic) {
+  const NN = N * N, dist = new Array(NN).fill(Infinity), prev = new Array(NN).fill(-1), done = new Array(NN).fill(false);
+  for (const s of sources) dist[s] = 0;
+  for (let it = 0; it < NN; it++) {
+    let u = -1;
+    for (let i = 0; i < NN; i++) if (!done[i] && (u < 0 || dist[i] < dist[u])) u = i;
+    if (u < 0 || dist[u] === Infinity) break;
+    done[u] = true;
+    for (const v of nbrs(u, N)) {
+      const ku = sizeOf.get(u), kv = sizeOf.get(v);
+      let w;
+      if (ku === undefined && kv === undefined) { if (!optimistic) continue; w = 1; }
+      else if (ku === undefined) w = optimistic ? 1 : kv;
+      else if (kv === undefined) w = optimistic ? 1 : ku;
+      else w = Math.min(ku, kv);
+      if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; }
+    }
+  }
+  const route = i => { const out = []; let x = i; while (x >= 0) { out.push(x); x = prev[x]; } return out.reverse(); };
+  return { dist, route };
+}
+
+/* ---------- which costs can actually be paid? ----------
+   The two books only ask whether a published number is too big or too small.
+   They never ask whether it can be paid for AT ALL: a number can sit inside
+   [lower, upper] and still be unreachable, if every walk out of that square
+   costs 3 or 7 and the square says 5.  This walks the (square, cost) graph
+   and collects every cost that some walk can really pay.  Where a size is
+   unknown the edge is charged anything in [1, known side] (or [1, board] when
+   both sides are unknown), which is a relaxation -- so on a partial board the
+   result can only ADD a contradiction, never remove one.  On a complete
+   tiling it is exact. */
+function reachableCosts(sizeOf, sources, maxCost) {
+  const NN = N * N, W = maxCost + 1;
+  const seen = new Uint8Array(NN * W), stack = [];
+  for (const s of sources) {
+    if (s < 0 || s >= NN || seen[s * W]) continue;
+    seen[s * W] = 1; stack.push([s, 0]);
+  }
+  while (stack.length) {
+    const st = stack.pop(), u = st[0], c = st[1];
+    for (const v of nbrs(u, N)) {
+      const ku = sizeOf.get(u), kv = sizeOf.get(v);
+      let lo, hi;
+      if (ku !== undefined && kv !== undefined) { lo = hi = Math.min(ku, kv); }
+      else if (ku === undefined && kv === undefined) { lo = 1; hi = NN; }
+      else { lo = 1; hi = ku !== undefined ? ku : kv; }
+      const top = Math.min(hi, maxCost - c);
+      for (let cc = c + lo; cc <= c + top; cc++) {
+        const k = v * W + cc;
+        if (!seen[k]) { seen[k] = 1; stack.push([v, cc]); }
+      }
+    }
+  }
+  const out = [];
+  for (let i = 0; i < NN; i++) {
+    const a = [];
+    for (let c = 0; c <= maxCost; c++) if (seen[i * W + c]) a.push(c);
+    out.push(a);
+  }
+  return out;
+}
+
+/* ---------- the costs that are FULLY DETERMINED ----------
+   A route that never touches a square whose state size is still unknown has
+   a cost that does not depend on how the free squares are filled in.  So a
+   published number that such a route pays can be paid no matter what the
+   rest of the board turns out to be -- the strong, unconditional answer.
+   Routes that do touch free squares can only be paid if those squares are
+   sized just so (TUNABLE); numbers no route can pay need a hidden capitol
+   (UNPAYABLE) -- which on a complete board is a contradiction in itself.
+
+   The two questions are INDEPENDENT of each other:
+     "is the number the minimum?"  -> the two books, the VERDICT column
+     "can the number be paid at all?" -> this, the PAYABLE column
+   A number can be payable and still be wrong (a cheaper route exists), and
+   a number can be the minimum and still be unpayable. */
+function determinedCosts(sizeOf, sources, maxCost) {
+  const NN = N * N, W = maxCost + 1;
+  const seen = new Uint8Array(NN * W), prev = new Map(), stack = [];
+  for (const s of sources) {
+    if (s < 0 || s >= NN || seen[s * W]) continue;
+    seen[s * W] = 1;
+    // a capitol whose state size is unknown: only the trivial route (cost 0),
+    // and it cannot be passed through -- the crossing cost is not determined
+    if (sizeOf.get(s) !== undefined) stack.push([s, 0]);
+  }
+  while (stack.length) {
+    const st = stack.pop(), u = st[0], c = st[1];
+    for (const v of nbrs(u, N)) {
+      const ku = sizeOf.get(u), kv = sizeOf.get(v);
+      if (ku === undefined || kv === undefined) continue;   // a free square: cost not fixed
+      const cc = c + Math.min(ku, kv);
+      if (cc > maxCost) continue;
+      const k = v * W + cc;
+      if (!seen[k]) { seen[k] = 1; prev.set(v + ':' + cc, u + ':' + c); stack.push([v, cc]); }
+    }
+  }
+  const costOf = (i, c) => {
+    const a = []; let key = i + ':' + c;
+    while (prev.has(key)) { const [u, uc] = key.split(':').map(Number); a.push([u, uc]); key = prev.get(key); }
+    const [si, sc] = key.split(':').map(Number);
+    a.push([si, sc]);                               // the source itself
+    return a.reverse();
+  };
+  const out = [];
+  for (let i = 0; i < NN; i++) {
+    const a = [];
+    for (let c = 0; c <= maxCost; c++) if (seen[i * W + c]) a.push(c);
+    out.push({ costs: a, route: c => costOf(i, c) });
+  }
+  return out;
+}
+
+/* ---------- verdict badges ----------
+   Four families, so the board says at a glance which published numbers the
+   current assumptions already settle and which are still asking for something.
+   The shape differs as well as the colour, so it survives a black-and-white
+   print. */
+const VERDICT_BADGE = {
+  FORCED:            { g: 'confirmed', ch: '\u25CF', c: '#14181d', t: t('badgeForced') },
+  TIGHT_GEODESIC:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeTightGeo') },
+  TIGHT_CHEAPEST:    { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeTightCheap') },
+  NEEDS_EXACT_PATH:  { g: 'open',      ch: '\u25CB', c: '#5b6b76', t: t('badgeNeedsPath') },
+  NEEDS_HIDDEN_CAPITOL: { g: 'demand', ch: '\u25B2', c: '#b58900', t: t('badgeDemand') },
+  CONTRADICTED:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: t('badgeContradicted') },
+  UNPRODUCIBLE:      { g: 'error',     ch: '\u2715', c: '#c0392b', t: t('badgeUnproducible') },
+};
+
+/* ---------- the ledger ---------- */
+function ledger() {
+  const { comp, list } = components(colors, N);
+  const sizeOf = new Map(), sources = new Set(), notes = [];
+  const stateInfo = list.map((s, idx) => {
+    for (const c of s.cells) sizeOf.set(c, s.cells.length);
+    if (s.capitol >= 0) sources.add(s.capitol);
+    return s;
+  });
+  // The symmetry check, made spatial: what the notes say about a state, the
+  // walls say at a glance.  0 = fine, 1 = a legal state with no capitol (it
+  // goes nowhere), 2 = no symmetry at all (not a state yet).
+  const flags = new Uint8Array(N * N);
+  for (const s of stateInfo) {
+    const f = !s.sym ? 2 : (s.capitol < 0 ? 1 : 0);
+    if (f) for (const c of s.cells) flags[c] = f;
+  }
+  for (let i = 0; i < N * N; i++) if (clueAt[i] === 0 && !sizeOf.has(i)) sources.add(i);   // a 0 IS a capitol
+  for (const [i, k] of assumed) { sizeOf.set(i, k); sources.add(i); }     // assumed capitols
+
+  for (const s of stateInfo) {
+    // A state with a symmetry but no capitol is legal, and it goes nowhere.
+    // The page does NOT say that in a note any more: the amber wall around
+    // the state already says it, and a note that repeats what the wall shows
+    // is noise.
+    if (!s.sym) notes.push({ k: 'bad', t: fmt(t('noteNoSymmetry'), cellsLabel(s.cells)) });
+    if (s.capitol >= 0 && clueAt[s.capitol] >= 0 && clueAt[s.capitol] !== 0) notes.push({ k: 'bad', t: fmt(t('noteCapitolOnClue'), clueAt[s.capitol], cellName(s.capitol)) });
+    for (const c of s.cells) if (clueAt[c] === 0 && s.capitol !== c) notes.push({ k: 'bad', t: fmt(t('noteZeroElsewhere'), cellName(c)) });
+  }
+
+  // An assumed capitol has to be a REAL state: a state with a capitol is
+  // always odd in size, so an even assumed size cannot happen at all.
+  for (const [i, k] of assumed) {
+    if (capitolSizeImpossible(k) === 'even') {
+      notes.push({ k: 'bad', t: fmt(t('noteEvenAssumed'), k, cellName(i)) });
+    }
+  }
+
+  // The two books are about the distance to the capitols we ALREADY KNOW about
+  // (the published 0s, the capitols of the states you painted, and the capitols
+  // you assumed).  They are not bounds on the true distance d: a hidden capitol
+  // can be nearer than both.  That asymmetry is the whole point --
+  //   farKnown  <  v  is a CONTRADICTION (a known capitol is strictly cheaper)
+  //   nearKnown >  v  is a DEMAND (a hidden capitol has to be strictly nearer)
+  const nearKnown = book(sizeOf, sources, true);    // optimistic: unknown squares as small as possible
+  const farKnown = book(sizeOf, sources, false);    // defensible: routes through two unknown squares are not used
+
+  // A tiling is complete only when every square belongs to a state.  Only
+  // then is the set of reachable costs exact, and only then does "no walk
+  // costs exactly v" condemn the number instead of merely remarking on it.
+  const complete = sizeOf.size === N * N;
+  const maxV = CLUES.reduce((m, x) => Math.max(m, x[2]), 0);
+  const reach = reachableCosts(sizeOf, sources, maxV);
+  const det = determinedCosts(sizeOf, sources, maxV);
+
+  // Cell constraints: your own numbers, judged with the same machinery.
+  const conVerdicts = new Map();
+  for (const [i, cfg] of constraints) {
+    const r = constraintVerdict(i, cfg, { list: stateInfo, nearKnown, farKnown, complete });
+    conVerdicts.set(i, r);
+    if (r.verdict === 'BAD') notes.push({ k: 'bad', t: fmt(t('noteConBad'), cellName(i), r.why.join('; ')) });
+    else if (r.verdict === 'OPEN') notes.push({ k: 'warn', t: fmt(t('noteConOpen'), cellName(i), r.why.join('; ')) });
+  }
+
+  const rows = [];
+  const verdictOf = {};
+  for (const [r, c, v] of CLUES) {
+    const i = r * N + c;
+    const L = nearKnown.dist[i] === Infinity ? null : nearKnown.dist[i];
+    const U = farKnown.dist[i] === Infinity ? null : farKnown.dist[i];
+    const pay = reach[i], cheapest = pay.length ? pay[0] : null;
+    const fixed = det[i].costs, isFixed = fixed.indexOf(v) >= 0;
+    const produced = isFixed, tunable = !isFixed && pay.indexOf(v) >= 0;
+    const payable = isFixed ? 'PRODUCED' : (tunable ? 'TUNABLE' : 'UNPAYABLE');
+    let witness = null, witnessCosts = null;
+    if (isFixed) {
+      const steps = det[i].route(v);
+      witness = steps.map(s => [((s[0] / N) | 0), s[0] % N]);
+      witnessCosts = steps.slice(0, -1).map((s, k) => Math.min(sizeOf.get(s[0]), sizeOf.get(steps[k + 1][0])));
+    }
+    let verdict, why;
+    if (L !== null && U !== null && L === U && L === v) { verdict = 'FORCED'; why = fmt(t('whyForced'), v); }
+    else if (U !== null && U < v) { verdict = 'CONTRADICTED'; why = fmt(t('whyContradicted'), U, v); }
+    else if (complete && !produced) {
+      verdict = 'UNPRODUCIBLE';
+      why = fmt(t('whyUnproducible'), v,
+        pay.length ? fmt(t('whyUnprodCosts'), pay.slice(0, 12).join(', ') + (pay.length > 12 ? ', ...' : ''))
+                   : t('whyUnprodNone'));
+    }
+    else if (U !== null && U === v) { verdict = 'TIGHT_GEODESIC'; why = fmt(t('whyTightGeo'), v, v); }
+    else if (L !== null && L > v) { verdict = 'NEEDS_HIDDEN_CAPITOL'; why = fmt(t('whyDemand'), L, v, produced ? '' : fmt(t('whyDemandExtra'), v)); }
+    else if (L !== null && L === v) { verdict = 'TIGHT_CHEAPEST'; why = fmt(t('whyTightCheap'), v, v, v); }
+    else { verdict = 'NEEDS_EXACT_PATH'; why = fmt(t('whyNeedsPath'), v); }
+    verdictOf[i] = verdict;
+    rows.push({ i, v, L, U, verdict, why, route: U !== null ? farKnown.route(i) : null,
+                produced, payable, witness, witnessCosts,
+                witnessSimple: witness ? (new Set(witness).size === witness.length) : null,
+                tuning: (payable === 'TUNABLE' && pay.length) ? v - pay[0] : null,
+                reachable: pay, determined: fixed, cheapest });
+  }
+
+  // The satisfaction test: on a complete tiling, every published number must
+  // be produced by some walk AND be the cheapest one.  Either half alone
+  // would have been enough to miss a wrong tiling.
+  let satisfaction = null;
+  if (complete) {
+    const wrong = {};
+    rows.forEach(r => { if (r.cheapest !== r.v) wrong['(' + (r.i / N | 0) + ', ' + (r.i % N) + ')'] = { published: r.v, actual: r.cheapest, reachable: r.reachable.slice(0, 12) }; });
+    satisfaction = {
+      all_numbers_produced: rows.every(r => r.produced),
+      all_numbers_are_the_cheapest: Object.keys(wrong).length === 0,
+      wrong: wrong,
+    };
+  }
+  return { list: stateInfo, comp, flags, sizeOf, sources, nearKnown, farKnown, rows, notes, complete, satisfaction, verdictOf, conVerdicts };
+}
+
+/* ---------- where could a hidden capitol be? ---------- */
+function hiddenCapitolCandidates(rows) {
+  const out = [];
+  for (const row of rows) {
+    if (row.verdict !== 'NEEDS_HIDDEN_CAPITOL' && row.verdict !== 'NEEDS_EXACT_PATH') continue;
+    if (row.L === null) continue;
+    // a capitol within reach: at most (v+1)/2 steps (every step but the last
+    // costs at least 2, since a step of cost 1 enters a 1x1 state, which is
+    // itself a capitol).
+    const D = Math.floor((row.v + 1) / 2), cand = [];
+    for (let j = 0; j < N * N; j++) {
+      if (j === row.i) continue;
+      if (clueAt[j] > 0) continue;                 // a square with a number is not a capitol
+      if (Math.abs((j / N | 0) - (row.i / N | 0)) + Math.abs((j % N) - (row.i % N)) <= D) cand.push(j);
+    }
+    if (cand.length) out.push({ row, cand });
+  }
+  return out;
+}
+
+/* ---------- 1x1 candidates forced by a published 1 ---------- */
+function singletonCandidates() {
+  const out = [];
+  for (const [r, c, v] of CLUES) {
+    if (v !== 1) continue;
+    const i = r * N + c;
+    // a 1x1 state must sit next to the square, must not be a square that
+    // already belongs to a painted state, and must not be a published 0
+    // (a 0 is a capitol of some state, but we do not know that state's size)
+    const cand = nbrs(i, N).filter(j => clueAt[j] !== 0 && colors[j] < 0);
+    out.push({ i, cand });
+  }
+  return out;
+}
+
+/* ---------- painting ---------- */
+function buildBoard() {
+  const b = $('board');
+  b.innerHTML = '';
+  for (let i = 0; i < N * N; i++) {
+    const d = document.createElement('div');
+    d.className = 'cell'; d.dataset.i = i;
+    b.appendChild(d);
+  }
+  buildAxes();
+}
+
+/* Coordinate rulers.  The page names a square rNcM -- r is the row (the Y
+   axis, down the left) and c the column (the X axis, across the top).  The
+   rulers are separate grids that share the board's inner width/height, so
+   the numbers line up with the cells they name. */
+function buildAxes() {
+  const cols = $('axCols'), rows = $('axRows');
+  if (!cols || !rows) return;
+  cols.innerHTML = ''; rows.innerHTML = '';
+  for (let c = 0; c < N; c++) {
+    const s = document.createElement('span');
+    s.textContent = String(c);
+    s.title = fmt(t('axisColumn'), c);
+    cols.appendChild(s);
+  }
+  for (let r = 0; r < N; r++) {
+    const s = document.createElement('span');
+    s.textContent = String(r);
+    s.title = fmt(t('axisRow'), r);
+    rows.appendChild(s);
+  }
+}
+function paint(i) {
+  const d = $('board').children[i];
+  const led = lastLedger;
+  const col = colors[i] >= 0 ? 'var(' + TONES[colors[i] % NCOL] + ')' : 'var(--blank)';
+  d.style.background = col;
+  // The walls.  Each edge is drawn once, by the cell on its upper-left side;
+  // an edge that sits on the rim of the board is drawn by the cell on it.  A
+  // square with no state of its own counts as different, so the edge of a
+  // painted region against the blank board is a wall too.  The colour of a
+  // wall is the worst of its two sides: a region with no symmetry at all is
+  // outlined in red, a state with no capitol in amber.
+  //
+  // Where each band lands is not guesswork -- an inset shadow paints the side
+  // OPPOSITE to the sign of its offset: `inset 0 -W 0` paints the BOTTOM band,
+  // `inset 0 +W 0` the TOP, `inset -W 0 0` the RIGHT, `inset +W 0 0` the LEFT.
+  // So the south wall (bottom) and the east wall (right) take a negative
+  // offset, and the north wall (top) and the west wall (left) a positive one.
+  // Getting this wrong puts the left rim one square too far right -- a wall
+  // through the middle of a state.  tools/lr11/check/wall_geometry_check.py
+  // reads the pixels and holds every edge to its own side.
+  const rr = (i / N) | 0, cc = i % N, st = led.comp[i];
+  const flag = j => (j >= 0 && j < N * N) ? led.flags[j] : 0;
+  const wallColour = (a, b) => {
+    const f = Math.max(flag(a), flag(b));
+    return f === 2 ? 'var(--bad)' : (f === 1 ? 'var(--warn)' : 'var(--ink)');
+  };
+  const plain = '0 0 0 transparent';
+  d.style.setProperty('--wN', (rr === 0 && st >= 0) ? 'inset 0 var(--wall) 0 ' + wallColour(i, i) : plain);
+  d.style.setProperty('--wW', (cc === 0 && st >= 0) ? 'inset var(--wall) 0 0 ' + wallColour(i, i) : plain);
+  d.style.setProperty('--wE', cc === N - 1 ? (st >= 0 ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i) : plain)
+    : (led.comp[i + 1] !== st ? 'inset calc(-1 * var(--wall)) 0 0 ' + wallColour(i, i + 1) : plain));
+  d.style.setProperty('--wS', rr === N - 1 ? (st >= 0 ? 'inset 0 calc(-1 * var(--wall)) 0 ' + wallColour(i, i) : plain)
+    : (led.comp[i + N] !== st ? 'inset 0 calc(-1 * var(--wall)) 0 ' + wallColour(i, i + N) : plain));
+  d.innerHTML = '';
+  if (colors[i] >= 0) {
+    const s = led.list.find(s => s.cells.includes(i));
+    const sp = document.createElement('span'); sp.className = 'sz' + (s && s.capitol < 0 ? ' nocap' : '');
+    sp.textContent = s ? s.cells.length : '';
+    if (s && s.capitol < 0) sp.textContent = s.cells.length + '✱';
+    d.appendChild(sp);
+    if (s && s.capitol === i) { const c = document.createElement('span'); c.className = 'cap'; d.appendChild(c); }
+  }
+  if (assumed.has(i)) { const c = document.createElement('span'); c.className = 'cap'; d.appendChild(c); d.classList.add('assumed'); }
+  else d.classList.remove('assumed');
+  if (clueAt[i] >= 0) {
+    const t = document.createElement('span'); t.textContent = clueAt[i]; d.appendChild(t);
+    const b = VERDICT_BADGE[(led.verdictOf || {})[i]];
+    if (b) { const m = document.createElement('span'); m.className = 'badge ' + b.g; m.textContent = b.ch; m.title = b.t; d.appendChild(m); }
+  }
+  const dv = led.nearKnown.dist[i];
+  if (dv !== Infinity && dv !== 0) {
+    const v = document.createElement('span'); v.className = 'dv'; v.textContent = dv;
+    d.appendChild(v);
+  }
+  // bottom-left: the cost the current assumptions actually pin down -- the
+  // cheapest route to a known or assumed capitol that uses only squares whose
+  // state size is known.  Infinity means no such route exists yet: the free
+  // squares would have to be sized first.
+  const cv = led.farKnown.dist[i];
+  if (cv !== Infinity) {
+    const v = document.createElement('span'); v.className = 'cost'; v.textContent = cv;
+    const pub = clueAt[i];
+    if (pub >= 0) {
+      if (cv === pub) v.classList.add('match');        // the assumptions reproduce it
+      else if (cv > pub) v.classList.add('higher');    // the calculated cost is bigger
+      else v.classList.add('lower');                   // the calculated cost is smaller
+    } else if (cv === 0) v.classList.add('zero');      // a capitol with no published number
+    d.appendChild(v);
+  }
+  if (selected === i) d.classList.add('sel'); else d.classList.remove('sel');
+  // the constraint tag: what you asked this square to be
+  const con = led.conVerdicts && led.conVerdicts.get(i);
+  if (con) {
+    const c = document.createElement('span');
+    c.className = 'con ' + (con.verdict === 'BAD' ? 'bad' : con.verdict === 'OPEN' ? 'open' : 'ok');
+    c.textContent = 'C';
+    c.title = (con.why.length ? con.why.join('; ') : t('conOk')) + '   ' + t('conTag');
+    d.appendChild(c);
+  }
+}
+function setStatus(html, kind) { const st = $('status'); st.innerHTML = html; st.className = 'status' + (kind ? ' ' + kind : ''); }
+function pushUndo() { undoStack.push({ c: colors.slice(), a: [...assumed] }); if (undoStack.length > 200) undoStack.shift(); }
+function doUndo() { const u = undoStack.pop(); if (!u) return; const before = snapshot(); colors = u.c; assumed = new Map(u.a); record(before, 'undo', '', ''); refresh(); }
+function setPaintColor(id) {
+  if (!Number.isInteger(id) || id < 0 || id >= NCOL) id = 0;   // a bad id would paint nothing at all
+  paintColor = id;
+  tool = 'paint';
+  $('tools').querySelectorAll('.chip[data-tool]').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.tool === 'paint')));
+  $('palette').querySelectorAll('.chip[data-id]').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.id === id)));
+  const sw = $('palette').querySelector('.chip[data-id="' + id + '"] .swatch');
+  if (sw) sw.style.outline = '2px solid var(--ink)';
+  $('palette').querySelectorAll('.chip[data-id] .swatch').forEach(o => { if (o !== sw) o.style.outline = ''; });
+}
+/* The tool decides what a click on a square does. */
+function applyTool(i) {
+  if (tool === 'constraint') { openConstraint(i); return; }
+  setCell(i);
+}
+function setCell(i) {
+  const before = snapshot();
+  let kind = 'paint', extra = '';
+  if (tool === 'erase') { colors[i] = -1; assumed.delete(i); kind = 'erase'; }
+  else if (tool === 'cap') {
+    const k = Math.max(1, Math.min(121, +$('capSize').value || 1));
+    if (assumed.has(i)) { assumed.delete(i); kind = 'uncap'; }
+    else { assumed.set(i, k); colors[i] = -1; kind = 'cap'; extra = k; }
+  } else {
+    if (colors[i] === paintColor) { colors[i] = -1; kind = 'erase'; }
+    else { colors[i] = paintColor; assumed.delete(i); kind = 'paint'; extra = paintColor; }
+  }
+  record(before, kind, cellName(i), extra);
+  refresh();
+}
+
+/* ---------- render ---------- */
+let lastLedger = null;
+function refresh() {
+  lastLedger = ledger();
+  const led = lastLedger;
+  for (let i = 0; i < N * N; i++) paint(i);
+
+  const counts = {};
+  for (const r of led.rows) counts[r.verdict] = (counts[r.verdict] || 0) + 1;
+  $('tally').innerHTML = Object.keys(counts).sort().map(k =>
+    '<span class="chip"><b class="v ' + k + '">' + counts[k] + '</b> ' + k.replace(/_/g, ' ').toLowerCase() + '</span>').join('');
+
+  const tb = $('verdicts').querySelector('tbody');
+  tb.innerHTML = led.rows.map(r => {
+    const range = (r.L === null ? '–' : r.L) + '–' + (r.U === null ? '∞' : r.U);
+    let canPay;
+    if (r.payable === 'PRODUCED') {
+      const simple = r.witnessSimple ? '' : t('paySimpleNote');
+      canPay = t('payOkHead')
+        + (r.witness ? r.witness.map(p2 => cellName(p2[0] * N + p2[1])).join(' → ') + ' = ' + r.witnessCosts.join('+') + ' = ' + r.witnessCosts.reduce((a, b) => a + b, 0) : '')
+        + simple + '</div>';
+    } else if (r.payable === 'TUNABLE') {
+      canPay = fmt(t('payMid'), r.v, r.tuning, r.reachable[0] + '–' + r.reachable[r.reachable.length - 1]);
+    } else {
+      canPay = fmt(t('payNo'), r.v,
+        r.reachable.length ? fmt(t('payNoKnown'), r.reachable[0] + '–' + r.reachable[r.reachable.length - 1])
+                           : t('payNoNone'));
+    }
+    return '<tr data-i="' + r.i + '"><td>' + cellName(r.i) + '</td><td>' + r.v + '</td><td>' + range + '</td>' +
+      '<td><span class="v ' + r.verdict + '">' + r.verdict + '</span><div class="why">' + r.why + '</div>' + canPay +
+      (r.route && r.route.length > 1 ? '<div class="route">' + r.route.map(cellName).join(' → ') + '</div>' : '') + '</td></tr>';
+  }).join('');
+  tb.querySelectorAll('tr').forEach(tr => {
+    tr.addEventListener('click', () => { selected = +tr.dataset.i; refresh(); });
+    // pointing at a verdict row rings the square it talks about
+    tr.addEventListener('mouseenter', () => { markCellFromRow(+tr.dataset.i); });
+    tr.addEventListener('mouseleave', () => { markCellFromRow(-1); });
+  });
+  markVerdictRow(hoverVerdict);          // the table was rebuilt: light it up again
+
+  const nStates = led.list.length;
+  $('undoBtn').disabled = undoStack.length === 0;
+  $('stateCount').textContent = nStates ? fmt(t('stateCount'), nStates,
+    led.list.filter(s => s.capitol >= 0).length, (N * N - led.sizeOf.size)) : t('noStatesYet');
+  // the same three numbers, in a language-independent form: the prose is
+  // translated, the counts are not
+  $('stateCount').dataset.states = String(nStates);
+  $('stateCount').dataset.capitols = String(led.list.filter(s => s.capitol >= 0).length);
+  $('stateCount').dataset.unknown = String(N * N - led.sizeOf.size);
+
+  const bad = led.rows.filter(r => r.verdict === 'CONTRADICTED' || r.verdict === 'UNPRODUCIBLE');
+  const conBad = [...(led.conVerdicts || new Map())].filter(([, r]) => r.verdict === 'BAD');
+  const st = $('status');
+  if (bad.length) { st.className = 'status bad'; st.innerHTML = fmt(t('statusContradicted'), bad.length,
+    bad.map(r => cellName(r.i) + ' reads ' + r.v + ' but ' + r.why).join('; ') + '.'); }
+  else if (conBad.length) { st.className = 'status bad'; st.innerHTML = fmt(t('statusConBad'), conBad.length,
+    conBad.map(([i, r]) => cellName(i) + ': ' + r.why.join('; ')).join('; ') + '.'); }
+  else if (!nStates && !assumed.size) { st.className = 'status'; st.textContent = t('statusIdle'); }
+  else if (led.complete) {
+    const sat = led.satisfaction;
+    st.className = 'status good';
+    st.innerHTML = fmt(t('statusComplete'), led.rows.length, led.rows.length);
+  }
+  else { st.className = 'status good'; st.innerHTML = t('statusOk'); }
+
+  const notes = led.notes.slice();
+  {
+    const cnt = { PRODUCED: 0, TUNABLE: 0, UNPAYABLE: 0 };
+    for (const r of led.rows) cnt[r.payable]++;
+    notes.push({ k: 'info', t: fmt(t('noteSatisfactionAxis'), cnt.PRODUCED, cnt.TUNABLE, cnt.UNPAYABLE) });
+  }
+  if (led.complete && led.satisfaction) {
+    const sat = led.satisfaction, wrong = Object.keys(sat.wrong);
+    notes.push({ k: sat.all_numbers_produced && sat.all_numbers_are_the_cheapest ? 'good' : 'bad',
+      t: fmt(t('noteSatisfactionFull'), String(N * N), String(led.rows.length),
+        sat.all_numbers_produced ? t('noteSatAllProduced')
+          : fmt(t('noteSatSomeUnproduced'), led.rows.length - Object.values(sat.wrong).filter(x => x.actual !== null).length),
+        sat.all_numbers_are_the_cheapest ? t('noteSatAllCheapest') : fmt(t('noteSatSomeNotCheapest'), wrong.length),
+        wrong.length ? t('noteSatWrong') + ' ' + wrong.map(k => k + ' ' + t('noteSatWrongOne') + ' ' + sat.wrong[k].published + ' ' + sat.wrong[k].actual).join('; ') + t('noteSatEnd') : '') });
+  }
+  const singles = singletonCandidates();
+  if (singles.length) {
+    notes.push({ k: 'warn', t: fmt(t('noteSingleton'),
+      singles.map(s => cellName(s.i) + ' → ' + s.cand.map(cellName).join('/')).join('; ')) });
+  }
+  $('notes').innerHTML = notes.map(n => '<div class="note ' + n.k + '">' + n.t + '</div>').join('') ||
+    '<div class="hint">' + t('notesNone') + '</div>';
+
+  const cands = hiddenCapitolCandidates(led.rows);
+  hiddenCapMap = new Map(cands.map(c => [c.row.i, c.cand]));
+  $('cands').innerHTML = cands.length
+    ? cands.map(c => '<p>' + fmt(t('hiddenCap'), cellName(c.row.i), c.row.v,
+        Math.floor((c.row.v + 1) / 2), c.cand.map(cellName).join(', ')) + '</p>').join('')
+    : t('hiddenCapNone');
+
+  // the computed answer -- practice boards only.  The 11x11 never shows one
+  // here: that puzzle is still open.  (The row sums have their own button,
+  // below, which computes them from whatever YOU painted -- it reads nothing
+  // out of a file either.)
+  const ans = BOARD.id === LEDGER_BOARD.id ? null : computedAnswer();
+  $('answerBox').hidden = !ans;
+  if (ans) {
+    $('answerNum').textContent = String(ans.answer);
+    $('rowSums').textContent = fmt(t('labelRowSums'), ans.rows.join(' / '));
+  }
+  // and the number the board comes out with, if it is known: a check at the
+  // end, not a hint at the start
+  const exp = $('expAnswer');
+  if (exp) exp.textContent = (BOARD.answer != null) ? fmt(t('labelExpected'), BOARD.answer) : '';
+
+  drawSums();
+  drawHover();
+  save();
+}
+
+/* ---------- the board switcher ----------
+   One sheet, many puzzles.  The 11x11 is the reason this page exists; the
+   practice boards are there to try a thing out on a puzzle that is already
+   solved, so the page can be checked against a known answer.  Every board is
+   judged by the SAME kernel -- the page recomputes the symmetry, the capitol
+   and the cost field itself -- so a practice board is a second judge for the
+   11x11 as well. */
+function clueTriples(n, flat) {
+  const out = [];
+  for (let k = 0; k < flat.length; k++) {
+    if (flat[k] >= 0) out.push([(k / n) | 0, k % n, flat[k]]);
+  }
+  return out;
+}
+const BOARDS = [LEDGER_BOARD].concat(PRACTICE_BOARDS.map(b => ({
+  id: b.id, n: b.n, clues: clueTriples(b.n, b.clue), answer: b.answer,
+  official: !!b.official,
+})));
+const boardById = id => BOARDS.find(b => b.id === id) || BOARDS[0];
+
+function boardLabel(b) {
+  if (b.id === LEDGER_BOARD.id) return t('boardLedger');
+  const base = b.n + '×' + b.n;
+  if (b.official) return base + ' · ' + t('boardOfficial');
+  const same = BOARDS.filter(x => x.n === b.n);
+  return base + ' · #' + (same.indexOf(b) + 1);
+}
+
+function fillBoardPicker() {
+  const sel = $('boardSel');
+  sel.innerHTML = '';
+  const g0 = document.createElement('optgroup');
+  g0.label = t('boardGroupLedger');
+  const o0 = document.createElement('option');
+  o0.value = LEDGER_BOARD.id; o0.textContent = boardLabel(LEDGER_BOARD);
+  g0.appendChild(o0); sel.appendChild(g0);
+  for (const n of [4, 5, 6, 7]) {
+    const group = BOARDS.filter(b => b.n === n);
+    if (!group.length) continue;
+    const g = document.createElement('optgroup');
+    g.label = n + '×' + n;
+    for (const b of group) {
+      const o = document.createElement('option');
+      o.value = b.id; o.textContent = boardLabel(b);
+      g.appendChild(o);
+    }
+    sel.appendChild(g);
+  }
+  sel.value = BOARD.id;
+}
+
+function loadBoard(id) {
+  const b = boardById(id);
+  const saved = store.get('mt2ledger:' + b.id);
+  BOARD = b; N = b.n; CLUES = b.clues;
+  setClues(CLUES);
+  colors = new Array(N * N).fill(-1);
+  assumed = new Map();
+  constraints = new Map();
+  selected = -1;
+  undoStack = [];
+  iterations = [];
+  actions = [];
+  actionSeq = 0;
+  histPos = -1;
+  hoverCell = -1;
+  if (saved && Array.isArray(saved.c) && saved.c.length === N * N) {
+    colors = saved.c;
+    assumed = new Map(saved.a || []);
+    iterations = saved.it || [];
+    constraints = new Map(saved.con || []);
+    if (Array.isArray(saved.act)) {
+      actions = saved.act.filter(a => a && Array.isArray(a.c) && a.c.length === N * N);
+      for (const a of actions) if (Number.isInteger(a.n) && a.n >= actionSeq) actionSeq = a.n + 1;
+      histPos = actions.length - 1;
+    }
+  }
+  $('axes').style.setProperty('--n', N);
+  $('board').style.setProperty('--n', N);
+  $('routeSvg').setAttribute('viewBox', '0 0 ' + N + ' ' + N);
+  $('capSize').max = String(N * N);
+  $('boardNote').hidden = b.id === LEDGER_BOARD.id;
+  $('plateName').textContent = boardLabel(b);
+  $('boardSel').value = b.id;
+  buildBoard();
+  renderIterations();
+  renderHistory();
+  refresh();
+  save();
+}
+
+/* There is no answer key here.  A practice board used to carry its own
+   partition, so that a reader could paint it with one button; that is gone
+   on purpose: the shapes of the solution must not sit in the page source,
+   where an agent could read them instead of playing.  What the page still
+   knows is the NUMBER the board comes out with, and that is a check at the
+   end, not a way to play.  The 11x11 has neither: it is still an open
+   puzzle, and this page does not carry its answer. */
+
+/* The answer, computed from what is painted right now -- never read out of a
+   file.  A row's sum is the total area of the states that touch that row: a
+   square contributes the area of the state it belongs to, so a state that
+   spans three rows counts in all three.  The answer is the sum of the
+   squares of those row sums. */
+function computedAnswer() {
+  const s = rowSums();
+  return s ? { rows: s.rows, answer: s.total } : null;
+}
+
+/* ---------- the row sums, their squares, and the total ----------
+   The arithmetic of the answer, from the painting alone.  A row's sum is the
+   total area of the states that touch that row: every square contributes the
+   area of the state it belongs to, so a state that spans three rows counts in
+   all three of them.  The answer is the sum of the squares of those row sums.
+
+   Two identities ride along, and both are checked by our own Python kernel
+   (src/cost.py):  sum(row sums) == sum(area^2) over the states, and the
+   official 5x5 example comes out at 8045 with rows 37/29/31/43/55.
+
+   This computes the answer of WHAT IS PAINTED -- not a stored answer.  The
+   11x11 carries no solution, no answer and no capitol coordinates here. */
+function rowSums() {
+  const area = paintedAreas();
+  if (area.size !== N * N) return null;             // not a complete tiling yet
+  const rows = [];
+  for (let r = 0; r < N; r++) {
+    let sum = 0;
+    for (let c = 0; c < N; c++) sum += area.get(r * N + c);
+    rows.push(sum);
+  }
+  return { rows: rows, squares: rows.map(x => x * x), total: rows.reduce((a, b) => a + b * b, 0) };
+}
+
+/* The area of the state every square belongs to, right now. */
+function paintedAreas() {
+  const area = new Map();
+  const led = lastLedger;
+  if (!led) return area;
+  for (const s of led.list) for (const c of s.cells) area.set(c, s.cells.length);
+  return area;
+}
+
+/* When is it honest to show the numbers?  Four things have to hold:
+     (a) the tiling is complete -- every square belongs to a state;
+     (b) every painted region is a real state (it has a non-trivial
+         self-symmetry) -- otherwise its "area" is not a state's area;
+     (c) an assumed capitol's declared size is the area of the state it sits
+         in -- otherwise the cost field and the painting disagree;
+     (d) every published number is settled -- no contradiction, nothing left
+         open.  (On a complete tiling the two books agree, so the only
+         verdicts left are FORCED, CONTRADICTED and UNPRODUCIBLE.) */
+const SETTLED_VERDICTS = new Set(['FORCED', 'TIGHT_GEODESIC', 'TIGHT_CHEAPEST']);
+function sumsGate() {
+  const led = lastLedger;
+  if (!led) return { ok: false, why: 'tiling' };
+  const area = paintedAreas();
+  if (area.size !== N * N) return { ok: false, why: 'tiling' };
+  if (led.list.some(s => !s.sym)) return { ok: false, why: 'state' };
+  for (const [i, k] of assumed) if (area.get(i) !== k) return { ok: false, why: 'assumption' };
+  const unsettled = led.rows.filter(r => !SETTLED_VERDICTS.has(r.verdict));
+  if (unsettled.length) return { ok: false, why: 'verdicts', n: unsettled.length };
+  return { ok: true };
+}
+
+function sumsWhy(gate) {
+  if (gate.why === 'state') return t('sumWhyState');
+  if (gate.why === 'assumption') return t('sumWhyAssumption');
+  if (gate.why === 'verdicts') return fmt(t('sumWhyVerdicts'), gate.n);
+  return t('sumWhyTiling');
+}
+
+/* The right-hand ruler and the foot under the board.  The reader asks for
+   them once, and from then on they follow the painting; when the sheet stops
+   qualifying, they go away again. */
+let showSums = false;
+function drawSums() {
+  const axis = $('axSums'), foot = $('footSum'), btn = $('sumBtn'), hint = $('sumHint');
+  if (!axis || !foot || !btn) return;
+  const gate = sumsGate();
+  btn.disabled = !gate.ok;
+  btn.title = gate.ok ? t('sumReady') : sumsWhy(gate);
+  if (hint) hint.textContent = gate.ok ? t('sumReady') : sumsWhy(gate);
+  if (!showSums || !gate.ok) { axis.innerHTML = ''; foot.innerHTML = ''; return; }
+  const s = rowSums();
+  if (!s) { axis.innerHTML = ''; foot.innerHTML = ''; return; }
+  axis.innerHTML = s.rows.map((v, r) =>
+    '<span title="' + fmt(t('sumAxisTitle'), v, s.squares[r]) + '">' + v +
+    '<em>' + s.squares[r] + '</em></span>').join('');
+  foot.innerHTML = '<span>' + t('sumFootLabel') + ' =</span><b>' + s.total + '</b>' +
+    '<span>' + t('sumFootCaption') + '</span>';
+}
+
+/* ---------- cell constraints ----------
+   A constraint is a number you made up: "this square's travel cost must be
+   11, and the state it sits in must have size 5 or 7-9".  The page then
+   judges the painting against it, with the same machinery it uses for the
+   published numbers.  The idea -- and the shape of the little dialog -- comes
+   from the practice page by sharmavedic; the checking is ours, on our own
+   cost model.
+
+   Two things are not known until they are known:
+     * the SIZE of a square: only once the square belongs to a state;
+     * the COST of a square: only once the sheet is full.  Until then the two
+       books bracket it (near <= the true cost <= far), so a constraint can be
+       CONTRADICTED (even the cheapest walk is too dear, or the dearest one
+       too cheap) but not yet satisfied. */
+let constraints = new Map();       // square -> { size: "5, 7-9", cost: "11" }
+let popCell = -1;                  // the square the dialog is about
+
+/* "5, 7-9" -> the set of allowed numbers.  Empty text means "any". */
+function parseNums(text) {
+  const raw = String(text == null ? '' : text).trim();
+  if (!raw) return { set: null, bad: [] };
+  const set = new Set(), bad = [];
+  for (const tok of raw.split(/[\s,;]+/)) {
+    if (!tok) continue;
+    const one = tok.match(/^(\d+)$/);
+    const range = tok.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
+    if (one) { set.add(Number(one[0])); continue; }
+    if (range) {
+      let a = Number(range[1]), b = Number(range[2]);
+      if (a > b) { const t = a; a = b; b = t; }
+      if (b - a > 1000) { bad.push(tok); continue; }
+      for (let i = a; i <= b; i++) set.add(i);
+      continue;
+    }
+    bad.push(tok);
+  }
+  return { set: set, bad: bad };
+}
+
+function formatNums(set) {
+  const a = [...set].sort((x, y) => x - y), out = [];
+  for (let i = 0; i < a.length;) {
+    let j = i;
+    while (j + 1 < a.length && a[j + 1] === a[j] + 1) j++;
+    out.push(i === j ? String(a[i]) : (j === i + 1 ? a[i] + ', ' + a[j] : a[i] + '-' + a[j]));
+    i = j + 1;
+  }
+  return out.join(', ');
+}
+
+function constraintOf(i) { return constraints.get(i) || { size: '', cost: '' }; }
+
+function setConstraint(i, cfg) {
+  const before = snapshot();
+  const was = constraintOf(i);
+  const clean = { size: String(cfg.size || ''), cost: String(cfg.cost || '') };
+  if (!clean.size.trim() && !clean.cost.trim()) constraints.delete(i);
+  else constraints.set(i, clean);
+  if (was.size !== clean.size || was.cost !== clean.cost) {
+    record(before, 'constraint', cellName(i), '');
+  }
+  refresh();
+}
+
+/* The verdict on one constrained square. */
+function constraintVerdict(i, cfg, led) {
+  const S = parseNums(cfg.size).set;       // null = any size
+  const C = parseNums(cfg.cost).set;       // null = any cost
+  const res = { verdict: 'OK', size: null, cost: null, why: [] };
+  if (S) {
+    const st = led.list.find(s => s.cells.includes(i));
+    if (st) {
+      res.size = st.cells.length;
+      if (!S.has(res.size)) {
+        res.verdict = 'BAD';
+        res.why.push(fmt(t('conSizeBad'), res.size, formatNums(S)));
+      }
+    } else if (res.verdict === 'OK') {
+      res.verdict = 'OPEN';
+      res.why.push(t('conNoState'));
+    }
+  }
+  if (C) {
+    const lo = Math.min(...C), hi = Math.max(...C);
+    const L = led.nearKnown.dist[i], U = led.farKnown.dist[i];
+    if (led.complete && L !== Infinity) {
+      res.cost = L;
+      if (!C.has(L)) {
+        res.verdict = 'BAD';
+        res.why.push(fmt(t('conCostBad'), L, formatNums(C)));
+      }
+    } else if (L !== Infinity && L > hi) {
+      res.verdict = 'BAD';
+      res.why.push(fmt(t('conCostTooDear'), L, formatNums(C)));
+    } else if (U !== Infinity && U < lo) {
+      res.verdict = 'BAD';
+      res.why.push(fmt(t('conCostTooCheap'), U, formatNums(C)));
+    } else if (res.verdict === 'OK') {
+      res.verdict = 'OPEN';
+      res.why.push(t('conCostUnknown'));
+    }
+  }
+  return res;
+}
+
+/* ---------- the iteration stack ---------- */
+let iterations = [];      // {name, at, board, tally}
+
+function tallyOf(rows) {
+  const t = {};
+  for (const r of rows) t[r.verdict] = (t[r.verdict] || 0) + 1;
+  return t;
+}
+function renderIterations() {
+  const box = $('iterList');
+  if (!iterations.length) { box.innerHTML = ''; box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = iterations.map((it, i) => {
+    const bad = (it.tally.CONTRADICTED || 0) + (it.tally.UNPRODUCIBLE || 0);
+    const forced = it.tally.FORCED || 0;
+    return '<div class="iterrow"><b>' + it.name + '</b>'
+      + '<span class="n">' + it.at.slice(5, 16).replace('T', ' ') + '</span>'
+      + '<span class="' + (bad ? 'bad' : 'good') + '">' + (bad ? fmt(t('iterContradicted'), bad) : t('iterOk')) + '</span>'
+      + '<span class="n">' + fmt(t('iterForced'), forced, (it.tally.NEEDS_HIDDEN_CAPITOL || 0)) + '</span>'
+      + '<button class="btn" data-restore="' + i + '">' + t('btnRestore') + '</button>'
+      + '<button class="btn" data-del="' + i + '">' + t('btnDrop') + '</button></div>';
+  }).join('');
+  box.querySelectorAll('[data-restore]').forEach(b => b.addEventListener('click', () => {
+    const res = loadJSON(iterations[+b.dataset.restore].board);
+    if (res && res.ok === false) { setStatus(res.message, 'bad'); return; }
+    setStatus(fmt(t('iterRestored'), iterations[+b.dataset.restore].name), 'good');
+  }));
+  box.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    iterations.splice(+b.dataset.del, 1);
+    renderIterations(); save();
+  }));
+}
+
+/* ---------- the paint history ----------
+   Every action on the board is written down, together with the board as it was
+   after that action.  The log is a list of links: click one and the page goes
+   back to that state -- and because every state has an address of its own
+   (#act=N), the browser's own back button walks the same list.  The log is
+   JSON: the button under it writes the whole thing to a file, and Open JSON
+   reads such a file back, board and all. */
+let actions = [];        // { n, at, kind, what, extra, c, a, con }
+let actionSeq = 0;       // the number the next action will carry
+let histPos = -1;        // which entry the board is showing right now
+const HIST_MAX = 60;     // how many actions are kept
+
+function snapshot() {
+  return { c: colors.slice(), a: [...assumed], con: [...constraints] };
+}
+function actionLabel(a) {
+  switch (a.kind) {
+    case 'start': return t('actStart');
+    case 'paint': return fmt(t('actPaint'), a.what);
+    case 'erase': return fmt(t('actErase'), a.what);
+    case 'cap': return fmt(t('actCap'), a.what, a.extra);
+    case 'uncap': return fmt(t('actUncap'), a.what);
+    case 'constraint': return fmt(t('actConstraint'), a.what);
+    case 'clear': return t('actClear');
+    case 'undo': return t('actUndo');
+    case 'load': return t('actLoad');
+    default: return a.kind;
+  }
+}
+/* Write one action down.  The state BEFORE it is handed in, because the first
+   entry of a log is the board as it was before anything happened. */
+function record(before, kind, what, extra) {
+  const now = new Date().toISOString();
+  if (!actions.length) {
+    actions.push({ n: actionSeq++, at: now, kind: 'start', what: '', extra: '',
+                   c: before.c, a: before.a, con: before.con });
+  }
+  const st = snapshot();
+  actions.push({ n: actionSeq++, at: now, kind: kind, what: what || '',
+                 extra: extra === undefined ? '' : extra, c: st.c, a: st.a, con: st.con });
+  while (actions.length > HIST_MAX) actions.shift();
+  histPos = actions.length - 1;
+  renderHistory();
+  setHistHash(actions[actions.length - 1].n);
+  save();
+  return actions[actions.length - 1].n;
+}
+/* Go back to a state that is written down. */
+function restoreAction(a) {
+  if (!a) return false;
+  colors = a.c.slice();
+  assumed = new Map(a.a);
+  constraints = new Map(a.con);
+  histPos = actions.indexOf(a);
+  renderHistory();
+  refresh();
+  return true;
+}
+/* The same thing by number -- this is what the links do. */
+function gotoAction(n) {
+  const a = actions.find(x => x.n === n);
+  if (!a) return false;
+  restoreAction(a);
+  setHistHash(a.n);
+  return true;
+}
+function setHistHash(n) {
+  // the address of the state on show.  A file:// page refuses to be told, and
+  // there the address is set the other way round: replace the entry, do not
+  // add one, so the browser's back button still walks the list.
+  const h = '#act=' + n;
+  try { history.replaceState(null, '', h); return; } catch (e) {}
+  try { location.replace(h); } catch (e) {}
+}
+function renderHistory() {
+  const list = $('histList'), pos = $('histPos'), prev = $('histPrev'), next = $('histNext');
+  const go = $('histGo');
+  if (!list) return;
+  if (!actions.length) {
+    list.innerHTML = ''; list.hidden = true;
+    pos.textContent = t('histNone');
+    prev.href = '#'; prev.classList.add('off');
+    next.href = '#'; next.classList.add('off');
+    if (go && document.activeElement !== go) go.value = '';
+    return;
+  }
+  list.hidden = false;
+  list.innerHTML = actions.slice().reverse().map(a => {
+    const here = (actions.indexOf(a) === histPos) ? ' cur' : '';
+    return '<div class="iterrow' + here + '">'
+      + '<a class="lnk" href="#act=' + a.n + '">#' + a.n + '</a>'
+      + '<b>' + actionLabel(a) + '</b>'
+      + '<span class="n">' + String(a.at).slice(5, 16).replace('T', ' ') + '</span>'
+      + '<span class="n">' + fmt(t('histPainted'), a.c.filter(x => x >= 0).length) + '</span>'
+      + '</div>';
+  }).join('');
+  const back = histPos > 0 ? actions[histPos - 1] : null;
+  const fwd = (histPos >= 0 && histPos < actions.length - 1) ? actions[histPos + 1] : null;
+  prev.href = back ? '#act=' + back.n : '#';
+  prev.classList.toggle('off', !back);
+  next.href = fwd ? '#act=' + fwd.n : '#';
+  next.classList.toggle('off', !fwd);
+  const cur = (histPos >= 0) ? actions[histPos] : null;
+  pos.textContent = fmt(t('histPos'), cur ? cur.n : 0, actions.length);
+  // the box holds the number of the step on show -- unless the reader is
+  // typing one in right now
+  if (go && document.activeElement !== go) go.value = cur ? cur.n : '';
+}
+/* Type a number and go there.  Every step of the log has a number and an
+   address, so the number in the box is the same number the links use. */
+function jumpToStep(raw) {
+  const s = String(raw === undefined || raw === null ? '' : raw).trim();
+  if (!s) { toast(t('histNoNumber'), 'bad'); return false; }
+  const n = parseInt(s, 10);
+  if (!Number.isInteger(n)) { toast(t('histNoNumber'), 'bad'); return false; }
+  const a = actions.find(x => x.n === n);
+  if (!a) { toast(fmt(t('histNoSuch'), n), 'bad'); return false; }
+  gotoAction(n);
+  toast(fmt(t('histJumped'), n), 'good');
+  return true;
+}
+/* The whole log, as JSON -- the file the button under the list writes. */
+function historyJSON() {
+  return {
+    format: 'metric-too-ledger-history/1',
+    n: N,
+    board: BOARD.id,
+    saved: new Date().toISOString(),
+    what_this_is: t('histWhat'),
+    actions: actions.map(a => ({
+      n: a.n, at: a.at, kind: a.kind, what: a.what, extra: a.extra,
+      label: actionLabel(a),
+      state: { c: a.c, a: a.a, con: a.con },
+    })),
+  };
+}
+/* Read such a file back: the board it was played on, and the whole log. */
+function loadHistory(data) {
+  const list = Array.isArray(data.actions) ? data.actions : [];
+  const bid = data.board;
+  if (bid && bid !== BOARD.id && BOARDS.some(b => b.id === bid)) loadBoard(bid);
+  actions = [];
+  actionSeq = 0;
+  for (const a of list) {
+    const st = (a && a.state) || a;
+    if (!st || !Array.isArray(st.c) || st.c.length !== N * N) continue;
+    const n = (a && Number.isInteger(a.n)) ? a.n : actionSeq;
+    actions.push({ n: n, at: (a && a.at) || '', kind: (a && a.kind) || 'start',
+                   what: (a && a.what) || '', extra: (a && a.extra) === undefined ? '' : a.extra,
+                   c: st.c.slice(), a: st.a || [], con: st.con || [] });
+    actionSeq = Math.max(actionSeq, n + 1);
+  }
+  histPos = actions.length - 1;
+  if (actions.length) restoreAction(actions[actions.length - 1]);
+  else { renderHistory(); save(); }
+  return { ok: true, actions: actions.length };
+}
+
+/* ---------- save and load ---------- */
+function toast(msg, kind) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (kind ? ' ' + kind : '');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { t.className = 'toast'; }, 6000);
+}
+function download(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.rel = 'noopener';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  // the anchor must survive a moment: some browsers (notably older Safari)
+  // process the download asynchronously and drop it if the link is removed
+  // straight away
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 4000);
+}
+function stamp() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+}
+function boardJSON() {
+  const led = lastLedger;
+  return {
+    format: 'metric-too-ledger/1',
+    n: N,
+    saved: new Date().toISOString(),
+    published: BOARD.id === LEDGER_BOARD.id ? t('jsonPublished')
+      : fmt(t('jsonPractice'), String(N), String(N)),
+    what_this_is: t('jsonWhat'),
+    states: led.list.map((s, id) => ({
+      id,
+      colour: colors[s.cells[0]],          // the palette colour it was painted with
+      size: s.cells.length,
+      cells: s.cells.map(i => [Math.floor(i / N), i % N]),
+      symmetry: regionInfo(s.cells, N).symNames,
+      capitol: s.capitol >= 0 ? [Math.floor(s.capitol / N), s.capitol % N] : null,
+    })),
+    assumed_capitols: [...assumed].map(([i, k]) => ({
+      cell: [Math.floor(i / N), i % N], state_size: k,
+    })),
+    cell_constraints: [...constraints].map(([i, v]) => ({
+      cell: [Math.floor(i / N), i % N], sizes: v.size, costs: v.cost,
+    })),
+  };
+}
+/* A board, turned into the two arrays the page works with.  Nothing is
+   painted here: the labels are checked against the partition the file claims
+   first, so a file that asks for the impossible is refused whole. */
+function parseBoard(data) {
+  // accepts the exported shape and the plain preset shape
+  const cellsOf = st => (Array.isArray(st) && Array.isArray(st[0]) && typeof st[0][0] === 'number')
+    ? st : (st.cells || []);
+  const states = data.states || [];
+
+  // A state may ask for a colour of its own -- that is exactly what the
+  // `colour` field of an exported board is for.  Without one, the state keeps
+  // the number of its place in the list.  The number is only a LABEL: two
+  // states that share a label AND touch each other would melt into one, so
+  // the labels are checked against the partition the file describes before
+  // anything is painted.  A file that asks for the impossible is refused
+  // whole, rather than half-loaded.
+  const labels = new Array(N * N).fill(-1);
+  const wanted = [];
+  states.forEach((st, id) => {
+    const ask = (st && !Array.isArray(st) && Number.isInteger(st.colour)) ? st.colour : null;
+    const label = (ask !== null && ask >= 0) ? ask : id;
+    wanted.push(label);
+    cellsOf(st).forEach(([r, c]) => { if (r >= 0 && c >= 0 && r < N && c < N) labels[r * N + c] = label; });
+  });
+
+  const { comp } = components(labels, N);
+  const owner = new Map();                       // piece -> the state that owns it
+  for (let id = 0; id < states.length; id++) {
+    const cells = cellsOf(states[id]).filter(p => p && p.length >= 2 && p[0] >= 0 && p[1] >= 0 && p[0] < N && p[1] < N);
+    if (!cells.length) continue;
+    const first = cells[0][0] * N + cells[0][1];
+    const cid = comp[first];
+    for (const p of cells) if (comp[p[0] * N + p[1]] !== cid) {
+      return { ok: false, message: fmt(t('errDisconnected'), cellName(first)) };
+    }
+    if (owner.has(cid)) {
+      const was = owner.get(cid);
+      return { ok: false, message: fmt(t('errColourConflict'), cellName(was.cell), cellName(first), wanted[id]) };
+    }
+    owner.set(cid, { id: id, cell: first });
+  }
+
+  const assumed = new Map();
+  (data.assumed_capitols || data.assumed || []).forEach(a => {
+    if (Array.isArray(a)) { const [r, c, k] = a; assumed.set(r * N + c, k == null ? 1 : k); }
+    else { const [r, c] = a.cell; assumed.set(r * N + c, a.state_size || 1); }
+  });
+
+  // cell constraints: your own numbers, carried with the board
+  const cons = new Map();
+  (data.cell_constraints || data.constraints || []).forEach(c => {
+    if (!c) return;
+    const cell = Array.isArray(c) ? c[0] : c.cell;
+    if (!cell) return;
+    const i = cell[0] * N + cell[1];
+    if (i < 0 || i >= N * N) return;
+    const size = Array.isArray(c) ? (c[1] || '') : (c.sizes != null ? c.sizes : (c.size || ''));
+    const cost = Array.isArray(c) ? (c[2] || '') : (c.costs != null ? c.costs : (c.cost || ''));
+    cons.set(i, { size: String(size || ''), cost: String(cost || '') });
+  });
+  return { ok: true, labels: labels, assumed: assumed, states: states, constraints: cons };
+}
+
+function loadJSON(data) {
+  // a bundle of candidates from goal.py: not a board, a LIST of boards
+  if (data && data.format === 'metric-too-ledger-candidates/1') return loadBundle(data);
+  // a paint history: a board and every state it passed through
+  if (data && data.format === 'metric-too-ledger-history/1') return loadHistory(data);
+  const p = parseBoard(data);
+  if (!p.ok) return p;
+  pushUndo();                                    // snapshot the board we are about to replace
+  const before = snapshot();
+  colors = p.labels;
+  assumed = p.assumed;
+  constraints = p.constraints;
+  record(before, 'load', '', '');
+  refresh();
+  return { ok: true, states: p.states.length };
+}
+
+/* Judge a board without painting it: the ledger runs on a COPY of the board,
+   so the page can check every candidate of a bundle without disturbing what
+   is on screen. */
+function judgeBoard(data) {
+  const p = parseBoard(data);
+  if (!p.ok) return null;
+  const savedC = colors, savedA = assumed;
+  colors = p.labels; assumed = p.assumed;
+  const led = ledger();
+  colors = savedC; assumed = savedA;
+  return led;
+}
+
+/* The three words goal.py uses, computed here from the page's OWN verdicts:
+     BACKTRACK  some published number is contradicted
+     KEEP       the target square is pinned by these assumptions
+     PARK       neither -- not dead, just not decided yet              */
+const PRODUCES = ['FORCED', 'TIGHT_GEODESIC', 'TIGHT_CHEAPEST'];
+function pageWord(led, target) {
+  if (!led) return null;
+  if (led.rows.some(r => r.verdict === 'CONTRADICTED')) return 'BACKTRACK';
+  const v = target >= 0 ? led.verdictOf[target] : null;
+  if (v && PRODUCES.indexOf(v) >= 0) return 'KEEP';
+  return 'PARK';
+}
+function cellIndex(name) {
+  const m = /^r(\d+)c(\d+)$/.exec(String(name || '').trim());
+  if (!m) return -1;
+  const r = +m[1], c = +m[2];
+  return (r >= 0 && c >= 0 && r < N && c < N) ? r * N + c : -1;
+}
+
+/* A bundle of candidates.  goal.py proposes the shapes; this page judges
+   every one of them again -- nothing that was stored is taken on trust --
+   and a click puts a candidate on the board so it can be worked on. */
+let candidates = null;
+function loadBundle(data) {
+  const list = data.candidates || [];
+  const target = cellIndex(data.cell);
+  const rows = list.map((c, i) => {
+    const led = judgeBoard(c.board || c);
+    const word = pageWord(led, target);
+    const mine = led && target >= 0 ? led.verdictOf[target] : null;
+    const said = c.word || null;
+    const cap = c.capitol ? 'cap ' + c.capitol[0] + 'c' + c.capitol[1] : 'no capitol';
+    return {
+      i: i, name: c.name || ('size ' + (c.size || '?')), word: word, said: said,
+      short: 'size ' + (c.size == null ? '?' : c.size) + ' · ' + cap,
+      mine: mine, agree: !said || said === word,
+      tally: led ? led.rows.reduce((m, r) => (m[r.verdict] = (m[r.verdict] || 0) + 1, m), {}) : {},
+    };
+  });
+  candidates = list;
+  const panel = $('candPanel');
+  panel.hidden = false;
+  $('candMeta').innerHTML = fmt(t('candMeta'), list.length, (data.cell || '?'),
+    (data.published == null ? '?' : data.published), ((data.sizes || []).join(', ') || '?'))
+    + (data.truncated ? t('candTruncated') : '');
+  const SHORT = { FORCED: 'FORCED', TIGHT_GEODESIC: 'TIGHT', TIGHT_CHEAPEST: 'TIGHT',
+                  NEEDS_EXACT_PATH: 'NEEDS', NEEDS_HIDDEN_CAPITOL: 'NEEDS',
+                  CONTRADICTED: 'CONTRADICTED', UNPRODUCIBLE: 'UNPRODUCIBLE' };
+  const tb = $('candTable').querySelector('tbody');
+  tb.innerHTML = rows.map(r => {
+    const short = r.mine ? (SHORT[r.mine] || r.mine) : '';
+    const tally = Object.keys(r.tally).sort().map(k => k.toLowerCase() + ' ' + r.tally[k]).join(', ');
+    return '<tr title="' + tally + '"><td>' + r.short + '</td>'
+      + '<td><b class="v ' + (r.said || 'PARK') + '">' + (r.said || '?') + '</b></td>'
+      + '<td><b class="v ' + (r.word || 'PARK') + '">' + (r.word || '?') + '</b>'
+      + (short ? ' <span class="hint">' + short + '</span>' : '')
+      + (r.agree ? '' : ' <span class="v BACKTRACK">!</span>') + '</td>'
+      + '<td><button class="btn" data-cand="' + r.i + '">' + t('btnLoad') + '</button></td></tr>';
+  }).join('');
+  tb.querySelectorAll('[data-cand]').forEach(b => b.addEventListener('click', () => {
+    const c = candidates[+b.dataset.cand];
+    const res = loadJSON(c.board || c);
+    if (res && res.ok === false) { setStatus(res.message, 'bad'); return; }
+    setStatus(fmt(t('candLoaded'), c.name || ''), 'good');
+  }));
+  const bad = rows.filter(r => !r.agree).length;
+  setStatus(fmt(t('candStatus'), (data.cell || '?'), list.length,
+    bad ? fmt(t('candDisagree'), bad) : t('candAgree')), bad ? 'warn' : 'good');
+  return { ok: true, states: 0, candidates: list.length };
+}
+function drawBoardCanvas() {
+  const S = 46, pad = 18, gut = 24, head = 62, foot = 78, dpr = 2;
+  const W = pad * 2 + gut + S * N, H = head + gut + S * N + foot;
+  const cv = document.createElement('canvas');
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d');
+  g.scale(dpr, dpr);  const cs = getComputedStyle(document.documentElement);
+  const C = n => (cs.getPropertyValue(n) || '').trim() || '#ffffff';
+  const led = lastLedger;
+  g.fillStyle = C('--ground'); g.fillRect(0, 0, W, H);
+  g.fillStyle = C('--ink');
+  g.font = '700 18px system-ui, sans-serif';
+  g.fillText(t('pngTitle'), pad, 26);
+  g.font = '12px system-ui, sans-serif';
+  g.fillStyle = C('--muted');
+  g.fillText(new Date().toLocaleString() + '  |  ' + fmt(t('pngCounts'), led.list.length,
+    led.list.filter(s => s.capitol >= 0).length, assumed.size), pad, 44);
+  const x0 = pad + gut, y0 = head + gut;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const i = r * N + c, x = x0 + c * S, y = y0 + r * S;
+    const st = led.list.find(s => s.cells.includes(i));
+    g.fillStyle = st ? C('--t' + (colors[i] % NCOL)) : C('--blank');
+    g.fillRect(x + 1, y + 1, S - 2, S - 2);
+    if (clueAt[i] >= 0) {
+      g.fillStyle = C('--ink');
+      g.font = '600 17px ui-monospace, monospace';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(String(clueAt[i]), x + S / 2, y + S / 2);
+      const bd = VERDICT_BADGE[(led.verdictOf || {})[i]];
+      if (bd) {
+        g.fillStyle = bd.c; g.font = 'bold 12px system-ui, sans-serif';
+        g.textAlign = 'right'; g.textBaseline = 'top';
+        g.fillText(bd.ch, x + S - 3, y + 2);
+      }
+    }
+    if (st) {
+      g.fillStyle = st.capitol < 0 ? C('--bad') : C('--muted');
+      g.font = '700 9px system-ui, sans-serif';
+      g.textAlign = 'left'; g.textBaseline = 'top';
+      g.fillText(String(st.cells.length) + (st.capitol < 0 ? '*' : ''), x + 3, y + 2);
+      if (st.capitol === i) {
+        g.fillStyle = C('--ink');
+        g.beginPath(); g.arc(x + S / 2, y + S / 2, 7, 0, 2 * Math.PI); g.fill();
+      }
+    }
+    if (assumed.has(i)) {
+      g.strokeStyle = C('--accent'); g.lineWidth = 2; g.setLineDash([4, 3]);
+      g.strokeRect(x + 3, y + 3, S - 6, S - 6); g.setLineDash([]);
+      g.fillStyle = C('--accent');
+      g.beginPath(); g.arc(x + S / 2, y + S / 2, 5, 0, 2 * Math.PI); g.fill();
+    }
+    const dv = led.nearKnown.dist[i];
+    if (dv !== Infinity && dv !== 0) {
+      g.fillStyle = C('--muted'); g.font = '9px system-ui, sans-serif';
+      g.textAlign = 'right'; g.textBaseline = 'bottom';
+      g.fillText(String(dv), x + S - 3, y + S - 2);
+    }
+    const cv = led.farKnown.dist[i];
+    if (cv !== Infinity) {
+      const pub = clueAt[i];
+      let col = '#2f6f7d', bold = '';
+      if (pub >= 0) {
+        if (cv === pub) { col = '#14181d'; bold = 'bold '; }
+        else if (cv > pub) { col = '#1f7a3d'; bold = 'bold '; }
+        else { col = '#b58900'; bold = 'bold '; }
+      } else if (cv === 0) col = C('--muted');
+      g.fillStyle = col; g.font = bold + '9px system-ui, sans-serif';
+      g.textAlign = 'left'; g.textBaseline = 'bottom';
+      g.fillText(String(cv), x + 3, y + S - 2);
+    }
+  }
+  g.strokeStyle = C('--line'); g.lineWidth = 1;
+  for (let i = 0; i <= N; i++) {
+    g.beginPath(); g.moveTo(x0 + i * S, y0); g.lineTo(x0 + i * S, y0 + N * S); g.stroke();
+    g.beginPath(); g.moveTo(x0, y0 + i * S); g.lineTo(x0 + N * S, y0 + i * S); g.stroke();
+  }
+  // the same walls the page draws, so the picture says the same thing
+  const flag = j => (j >= 0 && j < N * N) ? led.flags[j] : 0;
+  const segs = [[], [], []];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const i = r * N + c, st = led.comp[i];
+    if (c < N - 1 && led.comp[i + 1] !== st) {
+      segs[Math.max(flag(i), flag(i + 1))].push([x0 + (c + 1) * S, y0 + r * S, x0 + (c + 1) * S, y0 + (r + 1) * S]);
+    }
+    if (r < N - 1 && led.comp[i + N] !== st) {
+      segs[Math.max(flag(i), flag(i + N))].push([x0 + c * S, y0 + (r + 1) * S, x0 + (c + 1) * S, y0 + (r + 1) * S]);
+    }
+    // the rim of the board: a painted region ends there too
+    if (st >= 0) {
+      if (c === 0) segs[flag(i)].push([x0, y0 + r * S, x0, y0 + (r + 1) * S]);
+      if (r === 0) segs[flag(i)].push([x0 + c * S, y0, x0 + (c + 1) * S, y0]);
+      if (c === N - 1) segs[flag(i)].push([x0 + N * S, y0 + r * S, x0 + N * S, y0 + (r + 1) * S]);
+      if (r === N - 1) segs[flag(i)].push([x0 + c * S, y0 + N * S, x0 + (c + 1) * S, y0 + N * S]);
+    }
+  }
+  g.lineWidth = 3;
+  [['--ink', 0], ['--warn', 1], ['--bad', 2]].forEach(pair => {
+    if (!segs[pair[1]].length) return;
+    g.strokeStyle = C(pair[0]);
+    g.beginPath();
+    for (const s of segs[pair[1]]) { g.moveTo(s[0], s[1]); g.lineTo(s[2], s[3]); }
+    g.stroke();
+  });
+  g.strokeStyle = C('--ink'); g.lineWidth = 3;
+  g.strokeRect(x0, y0, N * S, N * S);
+  /* coordinate rulers, same convention as the page: columns (X) across the
+     top, rows (Y) down the left */
+  g.fillStyle = C('--muted'); g.font = '11px ui-monospace, monospace';
+  for (let c = 0; c < N; c++) {
+    g.textAlign = 'center'; g.textBaseline = 'bottom';
+    g.fillText(String(c), x0 + c * S + S / 2, y0 - 7);
+  }
+  for (let r = 0; r < N; r++) {
+    g.textAlign = 'right'; g.textBaseline = 'middle';
+    g.fillText(String(r), x0 - 7, y0 + r * S + S / 2);
+  }
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.font = '10px ui-monospace, monospace';
+  g.fillText('c', x0 - 14, y0 - 7);
+  g.fillText('r', x0 - 14, y0 - 22);
+  const tally = {};
+  for (const row of led.rows) tally[row.verdict] = (tally[row.verdict] || 0) + 1;
+  g.fillStyle = C('--muted'); g.font = '11px system-ui, sans-serif';
+  g.textAlign = 'left'; g.textBaseline = 'top';
+  g.fillText(t('pngLegend1'), pad, y0 + N * S + 10);
+  g.fillText(t('pngLegend2'), pad, y0 + N * S + 28);
+  g.fillText(Object.entries(tally).map(([k, v]) => v + ' ' + k.replace(/_/g, ' ').toLowerCase()).join('   '),
+    pad, y0 + N * S + 46);
+  return cv;
+}
+function boardPNG() {
+  const cv = drawBoardCanvas();
+  const name = 'metric-too-ledger-' + stamp() + '.png';
+  cv.toBlob(b => {
+    if (!b) { toast(t('pngFail'), 'bad'); return; }
+    const url = URL.createObjectURL(b);
+    const img = $('pngOut');
+    img.src = url; img.hidden = false;
+    $('pngRow').hidden = false;
+    download(b, name);
+    toast(fmt(t('pngReadyToast'), name), 'good');
+    setStatus(fmt(t('pngReadyStatus'), name), 'good');
+  }, 'image/png');
+}
+
+/* ---------- the route on hover ----------
+   The idea is borrowed from the practice page by sharmavedic -- a checkbox
+   that says "Show route on hover", and the mouse resting on a square shows
+   the cheapest walk from it to a capitol.  The code here is ours and runs on
+   our own cost model, and it draws the route the way the plan in
+   docs/inference-notes-11x11/15-route-view-plan.md says it must:
+
+     * the NEAR book (unknown squares charged as little as possible) is the
+       solid line -- that is "the cheapest walk to a capitol", the same walk
+       the practice page draws;
+     * the FAR book (the walk that proves the upper bound; it may cross
+       unknown squares) is the dashed line, and only when the two differ;
+     * when the board is not full the line says WHICH book it is, so nobody
+       mistakes a bound for the truth.
+
+   A finger has no hover, so on a touch screen the route is shown by holding
+   the square down instead. */
+const HOVER_MS = 900;          // the mouse has to rest a moment
+const LONG_PRESS_MS = 450;     // a finger has no hover, so it holds instead
+const SVGNS = 'http://www.w3.org/2000/svg';
+let hoverCell = -1, hoverTimer = null, routeOn = true;
+/* square -> the squares where a hidden capitol could sit for it (see
+   hiddenCapitolCandidates).  Rebuilt every time the ledger is. */
+let hiddenCapMap = new Map();
+
+function stepCost(u, v) {
+  const led = lastLedger;
+  if (!led) return null;
+  const ku = led.sizeOf.get(u), kv = led.sizeOf.get(v);
+  if (ku === undefined && kv === undefined) return null;
+  if (ku === undefined) return kv;
+  if (kv === undefined) return ku;
+  return Math.min(ku, kv);
+}
+
+/* The two books, each turned round so the route reads "from where you rest
+   to where it ends".  The near book is the optimistic one (unknown squares
+   charged as little as possible); the far book is the walk that proves the
+   upper bound.  On a full board they are the same walk. */
+function routesOf(i) {
+  const led = lastLedger;
+  if (!led) return null;
+  const flip = p => p.slice().reverse();
+  const near = flip(led.nearKnown.route(i));
+  const far = flip(led.farKnown.route(i));
+  if (near.length < 2 && far.length < 2) return null;
+  const costs = path => {
+    const out = [];
+    for (let k = 0; k + 1 < path.length; k++) out.push(stepCost(path[k], path[k + 1]));
+    return out;
+  };
+  const same = near.length === far.length && near.every((c, k) => c === far[k]);
+  return { near: near, far: far, nearCosts: costs(near), farCosts: costs(far), same: same };
+}
+
+function svgEl(tag, attrs) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function drawRoute() {
+  const svg = $('routeSvg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  for (const d of $('board').children) d.classList.remove('hov');
+  const line = $('routeLine');
+  if (line) line.textContent = '';
+  if (!routeOn || hoverCell < 0 || hoverCell >= N * N) return;
+  const cell = $('board').children[hoverCell];
+  if (cell) cell.classList.add('hov');
+  const r = routesOf(hoverCell);
+  if (!r) {
+    if (line) line.textContent = t('routeNone');
+    return;
+  }
+  const led = lastLedger;
+  const exact = led && led.complete;
+  const pt = i => [(i % N) + 0.5, ((i / N) | 0) + 0.5];
+
+  const drawOne = (path, cls) => {
+    if (path.length < 2) return;
+    let d = '';
+    path.forEach((c, k) => { const p = pt(c); d += (k ? 'L' : 'M') + p[0] + ' ' + p[1] + ' '; });
+    svg.appendChild(svgEl('path', { d: d, class: cls, fill: 'none' }));
+    // the capitol it ends at gets a ring
+    const a = pt(path[path.length - 1]);
+    svg.appendChild(svgEl('circle', { cx: a[0], cy: a[1], r: 0.3, class: 'rc' }));
+    // and the last step gets an arrow head
+    if (path.length >= 2) {
+      const p0 = pt(path[path.length - 2]), p1 = pt(path[path.length - 1]);
+      const dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len, s = 0.17;
+      const tip = [p1[0] - ux * s * 0.5, p1[1] - uy * s * 0.5];
+      const l = [tip[0] - ux * s + uy * s * 0.6, tip[1] - uy * s - ux * s * 0.6];
+      const rr = [tip[0] - ux * s - uy * s * 0.6, tip[1] - uy * s + ux * s * 0.6];
+      svg.appendChild(svgEl('polygon', { points: [tip, l, rr].map(q => q.join(',')).join(' '), class: 'rh' }));
+    }
+  };
+
+  // the near book is the solid line; the far one is dashed, and only if the
+  // two walks are not the same
+  drawOne(r.near, 'rl');
+  if (!r.same) drawOne(r.far, 'rl far');
+
+  if (line) {
+    const parts = [];
+    const chain = p => p.map(cellName).join(' → ');
+    const sum = cs => cs.reduce((a, b) => a + b, 0);
+    if (r.near.length > 1) {
+      parts.push(fmt(t('routeNear'), chain(r.near), r.nearCosts.join('+'), sum(r.nearCosts))
+        + ' · ' + (exact ? t('routeExact') : t('routeOptimistic')));
+    }
+    if (!r.same && r.far.length > 1) {
+      parts.push(fmt(t('routeFar'), chain(r.far), r.farCosts.join('+'), sum(r.farCosts))
+        + ' · ' + (exact ? t('routeExact') : t('routeUpper')));
+    }
+    line.textContent = parts.join('   |   ');
+  }
+}
+
+/* ---------- where could a hidden capitol be? (on the board) ---------- */
+/* The panel under the board lists the squares in words; this puts the same
+   answer on the board: rest the pointer on a square (or hold it on a touch
+   screen) and every square that could host the hidden capitol for that
+   number gets a dashed ring.
+
+   It is the same set the panel prints -- a necessary condition, not a
+   promise: the hidden capital has to sit within floor((v+1)/2) steps and on
+   a square that carries no published number.  Whether it really works out
+   there depends on the hidden state's size and symmetry, which we do not
+   know. */
+function drawHiddenCap() {
+  for (const d of $('board').children) d.classList.remove('hcap');
+  if (hoverCell < 0 || hoverCell >= N * N) return;
+  const cand = hiddenCapMap.get(hoverCell);
+  if (!cand) return;
+  for (const j of cand) {
+    const cell = $('board').children[j];
+    if (cell) cell.classList.add('hcap');
+  }
+}
+
+/* the route and the hidden-capitol rings follow the same hover, so they are
+   drawn together -- the route may be switched off, the rings may not */
+function drawHover() {
+  drawRoute();
+  drawHiddenCap();
+}
+
+/* ---------- the constraint dialog ---------- */
+function buildChips() {
+  const sb = $('sizeChips'), cb = $('costChips');
+  sb.innerHTML = ''; cb.innerHTML = '';
+  const chip = (box, n, field) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = String(n);
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      const cur = constraintOf(popCell);
+      const set = parseNums(cur[field]).set || new Set();
+      if (set.has(n)) set.delete(n); else set.add(n);
+      setConstraint(popCell, { size: cur.size, cost: cur.cost, [field]: formatNums(set) });
+      syncPop();
+    });
+    box.appendChild(b);
+  };
+  for (let i = 1; i <= Math.min(25, N * N); i++) chip(sb, i, 'size');
+  for (let i = 0; i <= 40; i++) chip(cb, i, 'cost');
+}
+
+function syncPop() {
+  if (popCell < 0) return;
+  const v = constraintOf(popCell);
+  const sizeIn = $('cellSize'), costIn = $('cellCost');
+  if (document.activeElement !== sizeIn) sizeIn.value = v.size;
+  if (document.activeElement !== costIn) costIn.value = v.cost;
+  const ps = parseNums(v.size), pc = parseNums(v.cost);
+  for (const b of $('sizeChips').children) b.setAttribute('aria-pressed', !!(ps.set && ps.set.has(+b.textContent)));
+  for (const b of $('costChips').children) b.setAttribute('aria-pressed', !!(pc.set && pc.set.has(+b.textContent)));
+  $('sizeErr').textContent = ps.bad.length ? fmt(t('conBadTokens'), ps.bad.join(' ')) : '';
+  $('costErr').textContent = pc.bad.length ? fmt(t('conBadTokens'), pc.bad.join(' ')) : '';
+  const clue = clueAt[popCell];
+  $('cellTitle').textContent = fmt(t('conTitle'), cellName(popCell))
+    + (clue >= 0 ? fmt(t('conTitleClue'), clue) : '');
+  $('useClue').hidden = clue < 0;
+  $('useClue').textContent = fmt(t('conUseClue'), clue);
+  $('cellHelp').textContent = t('conHelp');
+  // what the page knows about this square right now
+  const led = lastLedger;
+  let cur = '';
+  if (led) {
+    const st = led.list.find(s => s.cells.includes(popCell));
+    const r = led.conVerdicts && led.conVerdicts.get(popCell);
+    if (st) cur += fmt(t('conCurSize'), st.cells.length);
+    if (r && r.cost !== null && r.cost !== undefined) cur += fmt(t('conCurCost'), r.cost);
+    else {
+      const u = led.farKnown.dist[popCell];
+      if (u !== Infinity) cur += fmt(t('conCurCost'), u) + t('conCurUpper');
+    }
+  }
+  $('cellCur').textContent = cur;
+}
+
+function openConstraint(i) {
+  popCell = i;
+  buildChips();
+  syncPop();
+  $('cellPop').hidden = false;
+  $('cellSize').focus();
+}
+
+function closeConstraint() {
+  $('cellPop').hidden = true;
+  popCell = -1;
+}
+
+/* ---------- the two panels, pointing at each other ----------
+   Resting the pointer on a square lights up the verdict row that belongs to
+   it, so the number you are pointing at and its verdict can be read at the
+   same time; and pointing at a verdict row rings the square it talks about.
+   Clicking a verdict row already pinned its square -- this is the same idea,
+   without the click. */
+let hoverVerdict = -1;        // the square whose verdict row is lit up
+
+function scrollRowIntoView(tr) {
+  const box = $('verdictBox');
+  if (!box) return;
+  const b = box.getBoundingClientRect(), r = tr.getBoundingClientRect();
+  if (r.top < b.top) box.scrollTop -= (b.top - r.top);
+  else if (r.bottom > b.bottom) box.scrollTop += (r.bottom - b.bottom);
+}
+
+function markVerdictRow(i) {
+  const tb = $('verdicts') && $('verdicts').querySelector('tbody');
+  if (!tb) return;
+  tb.querySelectorAll('tr.hov').forEach(tr => tr.classList.remove('hov'));
+  if (i < 0) return;
+  const tr = tb.querySelector('tr[data-i="' + i + '"]');
+  if (!tr) return;                       // a square with no published number has no row
+  tr.classList.add('hov');
+  scrollRowIntoView(tr);
+}
+
+function markCellFromRow(i) {
+  for (const d of $('board').children) d.classList.remove('vh');
+  if (i < 0) return;
+  const cell = $('board').children[i];
+  if (cell) cell.classList.add('vh');
+}
+
+/* ---------- events ---------- */
+/* Two fingers can paint at the same time -- handy on a tablet, where you can
+   hold one in each hand and tap the two halves of a symmetric pair.  Each
+   finger is tracked on its own, so lifting one does not stop the other, and
+   the whole stroke is a single undo step. */
+/* Two fingers can paint at the same time -- handy on a tablet, where you can
+   hold one in each hand and tap the two halves of a symmetric pair.  Each
+   finger is tracked on its own, so lifting one does not stop the other, and
+   the whole stroke is a single undo step.  A finger, though, has no hover:
+   it cannot rest on a square without painting it, so a touch waits a moment
+   to find out which gesture it is -- a tap paints, a drag paints as it goes,
+   and a long press shows the route. */
+const touchPending = new Map();     // pointerId -> {i, x, y, timer, long}
+
+$('board').addEventListener('pointerdown', e => {
+  const el = e.target.closest('.cell'); if (!el) return;
+  e.preventDefault();
+  const i = +el.dataset.i;
+  if (e.pointerType === 'touch') {
+    const p = { i: i, x: e.clientX, y: e.clientY, long: false, timer: null };
+    p.timer = setTimeout(() => {
+      p.long = true; hoverCell = i; hoverVerdict = i;
+      markVerdictRow(i); drawHover();
+    }, LONG_PRESS_MS);
+    touchPending.set(e.pointerId, p);
+    return;
+  }
+  if (pointers.size === 0 && tool !== 'constraint') pushUndo();
+  pointers.add(e.pointerId);
+  applyTool(i);
+});
+$('board').addEventListener('pointermove', e => {
+  const pending = touchPending.get(e.pointerId);
+  if (pending) {
+    if (Math.hypot(e.clientX - pending.x, e.clientY - pending.y) < 10) return;  // still a tap
+    clearTimeout(pending.timer);                    // it is a drag after all
+    touchPending.delete(e.pointerId);
+    if (pointers.size === 0 && tool !== 'constraint') pushUndo();
+    pointers.add(e.pointerId);
+    applyTool(pending.i);
+    return;
+  }
+  if (!pointers.has(e.pointerId)) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const c = el && el.closest && el.closest('.cell');
+  if (c && c.parentNode === $('board')) setCell(+c.dataset.i);
+});
+window.addEventListener('pointerup', e => {
+  pointers.delete(e.pointerId);
+  const pending = touchPending.get(e.pointerId);
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  touchPending.delete(e.pointerId);
+  if (pending.long) {
+    hoverCell = -1; hoverVerdict = -1;
+    markVerdictRow(-1); drawHover();
+    return;
+  }
+  if (pointers.size === 0 && tool !== 'constraint') pushUndo();
+  applyTool(pending.i);
+});
+window.addEventListener('pointercancel', e => {
+  pointers.delete(e.pointerId);
+  const pending = touchPending.get(e.pointerId);
+  if (pending) { clearTimeout(pending.timer); touchPending.delete(e.pointerId); }
+});
+/* the mouse has a hover: rest it on a square and the route turns up, and the
+   verdict row that belongs to the square lights up at once */
+$('board').addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse') return;
+  const el = e.target.closest('.cell'); if (!el) return;
+  const i = +el.dataset.i;
+  if (i !== hoverVerdict) { hoverVerdict = i; markVerdictRow(i); }
+  if (!routeOn) return;
+  clearTimeout(hoverTimer);
+  if (i === hoverCell) return;
+  hoverCell = -1; drawHover();
+  hoverTimer = setTimeout(() => { hoverCell = i; drawHover(); }, HOVER_MS);
+});
+$('board').addEventListener('pointerout', e => {
+  if (e.pointerType !== 'mouse') return;
+  const to = e.relatedTarget;
+  if (to && to.closest && to.closest('.cell')) return;    // moving to the next square
+  clearTimeout(hoverTimer);
+  if (hoverCell !== -1) { hoverCell = -1; drawHover(); }
+  if (hoverVerdict !== -1) { hoverVerdict = -1; markVerdictRow(-1); }
+});
+$('tools').addEventListener('click', e => {
+  const chip = e.target.closest('.chip[data-tool]');
+  if (chip) {
+    tool = chip.dataset.tool;
+    $('tools').querySelectorAll('.chip[data-tool]').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
+    return;
+  }
+  // the palette: the id is on the chip, and clicking the little swatch inside
+  // it must count as clicking the chip
+  const palChip = e.target.closest('.chip[data-id]');
+  if (palChip) { setPaintColor(+palChip.dataset.id); return; }
+});
+$('presetClear').addEventListener('click', () => { pushUndo(); const before = snapshot(); colors = new Array(N * N).fill(-1); assumed = new Map(); record(before, 'clear', '', ''); refresh(); });
+/* The rules are open the first time -- a reader who lands here has to be able
+   to play without reading any code.  A reader who has read them once should
+   not have to scroll past them every time, so the choice is remembered. */
+{
+  const box = $('rulesBox');
+  if (store.get('mt2rules') === 'closed') box.removeAttribute('open');
+  box.addEventListener('toggle', () => store.set('mt2rules', box.open ? 'open' : 'closed'));
+}
+$('boardSel').addEventListener('change', e => loadBoard(e.target.value));
+// The row sums and the total.  One press, and from then on they follow the
+// painting; they go away again if the sheet stops qualifying.
+$('sumBtn').addEventListener('click', () => { showSums = true; drawSums(); });
+$('tPath').addEventListener('change', e => {
+  routeOn = e.target.checked;
+  if (!routeOn) hoverCell = -1;
+  drawHover();
+});
+/* the constraint dialog */
+$('cellSize').addEventListener('input', e => {
+  if (popCell < 0) return;
+  setConstraint(popCell, { size: e.target.value, cost: $('cellCost').value });
+  syncPop();
+});
+$('cellCost').addEventListener('input', e => {
+  if (popCell < 0) return;
+  setConstraint(popCell, { size: $('cellSize').value, cost: e.target.value });
+  syncPop();
+});
+$('useClue').addEventListener('click', () => {
+  if (popCell < 0) return;
+  const clue = clueAt[popCell];
+  if (clue < 0) return;
+  setConstraint(popCell, { size: $('cellSize').value, cost: String(clue) });
+  syncPop();
+});
+$('cellReset').addEventListener('click', () => {
+  if (popCell < 0) return;
+  setConstraint(popCell, { size: '', cost: '' });
+  syncPop();
+});
+$('cellDone').addEventListener('click', closeConstraint);
+$('cellPop').addEventListener('click', e => { if (e.target === $('cellPop')) closeConstraint(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && popCell >= 0) closeConstraint();
+});
+$('undoBtn').addEventListener('click', doUndo);
+$('saveJson').addEventListener('click', () => {
+  const data = boardJSON();
+  const text = JSON.stringify(data, null, 2);
+  const name = 'metric-too-ledger-' + stamp() + '.json';
+  download(new Blob([text], { type: 'application/json' }), name);
+  toast(fmt(t('jsonReadyToast'), name), 'good');
+  setStatus(fmt(t('jsonReadyStatus'), name, data.states.length, data.assumed_capitols.length, name), 'good');
+});
+$('copyJson').addEventListener('click', async () => {
+  const text = JSON.stringify(boardJSON(), null, 2);
+  let ok = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) ok = await navigator.clipboard.writeText(text); } catch (e) { ok = false; }
+  if (!ok) {
+    // no async clipboard here (older browsers, and file:// pages): the old way,
+    // through a throw-away text area
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.setAttribute('readonly', '');
+    tmp.style.cssText = 'position:fixed;top:-1000px;left:0;opacity:0';
+    document.body.appendChild(tmp);
+    tmp.select();
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    tmp.remove();
+  }
+  if (ok) {
+    toast(t('jsonCopiedToast'), 'good');
+    setStatus(t('jsonCopiedStatus'), 'good');
+    return;
+  }
+  // last resort: show it, selected, so it can be copied by hand
+  const box = $('jsonFallback');
+  box.hidden = false;
+  box.value = text;
+  box.focus(); box.select();
+  toast(t('jsonCopyFailed'), 'bad');
+});
+$('openJson').addEventListener('click', () => $('fileIn').click());
+$('fileIn').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const res = loadJSON(JSON.parse(await f.text()));
+    if (res && res.ok === false) {
+      setStatus(res.message, 'bad');
+      toast(res.message, 'bad');
+      return;
+    }
+    if (res && res.bundle) return;          // the bundle sets its own status
+    setStatus(fmt(t('jsonLoaded'), f.name), 'good');
+  } catch (err) {
+    setStatus(fmt(t('fileUnreadable'), err.message), 'bad');
+  }
+  e.target.value = '';
+});
+$('savePng').addEventListener('click', () => boardPNG());
+$('saveIter').addEventListener('click', () => {
+  const name = ($('iterName').value || '').trim() || ('try ' + (iterations.length + 1));
+  const board = boardJSON();
+  board.name = name;
+  iterations.push({ name: name, at: new Date().toISOString(), board: board, tally: tallyOf(lastLedger.rows) });
+  $('iterName').value = '';
+  renderIterations(); save();
+  toast(fmt(t('iterSaved'), name), 'good');
+});
+$('exportIter').addEventListener('click', () => {
+  if (!iterations.length) { toast(t('iterNone'), 'bad'); return; }
+  const data = { format: 'metric-too-ledger-iterations/1', n: N, saved: new Date().toISOString(),
+    iterations: iterations.map(it => ({ name: it.name, at: it.at, board: it.board, tally: it.tally })) };
+  download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+    'metric-too-ledger-iterations-' + stamp() + '.json');
+  toast(fmt(t('iterExported'), iterations.length), 'good');
+});
+/* the paint history: write the whole log to a file, or throw it away */
+$('histJson').addEventListener('click', () => {
+  if (!actions.length) { toast(t('histNone'), 'bad'); return; }
+  download(new Blob([JSON.stringify(historyJSON(), null, 2)], { type: 'application/json' }),
+    'metric-too-ledger-history-' + stamp() + '.json');
+  toast(fmt(t('histExported'), actions.length), 'good');
+});
+$('histClear').addEventListener('click', () => {
+  actions = []; actionSeq = 0; histPos = -1;
+  renderHistory(); save();
+  toast(t('histCleared'), 'good');
+});
+/* and the box: type the number of a step and go there */
+$('histGoBtn').addEventListener('click', () => jumpToStep($('histGo').value));
+$('histGo').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); jumpToStep($('histGo').value); }
+});
+/* The browser's own back button walks the log: every state has an address of
+   its own, so a link is a real link and the history of the page is the history
+   of the board. */
+window.addEventListener('hashchange', () => {
+  const m = /^#act=(\d+)$/.exec(location.hash || '');
+  if (!m) return;
+  const a = actions.find(x => x.n === +m[1]);
+  if (!a || a === actions[histPos]) return;
+  restoreAction(a);
+});
+document.addEventListener('keydown', e => {
+  // typing in a box is typing in a box: the number keys pick a colour only
+  // when the reader is on the board, not when they are writing a number
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); doUndo(); return; }
+  if (e.key >= '0' && e.key <= '9') setPaintColor(+e.key);
+});
+
+/* ---------- palette ---------- */
+const pal = $('palette');
+for (let i = 0; i < NCOL; i++) {
+  const s = document.createElement('span');
+  s.className = 'chip'; s.dataset.id = i; s.title = fmt(t('paletteTitle'), i);
+  s.setAttribute('aria-pressed', String(i === 0));
+  s.innerHTML = '<span class="swatch" style="background:var(' + TONES[i] + ')"></span>' + i;
+  pal.appendChild(s);
+}
+
+/* ---------- persistence ---------- */
+/* Every board keeps its own sheet, so switching to a practice board and back
+   does not lose what was painted on either of them. */
+function save() {
+  store.set('mt2ledger:' + BOARD.id, { c: colors, a: [...assumed], it: iterations, con: [...constraints], act: actions });
+  store.set('mt2ledger:last', BOARD.id);
+}
+(function boot() {
+  applyI18n();
+  $('sizeChips').setAttribute('aria-label', t('conSizeLabel'));
+  $('costChips').setAttribute('aria-label', t('conCostLabel'));
+  /* The links to the other pages.  These are file names, not prose, so they
+     do not live in the I18N table -- and the page knows which files they are:
+     the published names are the same in the local build and on the site. */
+  const PAGE_FILES = {
+    full: { en: 'harness.html', zh: 'harness.zh.html' },
+    mini: { en: 'play.html', zh: 'play.zh.html' },
+  };
+  const mode = MINIMAL ? 'mini' : 'full';
+  const other = MINIMAL ? 'full' : 'mini';
+  const lang = LANG === 'zh' ? 'zh' : 'en';
+  const setHref = (id, href) => { const a = document.getElementById(id); if (a) a.href = href; };
+  setHref('linkMinimal', PAGE_FILES[other][lang]);
+  setHref('linkFull', PAGE_FILES[other][lang]);
+  setHref('zhLink', PAGE_FILES[mode][lang === 'zh' ? 'en' : 'zh']);
+  setHref('moreGoal', PAGE_FILES.full[lang] + '#goalBox');
+  setHref('moreVerdict', PAGE_FILES.full[lang] + '#verdictPanel');
+  setHref('moreNotes', PAGE_FILES.full[lang] + '#notesBox');
+  setHref('moreHidden', PAGE_FILES.full[lang] + '#hiddenCapBox');
+  fillBoardPicker();
+  const last = boardById(store.get('mt2ledger:last') || LEDGER_BOARD.id);
+  loadBoard(last.id);
+  setPaintColor(0);
+  // an address in the bar names a state of the log: show that state
+  const m = /^#act=(\d+)$/.exec(location.hash || '');
+  if (m) gotoAction(+m[1]);
+})();
+</script>
+</body></html>

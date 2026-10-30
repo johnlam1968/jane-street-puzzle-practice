@@ -284,6 +284,26 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
 .iterrow.cur { box-shadow: inset 3px 0 0 var(--accent); background: var(--sheet); }
 .iterrow a.lnk { font-family: var(--f-num); font-size: 0.78rem; color: var(--accent); text-decoration: none; }
 .iterrow a.lnk:hover { text-decoration: underline; }
+/* ---- the minimal page ---------------------------------------------------
+   The same board, the same buttons, and nothing but visual cues.  The prose
+   -- the goal, the rules, the verdict table, the notes, the hidden capitols
+   -- lives on the full page; the minimal page links to it and shows nothing
+   else.  The build writes the minimal face from the same source: one file,
+   two faces. */
+#moreBox { display: none; }
+body.minimal #moreBox { display: block; }
+body.minimal .sub { display: none; }        /* the one-line goal, in prose */
+body.minimal #goalBox,
+body.minimal #rulesBox,
+body.minimal #verdictBox,
+body.minimal #notesBox,
+body.minimal #hiddenCapBox,
+body.minimal #candPanel,
+body.minimal #histList { display: none !important; }
+body:not(.minimal) .only-minimal { display: none; }
+body.minimal .only-full { display: none; }
+.morelinks { margin: 0; padding-left: 1.2em; display: grid; gap: 5px; font-size: 0.9rem; }
+.morelinks a { color: var(--accent); }
 .io { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
 .io-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-right: 2px; }
 .io .btn { font-size: 0.84rem; padding: 6px 11px; }
@@ -348,8 +368,22 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
   <nav class="pagelinks">
     <a href="legends.html" data-i18n="linkLegends">Legends</a>
     <a href="agent-onboarding.html" data-i18n="linkOnboarding">Agent Onboarding</a>
-    <a href="harness.zh.html" data-i18n="linkZh" data-i18n-href="harness.zh.html">Chinese version</a>
+    <a class="only-full" id="linkMinimal" href="play.html" data-i18n="linkMinimal">Minimal view</a>
+    <a class="only-minimal" id="linkFull" href="harness.html" data-i18n="linkFull">Full page</a>
+    <a id="zhLink" href="harness.zh.html" data-i18n="linkZh">Chinese version</a>
   </nav>
+
+  <!-- the minimal page has no prose of its own: it points at the full page -->
+  <section class="box" id="moreBox">
+    <h2 data-i18n="moreTitle">More on the full page</h2>
+    <p class="hint" data-i18n="moreText">This page keeps the board and the buttons. Everything that is written down is on the full page:</p>
+    <ul class="morelinks">
+      <li><a id="moreGoal" href="harness.html#goalBox" data-i18n="linkMoreGoal">The goal of the puzzle</a></li>
+      <li><a id="moreVerdict" href="harness.html#verdictPanel" data-i18n="linkMoreVerdict">Every square: its range and its verdict</a></li>
+      <li><a id="moreNotes" href="harness.html#notesBox" data-i18n="linkMoreNotes">The notes the page writes</a></li>
+      <li><a id="moreHidden" href="harness.html#hiddenCapBox" data-i18n="linkMoreHidden">Where a hidden capitol could be</a></li>
+    </ul>
+  </section>
 
   <main>
     <div class="plate">
@@ -433,7 +467,7 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
           </table>
         </div>
       </section>
-      <section class="box">
+      <section class="box" id="verdictPanel">
         <h2 data-i18n="panelVerdicts">Verdicts</h2>
         <div class="tally" id="tally"></div>
         <div style="max-height:52vh;overflow:auto" id="verdictBox">
@@ -453,6 +487,9 @@ details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
           <a class="btn off" id="histPrev" href="#"><span data-i18n="histBack">← Back</span></a>
           <a class="btn off" id="histNext" href="#"><span data-i18n="histForward">Forward →</span></a>
           <span class="hint" id="histPos"></span>
+          <label class="hint" for="histGo" data-i18n="histGoLabel">Go to step</label>
+          <input class="btn" id="histGo" type="number" min="0" step="1" inputmode="numeric" style="width:5.4em">
+          <button class="btn" id="histGoBtn" data-i18n="btnHistGo">Go</button>
           <button class="btn" id="histJson" data-i18n="btnHistJson">History JSON</button>
           <button class="btn" id="histClear" data-i18n="btnHistClear">Clear history</button>
         </div>
@@ -574,6 +611,8 @@ const PRACTICE_BOARDS = [{"id":"up-0","n":6,"clue":[-1,7,4,-1,-1,13,-1,-1,1,0,1,
    names, goal.py's KEEP / PARK / BACKTRACK, the JSON keys -- are NOT
    translated: they are the protocol our other tools speak. */
 const LANG = 'en';          // 'en' or 'zh'; the build sets it
+const MINIMAL = false;      // the minimal page: the board, the buttons, nothing else
+                             // (the build sets this one too -- one source, two faces)
 const I18N = {
   pageTitle: 'Play · It\'s a Metric, Too',
   metaDesc: 'Play Jane Street\'s “It\'s a Metric, Too”: put a state\'s area on the board, assume a capitol, and see every published number re-checked against the real travel costs.',
@@ -584,8 +623,15 @@ const I18N = {
   linkHarness: 'Play the harness',
   linkLegends: 'Legends',
   linkOnboarding: 'Agent Onboarding',
+  linkMinimal: 'Minimal view',
+  linkFull: 'Full page',
+  moreTitle: 'More on the full page',
+  moreText: 'This page keeps the board and the buttons. Everything that is written down is on the full page:',
+  linkMoreGoal: 'The goal of the puzzle',
+  linkMoreVerdict: 'Every square: its range and its verdict',
+  linkMoreNotes: 'The notes the page writes',
+  linkMoreHidden: 'Where a hidden capitol could be',
   linkZh: 'Chinese version',
-  linkZhHref: 'harness.zh.html',
   ruleState: '<b>A state</b> is a connected group of squares that has a mirror or a rotation symmetry of its own.',
   ruleCapitol: '<b>Its capitol</b> — if <b>every</b> symmetry of the state fixes exactly one of its squares, that square is the capitol; if some symmetry fixes none, or more than one, the state has <b>no capitol</b>. Capitols are never painted: they follow from the shape.',
   ruleCost: '<b>The cost of a step</b> — inside one state a step costs the area of that state; between two states it costs the smaller of the two areas.',
@@ -657,6 +703,11 @@ const I18N = {
   histNone: 'Nothing painted yet.',
   histPos: 'action %s of %s',
   histPainted: '%s painted',
+  histGoLabel: 'Go to step',
+  btnHistGo: 'Go',
+  histNoNumber: 'Type the number of a step.',
+  histNoSuch: 'There is no step %s.',
+  histJumped: 'Now at step %s.',
   btnHistJson: 'History JSON',
   btnHistClear: 'Clear history',
   histCleared: 'History cleared.',
@@ -682,7 +733,6 @@ const I18N = {
   badgeContradicted: 'contradicted: a known capitol is cheaper, so this cannot be the minimum',
   badgeUnproducible: 'unproducible: no route can pay exactly this',
   noteNoSymmetry: 'The region %s has no symmetry at all, so it is not a state yet — repaint it as a shape that has one (a mirror axis or a rotation).',
-  noteNoCapitol: 'The state %s (size %s) has NO capitol: every symmetry fixes %s squares instead of exactly one. It is still a legal state, but it contributes no destination, and every step inside it costs %s.',
   noteCapitolOnClue: 'The capitol of a painted state sits on the %s at %s, but a capitol reads 0.',
   noteZeroElsewhere: 'The 0 at %s is inside a state whose capitol is elsewhere.',
   noteEvenAssumed: 'You assumed a state of size %s for the capitol at %s, but a state with a capitol is always odd: an even-sized state has a mirror axis running along a column of squares, which fixes more than one of them, so it has no capitol at all. Use an odd size.',
@@ -1042,8 +1092,11 @@ function ledger() {
   for (const [i, k] of assumed) { sizeOf.set(i, k); sources.add(i); }     // assumed capitols
 
   for (const s of stateInfo) {
+    // A state with a symmetry but no capitol is legal, and it goes nowhere.
+    // The page does NOT say that in a note any more: the amber wall around
+    // the state already says it, and a note that repeats what the wall shows
+    // is noise.
     if (!s.sym) notes.push({ k: 'bad', t: fmt(t('noteNoSymmetry'), cellsLabel(s.cells)) });
-    else if (s.capitol < 0) notes.push({ k: 'warn', t: fmt(t('noteNoCapitol'), cellsLabel(s.cells), s.cells.length, s.fixes.join('/'), s.cells.length) });
     if (s.capitol >= 0 && clueAt[s.capitol] >= 0 && clueAt[s.capitol] !== 0) notes.push({ k: 'bad', t: fmt(t('noteCapitolOnClue'), clueAt[s.capitol], cellName(s.capitol)) });
     for (const c of s.cells) if (clueAt[c] === 0 && s.capitol !== c) notes.push({ k: 'bad', t: fmt(t('noteZeroElsewhere'), cellName(c)) });
   }
@@ -1838,12 +1891,14 @@ function setHistHash(n) {
 }
 function renderHistory() {
   const list = $('histList'), pos = $('histPos'), prev = $('histPrev'), next = $('histNext');
+  const go = $('histGo');
   if (!list) return;
   if (!actions.length) {
     list.innerHTML = ''; list.hidden = true;
     pos.textContent = t('histNone');
     prev.href = '#'; prev.classList.add('off');
     next.href = '#'; next.classList.add('off');
+    if (go && document.activeElement !== go) go.value = '';
     return;
   }
   list.hidden = false;
@@ -1862,7 +1917,24 @@ function renderHistory() {
   prev.classList.toggle('off', !back);
   next.href = fwd ? '#act=' + fwd.n : '#';
   next.classList.toggle('off', !fwd);
-  pos.textContent = fmt(t('histPos'), histPos + 1, actions.length);
+  const cur = (histPos >= 0) ? actions[histPos] : null;
+  pos.textContent = fmt(t('histPos'), cur ? cur.n : 0, actions.length);
+  // the box holds the number of the step on show -- unless the reader is
+  // typing one in right now
+  if (go && document.activeElement !== go) go.value = cur ? cur.n : '';
+}
+/* Type a number and go there.  Every step of the log has a number and an
+   address, so the number in the box is the same number the links use. */
+function jumpToStep(raw) {
+  const s = String(raw === undefined || raw === null ? '' : raw).trim();
+  if (!s) { toast(t('histNoNumber'), 'bad'); return false; }
+  const n = parseInt(s, 10);
+  if (!Number.isInteger(n)) { toast(t('histNoNumber'), 'bad'); return false; }
+  const a = actions.find(x => x.n === n);
+  if (!a) { toast(fmt(t('histNoSuch'), n), 'bad'); return false; }
+  gotoAction(n);
+  toast(fmt(t('histJumped'), n), 'good');
+  return true;
 }
 /* The whole log, as JSON -- the file the button under the list writes. */
 function historyJSON() {
@@ -2741,6 +2813,11 @@ $('histClear').addEventListener('click', () => {
   renderHistory(); save();
   toast(t('histCleared'), 'good');
 });
+/* and the box: type the number of a step and go there */
+$('histGoBtn').addEventListener('click', () => jumpToStep($('histGo').value));
+$('histGo').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); jumpToStep($('histGo').value); }
+});
 /* The browser's own back button walks the log: every state has an address of
    its own, so a link is a real link and the history of the page is the history
    of the board. */
@@ -2752,6 +2829,10 @@ window.addEventListener('hashchange', () => {
   restoreAction(a);
 });
 document.addEventListener('keydown', e => {
+  // typing in a box is typing in a box: the number keys pick a colour only
+  // when the reader is on the board, not when they are writing a number
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); doUndo(); return; }
   if (e.key >= '0' && e.key <= '9') setPaintColor(+e.key);
 });
@@ -2777,6 +2858,24 @@ function save() {
   applyI18n();
   $('sizeChips').setAttribute('aria-label', t('conSizeLabel'));
   $('costChips').setAttribute('aria-label', t('conCostLabel'));
+  /* The links to the other pages.  These are file names, not prose, so they
+     do not live in the I18N table -- and the page knows which files they are:
+     the published names are the same in the local build and on the site. */
+  const PAGE_FILES = {
+    full: { en: 'harness.html', zh: 'harness.zh.html' },
+    mini: { en: 'play.html', zh: 'play.zh.html' },
+  };
+  const mode = MINIMAL ? 'mini' : 'full';
+  const other = MINIMAL ? 'full' : 'mini';
+  const lang = LANG === 'zh' ? 'zh' : 'en';
+  const setHref = (id, href) => { const a = document.getElementById(id); if (a) a.href = href; };
+  setHref('linkMinimal', PAGE_FILES[other][lang]);
+  setHref('linkFull', PAGE_FILES[other][lang]);
+  setHref('zhLink', PAGE_FILES[mode][lang === 'zh' ? 'en' : 'zh']);
+  setHref('moreGoal', PAGE_FILES.full[lang] + '#goalBox');
+  setHref('moreVerdict', PAGE_FILES.full[lang] + '#verdictPanel');
+  setHref('moreNotes', PAGE_FILES.full[lang] + '#notesBox');
+  setHref('moreHidden', PAGE_FILES.full[lang] + '#hiddenCapBox');
   fillBoardPicker();
   const last = boardById(store.get('mt2ledger:last') || LEDGER_BOARD.id);
   loadBoard(last.id);

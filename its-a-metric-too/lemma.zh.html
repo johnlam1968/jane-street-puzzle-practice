@@ -153,6 +153,7 @@ const I18N = {
   linkHarness: '去玩',
   linkLegends: '图例',
   linkOnboarding: '智能体入门',
+  linkLemma: '引理',
   linkMinimal: '极简视图',
   linkFull: '完整页面',
   moreTitle: '完整页面上的更多内容',
@@ -412,5 +413,11 @@ const I18N = {
   figAlt8: '读数 8：读 8 的十七种付法',
 };
 </script>
+
+<script>
+/* The nav points at the pages in the reader's own language (the Chinese page
+   used to send a Chinese reader to the English ones). */
+const _zh = document.documentElement.lang === 'zh';
+document.querySelectorAll('a[data-i18n="linkHarness"]').forEach(a =>去玩图例智能体入门</script>
 </body>
 </html>

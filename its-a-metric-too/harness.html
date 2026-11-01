@@ -366,8 +366,9 @@ body.minimal .only-full { display: none; }
   </details>
 
   <nav class="pagelinks">
-    <a href="legends.html" data-i18n="linkLegends">Legends</a>
-    <a href="agent-onboarding.html" data-i18n="linkOnboarding">Agent Onboarding</a>
+    <a href="legends.html" id="linkLegends" data-i18n="linkLegends">Legends</a>
+    <a href="agent-onboarding.html" id="linkOnboarding" data-i18n="linkOnboarding">Agent Onboarding</a>
+    <a href="lemma.html" id="linkLemma" data-i18n="linkLemma">The Lemma</a>
     <a class="only-full" id="linkMinimal" href="play.html" data-i18n="linkMinimal">Minimal view</a>
     <a class="only-minimal" id="linkFull" href="harness.html" data-i18n="linkFull">Full page</a>
     <a id="zhLink" href="harness.zh.html" data-i18n="linkZh">Chinese version</a>
@@ -620,9 +621,10 @@ const I18N = {
   rulesTitle: 'Rules',
   goalTitle: 'Goal',
   goalText: 'Goal: follow the rules below to cover the whole board with squares',
-  linkHarness: 'Play the harness',
+  linkHarness: 'Play',
   linkLegends: 'Legends',
   linkOnboarding: 'Agent Onboarding',
+  linkLemma: 'The Lemma',
   linkMinimal: 'Minimal view',
   linkFull: 'Full page',
   moreTitle: 'More on the full page',
@@ -762,6 +764,9 @@ const I18N = {
   statusOk: 'No contradiction: every published number is still reachable under these assumptions.',
   hiddenCap: '<b>%s reads %s</b>: a hidden capitol within %s steps, i.e. %s.',
   hiddenCapNone: '<p>No square currently demands a hidden capitol.</p>',
+  hiddenCapCommonTitle: '<b>And what the rings have in common</b> (%s groups): a capital is one cell with one state, so if it pays several numbers it has to sit in the ring of every one of them.',
+  hiddenCapGroup: '<b>%s</b> could pay %s — and if ONE capital paid all of them, it would have to be at %s.',
+  hiddenCapRead: '%s reads %s',
   iterContradicted: '%s contradicted',
   iterOk: 'no contradiction',
   iterForced: '%s forced · %s need a hidden capitol',
@@ -1186,10 +1191,43 @@ function hiddenCapitolCandidates(rows) {
     for (let j = 0; j < N * N; j++) {
       if (j === row.i) continue;
       if (clueAt[j] > 0) continue;                 // a square with a number is not a capitol
+      if (colors[j] >= 0) continue;                // a square you painted belongs to its state
       if (Math.abs((j / N | 0) - (row.i / N | 0)) + Math.abs((j % N) - (row.i % N)) <= D) cand.push(j);
     }
     if (cand.length) out.push({ row, cand });
   }
+  return out;
+}
+
+/* What the rings have in common.  A capital is ONE cell with ONE state, so it
+   can pay several numbers -- and then it has to sit in the ring of EVERY one
+   of them.  So for each square that shows up in two or more rings, the
+   intersection of those rings is where a single capital would have to be.
+
+   That is a NECESSARY condition: it says where ONE capital COULD be, not that
+   it is there.  The rings shrink as you paint (a square you have painted
+   belongs to its state, and that state's capital is already known), so the
+   groups get sharper as the board fills in. */
+function hiddenCapGroups(cands) {
+  const serves = new Map();                 // square -> the rows it could pay
+  for (const c of cands) {
+    for (const j of c.cand) {
+      if (!serves.has(j)) serves.set(j, []);
+      serves.get(j).push(c.row);
+    }
+  }
+  const out = [];
+  for (const [j, rows] of serves) {
+    if (rows.length < 2) continue;
+    let common = null;
+    for (const row of rows) {
+      const set = new Set(cands.find(c => c.row === row).cand);
+      common = common === null ? set
+        : new Set([...common].filter(x => set.has(x)));
+    }
+    out.push({ cell: j, rows: rows, common: [...common].sort((a, b) => a - b) });
+  }
+  out.sort((a, b) => b.rows.length - a.rows.length || a.cell - b.cell);
   return out;
 }
 
@@ -1445,10 +1483,19 @@ function refresh() {
 
   const cands = hiddenCapitolCandidates(led.rows);
   hiddenCapMap = new Map(cands.map(c => [c.row.i, c.cand]));
-  $('cands').innerHTML = cands.length
+  const groups = hiddenCapGroups(cands);
+  let html = cands.length
     ? cands.map(c => '<p>' + fmt(t('hiddenCap'), cellName(c.row.i), c.row.v,
         Math.floor((c.row.v + 1) / 2), c.cand.map(cellName).join(', ')) + '</p>').join('')
     : t('hiddenCapNone');
+  if (groups.length) {
+    html += '<p>' + fmt(t('hiddenCapCommonTitle'), String(groups.length)) + '</p>';
+    html += groups.slice(0, 8).map(g => '<p>' + fmt(t('hiddenCapGroup'),
+      cellName(g.cell),
+      g.rows.map(r => fmt(t('hiddenCapRead'), cellName(r.i), r.v)).join(', '),
+      g.common.map(cellName).join(', ')) + '</p>').join('');
+  }
+  $('cands').innerHTML = html;
 
   // the computed answer -- practice boards only.  The 11x11 never shows one
   // here: that puzzle is still open.  (The row sums have their own button,
@@ -2863,6 +2910,9 @@ function save() {
   setHref('linkMinimal', PAGE_FILES[other][lang]);
   setHref('linkFull', PAGE_FILES[other][lang]);
   setHref('zhLink', PAGE_FILES[mode][lang === 'zh' ? 'en' : 'zh']);
+  setHref('linkLegends', lang === 'zh' ? 'legends.zh.html' : 'legends.html');
+  setHref('linkOnboarding', lang === 'zh' ? 'agent-onboarding.zh.html' : 'agent-onboarding.html');
+  setHref('linkLemma', lang === 'zh' ? 'lemma.zh.html' : 'lemma.html');
   setHref('moreGoal', PAGE_FILES.full[lang] + '#goalBox');
   setHref('moreVerdict', PAGE_FILES.full[lang] + '#verdictPanel');
   setHref('moreNotes', PAGE_FILES.full[lang] + '#notesBox');

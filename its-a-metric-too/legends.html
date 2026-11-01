@@ -75,7 +75,7 @@ a {{ color: var(--accent); }}
       <p class="sub" data-i18n="legendsIntro">Every mark on the board, one paragraph each.</p>
     </div>
     <nav class="pagelinks">
-      <a href="harness.html" data-i18n="linkHarness">Play the harness</a>
+      <a href="harness.html" data-i18n="linkHarness">Play</a>
       <a href="agent-onboarding.html" data-i18n="linkOnboarding">Agent Onboarding</a>
       <a href="legends.zh.html" data-i18n="linkZh" data-i18n-href="legends.zh.html">Chinese version</a>
     </nav>
@@ -104,9 +104,10 @@ const I18N = {
   rulesTitle: 'Rules',
   goalTitle: 'Goal',
   goalText: 'Goal: follow the rules below to cover the whole board with squares',
-  linkHarness: 'Play the harness',
+  linkHarness: 'Play',
   linkLegends: 'Legends',
   linkOnboarding: 'Agent Onboarding',
+  linkLemma: 'The Lemma',
   linkMinimal: 'Minimal view',
   linkFull: 'Full page',
   moreTitle: 'More on the full page',
@@ -246,6 +247,9 @@ const I18N = {
   statusOk: 'No contradiction: every published number is still reachable under these assumptions.',
   hiddenCap: '<b>%s reads %s</b>: a hidden capitol within %s steps, i.e. %s.',
   hiddenCapNone: '<p>No square currently demands a hidden capitol.</p>',
+  hiddenCapCommonTitle: '<b>And what the rings have in common</b> (%s groups): a capital is one cell with one state, so if it pays several numbers it has to sit in the ring of every one of them.',
+  hiddenCapGroup: '<b>%s</b> could pay %s — and if ONE capital paid all of them, it would have to be at %s.',
+  hiddenCapRead: '%s reads %s',
   iterContradicted: '%s contradicted',
   iterOk: 'no contradiction',
   iterForced: '%s forced · %s need a hidden capitol',
@@ -327,5 +331,11 @@ const I18N = {
   legendRing: '<b>Dashed ring</b> in the middle — the square could host a hidden capitol: rest the pointer on a number that needs one (hold it on a touch screen) and every square that could carry it is ringed.',
 };
 </script>
+
+<script>
+/* The nav points at the pages in the reader's own language (the Chinese page
+   used to send a Chinese reader to the English ones). */
+const _zh = document.documentElement.lang === 'zh';
+document.querySelectorAll('a[data-i18n="linkHarness"]').forEach(a =>PlayLegendsAgent Onboarding</script>
 </body>
 </html>

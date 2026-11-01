@@ -69,7 +69,7 @@ a { color: var(--accent); }
       <p class="sub" data-i18n="lemmaIntro">A number in a square is a cost: the least total cost of any walk from that square to a capitol. <b>For every reading from 0 to 8, what follows is the complete list</b> — every way such a number can be paid, each one drawn on a board the rule engine checked, and what it forces on the square that carries it. There is no “and so on”: if a square reads 5, the four ways below are all of them.</p>
     </div>
     <nav class="pagelinks">
-      <a href="harness.html" data-i18n="linkHarness">Play the harness</a>
+      <a href="harness.html" data-i18n="linkHarness">Play</a>
       <a href="legends.html" data-i18n="linkLegends">Legends</a>
       <a href="lemma.zh.html" data-i18n="linkZh" data-i18n-href="lemma.zh.html">Chinese version</a>
     </nav>
@@ -150,9 +150,10 @@ const I18N = {
   rulesTitle: 'Rules',
   goalTitle: 'Goal',
   goalText: 'Goal: follow the rules below to cover the whole board with squares',
-  linkHarness: 'Play the harness',
+  linkHarness: 'Play',
   linkLegends: 'Legends',
   linkOnboarding: 'Agent Onboarding',
+  linkLemma: 'The Lemma',
   linkMinimal: 'Minimal view',
   linkFull: 'Full page',
   moreTitle: 'More on the full page',
@@ -412,5 +413,11 @@ const I18N = {
   figAlt8: 'Reading 8: the seventeen ways a reading of 8 can be paid',
 };
 </script>
+
+<script>
+/* The nav points at the pages in the reader's own language (the Chinese page
+   used to send a Chinese reader to the English ones). */
+const _zh = document.documentElement.lang === 'zh';
+document.querySelectorAll('a[data-i18n="linkHarness"]').forEach(a =>PlayLegendsAgent Onboarding</script>
 </body>
 </html>

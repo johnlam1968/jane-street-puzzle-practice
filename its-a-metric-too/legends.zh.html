@@ -107,6 +107,7 @@ const I18N = {
   linkHarness: '去玩',
   linkLegends: '图例',
   linkOnboarding: '智能体入门',
+  linkLemma: '引理',
   linkMinimal: '极简视图',
   linkFull: '完整页面',
   moreTitle: '完整页面上的更多内容',
@@ -246,6 +247,9 @@ const I18N = {
   statusOk: '没有矛盾：在这些假设下，每个已发布数仍然都走得出来。',
   hiddenCap: '<b>%s 读 %s</b>：隐藏的首都可以落在 %s 步之内，也就是 %s。',
   hiddenCapNone: '<p>目前没有哪个格子要求一个隐藏的首都。</p>',
+  hiddenCapCommonTitle: '<b>这些环有什么共同点</b>（%s 组）：一个首府就是「一格 + 一个州」，所以它若要付好几个数，就得落在每一个数的那片环里。',
+  hiddenCapGroup: '<b>%s</b> 可以付 %s —— 若由<b>同一个</b>首府付掉它们全部，那就只能在 %s。',
+  hiddenCapRead: '%s 读 %s',
   iterContradicted: '%s 个矛盾',
   iterOk: '没有矛盾',
   iterForced: '%s 个确认 · %s 个要隐藏首都',
@@ -327,5 +331,11 @@ const I18N = {
   legendRing: '<b>中间的虚线圆环</b> —— 这一格可以放一个隐藏首都：把指针停在一个需要隐藏首都的数上（触屏上长按），能放它的格子就会一个一个圈出来。',
 };
 </script>
+
+<script>
+/* The nav points at the pages in the reader's own language (the Chinese page
+   used to send a Chinese reader to the English ones). */
+const _zh = document.documentElement.lang === 'zh';
+document.querySelectorAll('a[data-i18n="linkHarness"]').forEach(a =>去玩图例智能体入门</script>
 </body>
 </html>

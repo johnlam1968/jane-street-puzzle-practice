@@ -10,7 +10,7 @@ Works on iPhone, iPad, Android and desktop browsers. Each page is one self-conta
 
 | Month | Puzzle | What you get |
 | --- | --- | --- |
-| October 2026 | [It's a Metric, Too](https://johnlam1968.github.io/jane-street-puzzle-practice/its-a-metric-too/harness.html) | [Play](https://johnlam1968.github.io/jane-street-puzzle-practice/its-a-metric-too/harness.html) (中文版 [here](https://johnlam1968.github.io/jane-street-puzzle-practice/its-a-metric-too/harness.zh.html)): 49 practice boards (4×4 to 7×7), each with exactly one solution, plus the original 11×11 with a rule checker. The harness lets you paint the states you are assuming, assume a capitol (including a hidden one), and re-checks every published number against the real travel costs. |
+| October 2026 | [It's a Metric, Too](https://johnlam1968.github.io/jane-street-puzzle-practice/its-a-metric-too/play.html) | [Play](https://johnlam1968.github.io/jane-street-puzzle-practice/its-a-metric-too/play.html) (中文版 [here](https://johnlam1968.github.io/jane-street-puzzle-practice/its-a-metric-too/play.zh.html)), or the [full page](https://johnlam1968.github.io/jane-street-puzzle-practice/its-a-metric-too/harness.html) with the rules and the notes: 49 practice boards (4×4 to 7×7), each with exactly one solution, plus the original 11×11 with a rule checker. The harness lets you paint the states you are assuming, assume a capitol (including a hidden one), and re-checks every published number against the real travel costs. |
 
 ## Why a website instead of the HTML file
 

@@ -50,6 +50,7 @@ a { color: var(--accent); }
 .lemma .lp { font-size: 0.74rem; color: var(--muted); }
 .lemma .lp.pin { color: var(--good); }
 .lemma .lp.ok { color: var(--accent); font-weight: 600; }
+.lemma .lp.n { color: var(--ink); font-weight: 600; }
 .lemma img { max-width: 100%; height: auto; width: auto; display: block;
   border: 1px solid var(--line); border-radius: 3px; background: #fcfcf9; }
 .lemma a.fig { display: inline-block; max-width: 100%; line-height: 0; }
@@ -78,55 +79,55 @@ a { color: var(--accent); }
 
   <section class="lemmas">
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 0 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 0 <span class="lp n" data-i18n="lemmaScen0">3 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-0.en.png" href="reading-scenarios/reading-0.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-0.en.png" alt="Reading 0: the square that reads 0, and the states it can sit in" data-i18n-src="figSrc0" data-i18n-alt="figAlt0" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead0">The square IS a capitol, and its state's size is odd (1, 3, 5, …) — the lower bound is 1, not 3.</p>
       <p class="lfam"><span data-i18n="lemmaFamsNone">the only case</span></p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 1 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 1 <span class="lp n" data-i18n="lemmaScen1">2 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-1.en.png" href="reading-scenarios/reading-1.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-1.en.png" alt="Reading 1: a step of cost 1 into a 1x1 state" data-i18n-src="figSrc1" data-i18n-alt="figAlt1" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead1">The square touches a 1×1 state and is not a capitol itself. An equivalence, not just an implication.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 1</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 2 <span class="lp pin" data-i18n="lemmaPin">pins the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 2 <span class="lp n" data-i18n="lemmaScen2">1 scenario</span> <span class="lp pin" data-i18n="lemmaPin">pins the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-2.en.png" href="reading-scenarios/reading-2.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-2.en.png" alt="Reading 2: a 2-cell state next to a capitol" data-i18n-src="figSrc2" data-i18n-alt="figAlt2" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead2">The square is in a 2-cell state, next to a capitol of odd size ≥ 3. This is the only reading that pins the square's own state.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 2</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 3 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 3 <span class="lp n" data-i18n="lemmaScen3">3 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-3.en.png" href="reading-scenarios/reading-3.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-3.en.png" alt="Reading 3: one step of cost 3, and two steps of 2 then 1" data-i18n-src="figSrc3" data-i18n-alt="figAlt3" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead3">Two families: one step of cost 3, or 2+1 into a 1×1. The own state is not pinned, so "reading 3 ⇒ a 3-cell state" is false.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 2+1 · 3</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 4 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 4 <span class="lp n" data-i18n="lemmaScen4">3 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-4.en.png" href="reading-scenarios/reading-4.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-4.en.png" alt="Reading 4: the three ways a reading of 4 can be paid" data-i18n-src="figSrc4" data-i18n-alt="figAlt4" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead4">Three families: 4, 3+1, 2+2. Only the one-step family pins the own state, at 4.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 2+2 · 3+1 · 4</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 5 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 5 <span class="lp n" data-i18n="lemmaScen5">4 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-5.en.png" href="reading-scenarios/reading-5.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-5.en.png" alt="Reading 5: the four ways a reading of 5 can be paid" data-i18n-src="figSrc5" data-i18n-alt="figAlt5" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead5">Four families: 5, 4+1, 2+3, 2+2+1. The own state is not pinned.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 2+2+1 · 2+3 · 4+1 · 5</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 6 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 6 <span class="lp n" data-i18n="lemmaScen6">7 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-6.en.png" href="reading-scenarios/reading-6.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-6.en.png" alt="Reading 6: the seven ways a reading of 6 can be paid" data-i18n-src="figSrc6" data-i18n-alt="figAlt6" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead6">Seven families. The own state is not pinned.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 2+2+2 · 2+3+1 · 2+4 · 3+2+1 · 3+3 · 5+1 · 6</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 7 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 7 <span class="lp n" data-i18n="lemmaScen7">11 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-7.en.png" href="reading-scenarios/reading-7.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-7.en.png" alt="Reading 7: the eleven ways a reading of 7 can be paid" data-i18n-src="figSrc7" data-i18n-alt="figAlt7" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead7">Eleven families. The own state is not pinned.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 2+2+2+1 · 2+2+3 · 2+4+1 · 2+5 · 3+2+2 · 3+3+1 · 3+4 · 4+2+1 · 4+3 · 6+1 · 7</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">Reading</b> 8 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 8 <span class="lp n" data-i18n="lemmaScen8">17 scenarios</span> <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span> <span class="lp ok" data-i18n="lemmaComplete">complete</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-8.en.png" href="reading-scenarios/reading-8.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-8.en.png" alt="Reading 8: the seventeen ways a reading of 8 can be paid" data-i18n-src="figSrc8" data-i18n-alt="figAlt8" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead8">Seventeen families. The own state is not pinned.</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">all the ways it can be paid</span>: 2+2+2+2 · 2+2+3+1 · 2+2+4 · 2+3+2+1 · 2+3+3 · 2+5+1 · 2+6 · 3+2+2+1 · 3+4+1 · 3+5 · 4+2+2 · 4+3+1 · 4+4 · 5+2+1 · 5+3 · 7+1 · 8</p>
@@ -368,6 +369,15 @@ const I18N = {
   lemmaWord: 'Reading',
   lemmaFamsWord: 'all the ways it can be paid',
   lemmaComplete: 'complete',
+  lemmaScen0: '3 scenarios',
+  lemmaScen1: '2 scenarios',
+  lemmaScen2: '1 scenario',
+  lemmaScen3: '3 scenarios',
+  lemmaScen4: '3 scenarios',
+  lemmaScen5: '4 scenarios',
+  lemmaScen6: '7 scenarios',
+  lemmaScen7: '11 scenarios',
+  lemmaScen8: '17 scenarios',
   lemmaFamsNone: 'the only case',
   lemmaPin: 'pins the square\'s own state size',
   lemmaFree: 'does not pin the square\'s own state size',

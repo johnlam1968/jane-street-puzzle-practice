@@ -50,6 +50,7 @@ a { color: var(--accent); }
 .lemma .lp { font-size: 0.74rem; color: var(--muted); }
 .lemma .lp.pin { color: var(--good); }
 .lemma .lp.ok { color: var(--accent); font-weight: 600; }
+.lemma .lp.n { color: var(--ink); font-weight: 600; }
 .lemma img { max-width: 100%; height: auto; width: auto; display: block;
   border: 1px solid var(--line); border-radius: 3px; background: #fcfcf9; }
 .lemma a.fig { display: inline-block; max-width: 100%; line-height: 0; }
@@ -78,55 +79,55 @@ a { color: var(--accent); }
 
   <section class="lemmas">
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 0 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 0 <span class="lp n" data-i18n="lemmaScen0">3 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-0.zh.png" href="reading-scenarios/reading-0.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-0.zh.png" alt="读数 0：读 0 的那一格，以及它可能所在的州" data-i18n-src="figSrc0" data-i18n-alt="figAlt0" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead0">这一格就是首府，而且所在州的大小是奇数（1、3、5……）—— 下界是 1，不是 3。</p>
       <p class="lfam"><span data-i18n="lemmaFamsNone">只有这一种情形</span></p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 1 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 1 <span class="lp n" data-i18n="lemmaScen1">2 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-1.zh.png" href="reading-scenarios/reading-1.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-1.zh.png" alt="读数 1：一步代价 1 进 1×1 州" data-i18n-src="figSrc1" data-i18n-alt="figAlt1" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead1">这一格挨着一个 1×1 州，且自己不是首府。是等价替换，不只是单向。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 1</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 2 <span class="lp pin" data-i18n="lemmaPin">钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 2 <span class="lp n" data-i18n="lemmaScen2">1 种情形</span> <span class="lp pin" data-i18n="lemmaPin">钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-2.zh.png" href="reading-scenarios/reading-2.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-2.zh.png" alt="读数 2：挨着首府的 2 格州" data-i18n-src="figSrc2" data-i18n-alt="figAlt2" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead2">这一格在 2 格州里，且紧挨着一个奇数 ≥ 3 的首府。这是唯一钉死这一格州大小的读数。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 2</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 3 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 3 <span class="lp n" data-i18n="lemmaScen3">3 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-3.zh.png" href="reading-scenarios/reading-3.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-3.zh.png" alt="读数 3：一步付 3，以及两步 2 再 1" data-i18n-src="figSrc3" data-i18n-alt="figAlt3" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead3">两族：一步付 3，或 2+1 进 1×1。州大小不钉死，所以「读 3 就是 3 格州」是错的。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 2+1 · 3</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 4 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 4 <span class="lp n" data-i18n="lemmaScen4">3 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-4.zh.png" href="reading-scenarios/reading-4.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-4.zh.png" alt="读数 4：读 4 的三种付法" data-i18n-src="figSrc4" data-i18n-alt="figAlt4" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead4">三族：4、3+1、2+2。只有一步那一族钉死州大小，钉在 4。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 2+2 · 3+1 · 4</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 5 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 5 <span class="lp n" data-i18n="lemmaScen5">4 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-5.zh.png" href="reading-scenarios/reading-5.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-5.zh.png" alt="读数 5：读 5 的四种付法" data-i18n-src="figSrc5" data-i18n-alt="figAlt5" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead5">四族：5、4+1、2+3、2+2+1。州大小不钉死。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 2+2+1 · 2+3 · 4+1 · 5</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 6 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 6 <span class="lp n" data-i18n="lemmaScen6">7 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-6.zh.png" href="reading-scenarios/reading-6.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-6.zh.png" alt="读数 6：读 6 的七种付法" data-i18n-src="figSrc6" data-i18n-alt="figAlt6" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead6">七族。州大小不钉死。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 2+2+2 · 2+3+1 · 2+4 · 3+2+1 · 3+3 · 5+1 · 6</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 7 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 7 <span class="lp n" data-i18n="lemmaScen7">11 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-7.zh.png" href="reading-scenarios/reading-7.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-7.zh.png" alt="读数 7：读 7 的十一种付法" data-i18n-src="figSrc7" data-i18n-alt="figAlt7" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead7">十一族。州大小不钉死。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 2+2+2+1 · 2+2+3 · 2+4+1 · 2+5 · 3+2+2 · 3+3+1 · 3+4 · 4+2+1 · 4+3 · 6+1 · 7</p>
     </figure>
     <figure class="lemma">
-      <figcaption><b data-i18n="lemmaWord">读数</b> 8 <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
+      <figcaption><b data-i18n="lemmaWord">读数</b> 8 <span class="lp n" data-i18n="lemmaScen8">17 种情形</span> <span class="lp" data-i18n="lemmaFree">不钉死这一格的州大小</span> <span class="lp ok" data-i18n="lemmaComplete">完整</span></figcaption>
       <a class="fig" data-i18n-href="reading-scenarios/reading-8.zh.png" href="reading-scenarios/reading-8.zh.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-8.zh.png" alt="读数 8：读 8 的十七种付法" data-i18n-src="figSrc8" data-i18n-alt="figAlt8" loading="lazy"></a>
       <p class="lnote" data-i18n="lemmaRead8">十七族。州大小不钉死。</p>
       <p class="lfam"><span data-i18n="lemmaFamsWord">全部的付法</span>: 2+2+2+2 · 2+2+3+1 · 2+2+4 · 2+3+2+1 · 2+3+3 · 2+5+1 · 2+6 · 3+2+2+1 · 3+4+1 · 3+5 · 4+2+2 · 4+3+1 · 4+4 · 5+2+1 · 5+3 · 7+1 · 8</p>
@@ -368,6 +369,15 @@ const I18N = {
   lemmaWord: '读数',
   lemmaFamsWord: '全部的付法',
   lemmaComplete: '完整',
+  lemmaScen0: '3 种情形',
+  lemmaScen1: '2 种情形',
+  lemmaScen2: '1 种情形',
+  lemmaScen3: '3 种情形',
+  lemmaScen4: '3 种情形',
+  lemmaScen5: '4 种情形',
+  lemmaScen6: '7 种情形',
+  lemmaScen7: '11 种情形',
+  lemmaScen8: '17 种情形',
   lemmaFamsNone: '只有这一种情形',
   lemmaPin: '钉死这一格的州大小',
   lemmaFree: '不钉死这一格的州大小',

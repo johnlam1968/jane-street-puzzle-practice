@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title data-i18n="pageTitle">Lemma · It's a Metric, Too</title>
+<meta name="description" content="What a reading of k can be, and what it forces: nine drawings, every one checked by the rule engine." data-i18n-content="What a reading of k can be, and what it forces: nine drawings, every one checked by the rule engine.">
+<meta name="theme-color" content="#e9eeec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111a1e" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e6b70'/%3E%3Cpath d='M6 6h9v9H6zM17 6h9v9h-9zM6 17h9v9H6z' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='21.5' cy='21.5' r='3.5' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* The lemma, on its own page: what a reading of k can be, and what it forces.
+   The palette is the site's (the puzzle pages use the same sheet). */
+:root {
+  --ground: #e9eeec; --sheet: #f7f9f8; --ink: #1b2a31; --muted: #5b6b70; --line: #c3cdcc;
+  --accent: #0e6b70; --accent-ink: #ffffff; --bad: #b3261e; --good: #2f6b2a; --warn: #8a5a00;
+  --blank: #fbfcfb;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--f-body);
+  font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(22px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(48px, env(safe-area-inset-bottom, 0px)); }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 20px; }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.5rem, 4vw, 2.1rem);
+  line-height: 1.1; margin: 0; }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+a { color: var(--accent); }
+.back { font-size: 0.85rem; color: var(--muted); text-decoration: none; display: inline-block; }
+.back:hover { color: var(--accent); }
+.pagelinks { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.88rem; }
+.pagelinks a { color: var(--accent); }
+.hint { color: var(--muted); font-size: 0.85rem; }
+.hint code { font-family: var(--f-num); font-size: 0.85em; }
+.box { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; }
+.lemmas { display: grid; gap: 16px; grid-template-columns: 1fr; }
+.lemma { margin: 0; background: var(--sheet); border: 1px solid var(--line);
+  border-radius: 4px; padding: 11px 12px; display: grid; gap: 7px; align-content: start; }
+.lemma figcaption { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.lemma figcaption b { font-family: var(--f-display); font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+.lemma .lp { font-size: 0.74rem; color: var(--muted); }
+.lemma .lp.pin { color: var(--good); }
+.lemma img { max-width: 100%; height: auto; width: auto; display: block;
+  border: 1px solid var(--line); border-radius: 3px; background: #fcfcf9; }
+.lemma a.fig { display: inline-block; max-width: 100%; line-height: 0; }
+.lemma a.fig:hover img { border-color: var(--accent); }
+.lemma .lnote { margin: 0; font-size: 0.85rem; color: var(--ink); }
+.lemma .lfam { margin: 0; font-size: 0.76rem; color: var(--muted); font-family: var(--f-num); }
+.foot { margin: 0; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html" data-i18n="backLink" data-i18n-href="../index.html">← All puzzles</a>
+  <header>
+    <div>
+      <h1 data-i18n="lemmaPageTitle">The lemma: what a reading forces</h1>
+      <p class="sub" data-i18n="lemmaIntro">A number in a square is a cost: the least total cost of any walk from that square to a capitol. This page says what that number can be — the ways it can be paid, drawn on boards the rule engine checked — and what each way forces on the square that carries it.</p>
+    </div>
+    <nav class="pagelinks">
+      <a href="harness.html" data-i18n="linkHarness">Play the harness</a>
+      <a href="legends.html" data-i18n="linkLegends">Legends</a>
+      <a href="lemma.zh.html" data-i18n="linkZh" data-i18n-href="lemma.zh.html">Chinese version</a>
+    </nav>
+  </header>
+
+  <p class="hint" data-i18n="lemmaLegend">Red ring: the square that reads k · gold: a capitol (it reads 0) · teal: the cheapest route to a capitol, with the cost of each step on it · grey: a filler state, which has no capitol and no reading of its own.</p>
+
+  <section class="lemmas">
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 0 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-0.en.png" href="reading-scenarios/reading-0.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-0.en.png" alt="Reading 0: the square that reads 0, and the states it can sit in" data-i18n-src="figSrc0" data-i18n-alt="figAlt0" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead0">The square IS a capitol, and its state's size is odd (1, 3, 5, …) — the lower bound is 1, not 3.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: —</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 1 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-1.en.png" href="reading-scenarios/reading-1.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-1.en.png" alt="Reading 1: a step of cost 1 into a 1x1 state" data-i18n-src="figSrc1" data-i18n-alt="figAlt1" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead1">The square touches a 1×1 state and is not a capitol itself. An equivalence, not just an implication.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 1</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 2 <span class="lp pin" data-i18n="lemmaPin">pins the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-2.en.png" href="reading-scenarios/reading-2.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-2.en.png" alt="Reading 2: a 2-cell state next to a capitol" data-i18n-src="figSrc2" data-i18n-alt="figAlt2" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead2">The square is in a 2-cell state, next to a capitol of odd size ≥ 3. This is the only reading that pins the square's own state.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 2</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 3 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-3.en.png" href="reading-scenarios/reading-3.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-3.en.png" alt="Reading 3: one step of cost 3, and two steps of 2 then 1" data-i18n-src="figSrc3" data-i18n-alt="figAlt3" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead3">Two families: one step of cost 3, or 2+1 into a 1×1. The own state is not pinned, so "reading 3 ⇒ a 3-cell state" is false.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 2+1 · 3</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 4 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-4.en.png" href="reading-scenarios/reading-4.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-4.en.png" alt="Reading 4: the three ways a reading of 4 can be paid" data-i18n-src="figSrc4" data-i18n-alt="figAlt4" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead4">Three families: 4, 3+1, 2+2. Only the one-step family pins the own state, at 4.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 2+2 · 3+1 · 4</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 5 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-5.en.png" href="reading-scenarios/reading-5.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-5.en.png" alt="Reading 5: the four ways a reading of 5 can be paid" data-i18n-src="figSrc5" data-i18n-alt="figAlt5" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead5">Four families: 5, 4+1, 2+3, 2+2+1. The own state is not pinned.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 2+2+1 · 2+3 · 4+1 · 5</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 6 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-6.en.png" href="reading-scenarios/reading-6.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-6.en.png" alt="Reading 6: the seven ways a reading of 6 can be paid" data-i18n-src="figSrc6" data-i18n-alt="figAlt6" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead6">Seven families. The own state is not pinned.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 2+2+2 · 2+3+1 · 2+4 · 3+2+1 · 3+3 · 5+1 · 6</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 7 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-7.en.png" href="reading-scenarios/reading-7.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-7.en.png" alt="Reading 7: the eleven ways a reading of 7 can be paid" data-i18n-src="figSrc7" data-i18n-alt="figAlt7" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead7">Eleven families. The own state is not pinned.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 2+2+2+1 · 2+2+3 · 2+4+1 · 2+5 · 3+2+2 · 3+3+1 · 3+4 · 4+2+1 · 4+3 · 6+1 · 7</p>
+    </figure>
+    <figure class="lemma">
+      <figcaption><b data-i18n="lemmaWord">Reading</b> 8 <span class="lp" data-i18n="lemmaFree">does not pin the square's own state size</span></figcaption>
+      <a class="fig" data-i18n-href="reading-scenarios/reading-8.en.png" href="reading-scenarios/reading-8.en.png" target="_blank" rel="noopener"><img src="reading-scenarios/reading-8.en.png" alt="Reading 8: the seventeen ways a reading of 8 can be paid" data-i18n-src="figSrc8" data-i18n-alt="figAlt8" loading="lazy"></a>
+      <p class="lnote" data-i18n="lemmaRead8">Seventeen families. The own state is not pinned.</p>
+      <p class="lfam"><span data-i18n="lemmaFamsWord">families</span>: 2+2+2+2 · 2+2+3+1 · 2+2+4 · 2+3+2+1 · 2+3+3 · 2+5+1 · 2+6 · 3+2+2+1 · 3+4+1 · 3+5 · 4+2+2 · 4+3+1 · 4+4 · 5+2+1 · 5+3 · 7+1 · 8</p>
+    </figure>
+  </section>
+
+  <p class="foot"><a id="lemmaNote" target="_blank" rel="noopener"
+    href="https://github.com/johnlam1968/js-puzzle/blob/docs/inference-notes-11x11/docs/inference-notes-11x11/32-reading-k-what-it-forces.md"
+    data-i18n="lemmaMore">The full note, with the proofs</a></p>
+</div>
+<script>
+/* This file is a SOURCE, not a page: every visible string lives in the I18N
+   table below, and the build (tools/lr11/page/build_lang.py) writes the pages
+   you can open -- lemma.en.html and lemma.zh.html.  Open one of those, not
+   this file. */
+const I18N = {
+  pageTitle: 'Lemma · It\'s a Metric, Too',
+  metaDesc: 'What a reading of k can be, and what it forces: nine drawings, every one checked by the rule engine.',
+  h1: 'Play',
+  rulesTitle: 'Rules',
+  goalTitle: 'Goal',
+  goalText: 'Goal: follow the rules below to cover the whole board with squares',
+  linkHarness: 'Play the harness',
+  linkLegends: 'Legends',
+  linkOnboarding: 'Agent Onboarding',
+  linkMinimal: 'Minimal view',
+  linkFull: 'Full page',
+  moreTitle: 'More on the full page',
+  moreText: 'This page keeps the board and the buttons. Everything that is written down is on the full page:',
+  linkMoreGoal: 'The goal of the puzzle',
+  linkMoreVerdict: 'Every square: its range and its verdict',
+  linkMoreNotes: 'The notes the page writes',
+  linkMoreHidden: 'Where a hidden capitol could be',
+  linkZh: 'Chinese version',
+  ruleState: '<b>A state</b> is a connected group of squares that has a mirror or a rotation symmetry of its own.',
+  ruleCapitol: '<b>Its capitol</b> — if <b>every</b> symmetry of the state fixes exactly one of its squares, that square is the capitol; if some symmetry fixes none, or more than one, the state has <b>no capitol</b>. Capitols are never painted: they follow from the shape.',
+  ruleCost: '<b>The cost of a step</b> — inside one state a step costs the area of that state; between two states it costs the smaller of the two areas.',
+  ruleNumber: '<b>The number in a square</b> is the least total cost of any walk from that square to a capitol. A finished tiling has to reproduce every published number <b>and</b> make it the cheapest route there is.',
+  ruleAnswer: '<b>The answer</b> — the row sum of a row is the total area of the states that touch that row (a state counts in every row it touches); the answer is the sum of the squares of the row sums.',
+  rulesMore: 'The board re-checks every published number against your painting as you go. The badge in the corner of a square says whether that number is settled, still open, asking for a hidden capitol, or contradicted; the legend below the board explains every mark on it.',
+  sub: 'Paint the states you are assuming, mark the capitols you are assuming — including the <b>hidden</b> ones — and every published number is re-checked against the real travel costs.',
+  backLink: '← All puzzles',
+  backLinkHref: '../index.html',
+  noscript: '<b>This page needs JavaScript</b>, and the grid below is drawn by it.<br><br>If you opened this file from a preview (on iOS: a message attachment, AirDrop, or the Files app), you are looking at a picture of the page, not the page itself -- iOS previews do not run scripts, so the board stays empty and the buttons do nothing. Open it in a browser instead: on iOS, share the file and choose <b>Open in Safari</b>; on a computer, double-click it, or serve the folder with <code>python3 -m http.server</code> and open the address it prints.',
+  plateHead: '<b>Original</b> · 11×11',
+  labelBoard: 'Board',
+  boardGroupLedger: 'The puzzle',
+  boardLedger: 'Original · 11×11',
+  boardOfficial: 'official example',
+  boardNote: 'A practice board: the partition is not in this page — find it yourself.',
+  labelExpected: 'this board comes out with %s',
+  btnRowSums: 'Row sums and answer',
+  sumReady: 'the sheet is tiled and every published number is settled',
+  sumWhyTiling: 'the sheet is not tiled yet',
+  sumWhyState: 'a painted region is not a state yet',
+  sumWhyAssumption: 'an assumed capitol does not match the state it sits in',
+  sumWhyVerdicts: '%s published numbers are not settled yet',
+  sumAxisTitle: 'row sum %s · its square %s',
+  sumFootLabel: 'answer',
+  sumFootCaption: 'computed from what you painted',
+  toggleRoute: 'Show route on hover (hold on a touch screen)',
+  labelAnswer: 'Computed answer',
+  labelRowSums: 'row sums %s',
+  routeText: '%s · %s = %s',
+  routeNear: 'cheapest walk: %s · %s = %s',
+  routeFar: 'upper bound: %s · %s = %s',
+  routeExact: 'the board is full, so this is the true cheapest walk',
+  routeOptimistic: 'optimistic: unknown squares are charged as little as possible',
+  routeUpper: 'the walk that proves the upper bound; it may cross unknown squares',
+  routeNone: 'No route yet: under the current assumptions this square cannot walk to a capitol.',
+  jsonPractice: 'Practice board -- %s×%s',
+  axCornerTitle: 'rows (Y) — index down the left',
+  toolPaint: 'Paint state',
+  toolCap: 'Assume capitol',
+  toolErase: 'Erase',
+  capSizeLabel: 'assumed capitol\'s state size',
+  presetClear: 'Clear',
+  undoBtn: 'Undo',
+  statusIdle: 'Paint a state, or open a board file.',
+  labelIterations: 'iterations',
+  labelIterName: 'name this try',
+  btnSaveIter: 'Save iteration',
+  btnExportIter: 'Export all',
+  labelSaveShare: 'save / share',
+  btnSaveJson: 'Save JSON',
+  btnCopyJson: 'Copy JSON',
+  btnOpenJson: 'Open JSON',
+  btnSavePng: 'Save PNG',
+  pngPreviewLabel: 'PNG preview — long-press it to save',
+  panelCandidates: 'Candidates',
+  thCandidate: 'candidate',
+  thGoalPy: 'goal.py',
+  thThisPage: 'this page',
+  panelVerdicts: 'Verdicts',
+  thSquare: 'square',
+  thReads: 'reads',
+  thRange: 'range',
+  thVerdict: 'verdict',
+  panelNotes: 'Notes',
+  panelHistory: 'Paint history',
+  histBack: '← Back',
+  histForward: 'Forward →',
+  histNone: 'Nothing painted yet.',
+  histPos: 'action %s of %s',
+  histPainted: '%s painted',
+  histGoLabel: 'Go to step',
+  btnHistGo: 'Go',
+  histNoNumber: 'Type the number of a step.',
+  histNoSuch: 'There is no step %s.',
+  histJumped: 'Now at step %s.',
+  btnHistJson: 'History JSON',
+  btnHistClear: 'Clear history',
+  histCleared: 'History cleared.',
+  histExported: 'Exported %s action(s).',
+  histRestored: 'Back to action #%s.',
+  histLoaded: 'Loaded %s action(s).',
+  histWhat: 'Every action taken on this board, with the board as it was after that action. Open this file to get the whole history back.',
+  actStart: 'start',
+  actPaint: 'paint %s',
+  actErase: 'erase %s',
+  actCap: 'assume capitol %s (%s)',
+  actUncap: 'drop the assumption at %s',
+  actConstraint: 'constraint at %s',
+  actClear: 'clear the board',
+  actUndo: 'undo',
+  actLoad: 'load a board file',
+  hiddenCapTitle: 'Where could a hidden capitol be?',
+  badgeForced: 'confirmed: the assumptions pin this number exactly',
+  badgeTightGeo: 'open: a known capitol pays exactly this, but a hidden one may be nearer',
+  badgeTightCheap: 'open: this is the floor, no capitol can be nearer',
+  badgeNeedsPath: 'open: some capitol has to be reachable at exactly this cost',
+  badgeDemand: 'demand: an unrevealed capitol has to be nearer than this',
+  badgeContradicted: 'contradicted: a known capitol is cheaper, so this cannot be the minimum',
+  badgeUnproducible: 'unproducible: no route can pay exactly this',
+  noteCapitolOnClue: 'The capitol of a painted state sits on the %s at %s, but a capitol reads 0.',
+  noteZeroElsewhere: 'The 0 at %s is inside a state whose capitol is elsewhere.',
+  noteEvenAssumed: 'You assumed a state of size %s for the capitol at %s, but a state with a capitol is always odd: an even-sized state has a mirror axis running along a column of squares, which fixes more than one of them, so it has no capitol at all. Use an odd size.',
+  noteSatisfactionAxis: 'Satisfaction axis (independent of “is it the minimum?”): %s numbers have a route whose cost is fully determined (however the free squares are filled), %s numbers need the free squares to be tuned, and %s numbers cannot be paid by any route at all (they need a hidden capitol).',
+  noteSatisfactionFull: 'The tiling is complete (all %s squares belong to a state), so the set of reachable costs is exact. Satisfaction test: of the %s published numbers, %s; and %s.%s',
+  noteSingleton: 'A square that reads 1 needs a 1×1 state right next to it (a step of cost 1). Candidates: %s.',
+  notesNone: 'Nothing in words to flag here — the walls and the badges may still be saying something. Assumptions that fit the numbers are not the same as assumptions that are true.',
+  whyForced: 'your assumptions pin the distance to exactly %s',
+  whyContradicted: 'a capitol you already know about is reachable for %s, which is cheaper than %s, so the number cannot be the minimum',
+  whyUnproducible: 'no walk out of this square can cost exactly %s%s, so this number cannot be produced at all',
+  whyUnprodCosts: ' (the reachable costs are %s)',
+  whyUnprodNone: ' (not even one known capitol is within reach)',
+  whyTightGeo: 'a known capitol is reachable for at most %s, and the number says the minimum is %s, so no hidden capitol may be nearer',
+  whyDemand: 'the nearest capitol you know about is at least %s away, but the number says %s, so a hidden capitol has to be strictly nearer than that%s',
+  whyDemandExtra: '; no walk to a known capitol costs exactly %s either',
+  whyTightCheap: '%s is the floor: no capitol can be nearer than %s, and one has to sit at exactly %s',
+  whyNeedsPath: 'the number sits inside the range, so a capitol has to be reachable at exactly %s',
+  paySimpleNote: '(this route loops, so there is a cheaper way: the number is not the minimum)',
+  payOkHead: '<div class="pay ok">payable, and <b>independent of the free squares</b>:',
+  payMid: '<div class="pay mid">payable, but <b>the free squares have to make up the difference</b>: the route through known squares cannot make up %s, the free squares must add %s of cost (reachable costs %s)</div>',
+  payNo: '<div class="pay no">not payable: no route costs exactly %s%s ⇒ only a hidden capitol can pay it</div>',
+  payNoKnown: ' (known capitols reach %s)',
+  payNoNone: ' (not even one known capitol is within reach)',
+  stateCount: '%s states · %s with a capitol · %s squares unknown',
+  noStatesYet: 'no states yet',
+  statusContradicted: '<b>%s published numbers are contradicted.</b> %s',
+  statusComplete: 'The tiling is complete and <b>every published number is produced and is the cheapest one</b>: %s/%s check out.',
+  statusOk: 'No contradiction: every published number is still reachable under these assumptions.',
+  hiddenCap: '<b>%s reads %s</b>: a hidden capitol within %s steps, i.e. %s.',
+  hiddenCapNone: '<p>No square currently demands a hidden capitol.</p>',
+  hiddenCapCommonTitle: '<b>And what the rings have in common</b> (%s groups): a capital is one cell with one state, so if it pays several numbers it has to sit in the ring of every one of them.',
+  hiddenCapGroup: '<b>%s</b> could pay %s — and if ONE capital paid all of them, it would have to be at %s.',
+  hiddenCapRead: '%s reads %s',
+  iterContradicted: '%s contradicted',
+  iterOk: 'no contradiction',
+  iterForced: '%s forced · %s need a hidden capitol',
+  btnRestore: 'Restore',
+  btnDrop: 'Drop',
+  iterRestored: 'Restored <b>%s</b>.',
+  jsonPublished: 'Jane Street, It\'s a Metric, Too (October 2026) -- the 33 official numbers',
+  jsonWhat: 'the board and the numbers it came with: the states you are assuming, the capitols you are assuming, and the published numbers of this board. The verdicts and notes are NOT here on purpose -- they are derived from those two things, so a rule tool recomputes them instead of trusting a stored conclusion.',
+  errDisconnected: 'The state at %s is not one connected shape, so it cannot carry a colour of its own.',
+  errColourConflict: 'Colour conflict: the states at %s and %s both ask for colour %s and they touch, so they would melt into a single state. Give one of them a different colour.',
+  axisColumn: 'column %s',
+  axisRow: 'row %s',
+  paletteTitle: 'state colour %s',
+  candMeta: '<b>%s</b> candidate states proposed for <b>%s</b> (it reads %s), sizes %s. <b>Each one is judged again here</b> — the word on the left is goal.py\'s, the word on the right is this page\'s, and they come from different code.',
+  candTruncated: ' <b>This round stopped at the candidate limit: it did NOT exhaust the possibilities.</b>',
+  btnLoad: 'load',
+  candLoaded: 'Loaded candidate: %s',
+  candStatus: 'Loaded %s candidates for %s — %s',
+  candDisagree: '<b>%s disagree</b> with goal.py.',
+  candAgree: 'this page agrees with goal.py on all of them.',
+  pngTitle: 'It\'s a Metric, Too - play',
+  pngCounts: '%s states, %s with a capitol, %s assumed capitols',
+  pngLegend1: 'top-left = the area of the state   (* = that state has no capitol)',
+  pngLegend2: 'bottom-right = the cheapest distance to a capitol we already know about',
+  pngFail: 'The picture could not be made in this browser.',
+  pngReadyToast: 'Picture ready: %s. It is also shown below - long-press it to save on a phone.',
+  pngReadyStatus: 'Picture ready: <b>%s</b>. It is shown below the board as well; on a phone, long-press it to save.',
+  jsonReadyToast: 'JSON ready: %s. Copy JSON puts the very same text on your clipboard.',
+  jsonReadyStatus: 'JSON ready: <b>%s</b> - %s states and %s assumed capitols. <b>Copy JSON</b> puts the same text on your clipboard, and a rule tool can read it with <code>python3 lr11/assume.py %s</code>.',
+  jsonCopiedToast: 'JSON copied to the clipboard - paste it to a friend, or to a rule tool.',
+  jsonCopiedStatus: 'JSON copied to the clipboard.',
+  jsonCopyFailed: 'The browser would not let the page copy. The JSON is now in a box, selected - press Cmd/Ctrl+C.',
+  jsonLoaded: 'Loaded %s.',
+  fileUnreadable: 'Could not read that file: %s',
+  iterSaved: 'Saved iteration "%s".',
+  iterNone: 'No iterations saved yet.',
+  iterExported: 'Exported %s iteration(s).',
+  noteSatAllProduced: 'every one of them can be produced by some walk',
+  noteSatSomeUnproduced: ' %s of them cannot',
+  noteSatAllCheapest: 'every one of them is exactly the minimum',
+  noteSatSomeNotCheapest: ' %s of them are not the minimum',
+  noteSatWrong: 'the ones that do not match:',
+  noteSatWrongOne: 'reads',
+  noteSatEnd: '.',
+  toolConstraint: 'Constraint',
+  conSizeLabel: 'Allowed state sizes',
+  conCostLabel: 'Allowed travel costs',
+  conUseClue: 'Use clue (%s)',
+  conReset: 'Reset this cell',
+  conDone: 'Done',
+  conTitle: 'Square %s',
+  conTitleClue: ' · clue %s',
+  conHelp: 'A constraint is a number you made up: the page checks your painting against it, the same way it checks the published numbers.',
+  conBadTokens: 'Ignored: %s. Use numbers and ranges like 5, 7-9.',
+  conSizeBad: 'the state there has size %s, which is not in %s',
+  conCostBad: 'the travel cost there is %s, which is not in %s',
+  conCostTooDear: 'even the cheapest walk costs %s, more than %s allows',
+  conCostTooCheap: 'the dearest walk that can be proven costs %s, less than %s allows',
+  conCostUnknown: 'the travel cost is not known until the sheet is full',
+  conNoState: 'the square has no state yet, so its size is not known',
+  conOk: 'the constraint holds',
+  conTag: 'your constraint',
+  conCurSize: 'state size here: %s · ',
+  conCurCost: 'travel cost here: %s',
+  conCurUpper: ' (an upper bound for now)',
+  noteConBad: 'Your constraint at %s is broken: %s',
+  noteConOpen: 'Your constraint at %s cannot be checked yet: %s',
+  statusConBad: '%s of your own constraints are broken: %s',
+  lemmaPageTitle: 'The lemma: what a reading forces',
+  lemmaIntro: 'A number in a square is a cost: the least total cost of any walk from that square to a capitol. This page says what that number can be — the ways it can be paid, drawn on boards the rule engine checked — and what each way forces on the square that carries it.',
+  lemmaLegend: 'Red ring: the square that reads k · gold: a capitol (it reads 0) · teal: the cheapest route to a capitol, with the cost of each step on it · grey: a filler state, which has no capitol and no reading of its own.',
+  lemmaWord: 'Reading',
+  lemmaFamsWord: 'families',
+  lemmaPin: 'pins the square\'s own state size',
+  lemmaFree: 'does not pin the square\'s own state size',
+  lemmaRead0: 'The square IS a capitol, and its state\'s size is odd (1, 3, 5, …) — the lower bound is 1, not 3.',
+  lemmaRead1: 'The square touches a 1×1 state and is not a capitol itself. An equivalence, not just an implication.',
+  lemmaRead2: 'The square is in a 2-cell state, next to a capitol of odd size ≥ 3. This is the only reading that pins the square\'s own state.',
+  lemmaRead3: 'Two families: one step of cost 3, or 2+1 into a 1×1. The own state is not pinned, so "reading 3 ⇒ a 3-cell state" is false.',
+  lemmaRead4: 'Three families: 4, 3+1, 2+2. Only the one-step family pins the own state, at 4.',
+  lemmaRead5: 'Four families: 5, 4+1, 2+3, 2+2+1. The own state is not pinned.',
+  lemmaRead6: 'Seven families. The own state is not pinned.',
+  lemmaRead7: 'Eleven families. The own state is not pinned.',
+  lemmaRead8: 'Seventeen families. The own state is not pinned.',
+  lemmaMore: 'The full note, with the proofs',
+  linkZhHref: 'lemma.zh.html',
+  figSrc0: 'reading-scenarios/reading-0.en.png',
+  figSrc1: 'reading-scenarios/reading-1.en.png',
+  figSrc2: 'reading-scenarios/reading-2.en.png',
+  figSrc3: 'reading-scenarios/reading-3.en.png',
+  figSrc4: 'reading-scenarios/reading-4.en.png',
+  figSrc5: 'reading-scenarios/reading-5.en.png',
+  figSrc6: 'reading-scenarios/reading-6.en.png',
+  figSrc7: 'reading-scenarios/reading-7.en.png',
+  figSrc8: 'reading-scenarios/reading-8.en.png',
+  figAlt0: 'Reading 0: the square that reads 0, and the states it can sit in',
+  figAlt1: 'Reading 1: a step of cost 1 into a 1x1 state',
+  figAlt2: 'Reading 2: a 2-cell state next to a capitol',
+  figAlt3: 'Reading 3: one step of cost 3, and two steps of 2 then 1',
+  figAlt4: 'Reading 4: the three ways a reading of 4 can be paid',
+  figAlt5: 'Reading 5: the four ways a reading of 5 can be paid',
+  figAlt6: 'Reading 6: the seven ways a reading of 6 can be paid',
+  figAlt7: 'Reading 7: the eleven ways a reading of 7 can be paid',
+  figAlt8: 'Reading 8: the seventeen ways a reading of 8 can be paid',
+};
+</script>
+</body>
+</html>
